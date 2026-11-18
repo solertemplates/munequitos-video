@@ -242,7 +242,7 @@ function drawSigns(ctx, s, lang, g, side) {
 
 // ---------- MUÑECO ----------
 // Proporciones tipo caricatura: cabeza grande, cuerpo negro sólido y grueso.
-const SK = { thigh: 98, shin: 96, torso: 150, neck: 10, head: 60, upper: 80, fore: 76 };
+const SK = { thigh: 98, shin: 96, torso: 150, neck: 8, head: 64, upper: 78, fore: 74 };
 const FIG = '#111111';
 
 function pose(action, t, g, seed) {
@@ -323,93 +323,145 @@ function limb(ctx, a, b, c, lw) {
   ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(cx, cy, c[0], c[1]); ctx.stroke();
 }
 
-function drawFace(ctx, hx, hy, f, emo, mouthOpen, g, seed) {
-  const ink = FIG, ex = f * 9;
-  const L = hx + ex - 20, Rr = hx + ex + 20, ey = hy - 10, mx = hx + ex, my = hy + 24;
-  const blink = ((g + seed * 1.7) % 3.8) < 0.13;
+// Colores de camiseta por personaje (estilo caricatura). En blanco y negro: gris claro.
+const SHIRT = { A: '#43b649', B: '#ff8a1e', C: '#ffcc29', D: '#3fa1ef' };
+const MOUTH_IN = '#7a1414', TONGUE = '#ff7d93';
+
+// Boca según la forma (visema) y la emoción. Contorno negro grueso, interior rojo oscuro y lengua rosada.
+function drawMouth(ctx, mx, my, shape, open, emo) {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const eyes = ({ rx = 13, ry = 16, pdx = f * 4, pdy = 1, pr = 7, lid = 0 } = {}) => {
-    if (blink) { for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey, rx * 0.9, 0.25, Math.PI - 0.25); ctx.stroke(); } return; }
+  const blk = FIG;
+  const inside = (pathFn, tongue, teeth = false) => {
+    ctx.save(); pathFn(); ctx.fillStyle = MOUTH_IN; ctx.fill(); ctx.clip();
+    if (teeth !== false && teeth != null) { ctx.fillStyle = '#fff'; ctx.fillRect(mx - 45, teeth - 4, 90, 13); }
+    if (tongue) { ctx.fillStyle = TONGUE; ctx.beginPath(); ctx.ellipse(mx + 2, tongue.y, tongue.rx, tongue.ry, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = '#e8577a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx + 2, tongue.y - tongue.ry * 0.7); ctx.lineTo(mx + 2, tongue.y + tongue.ry * 0.2); ctx.stroke(); }
+    ctx.restore(); pathFn(); ctx.strokeStyle = blk; ctx.lineWidth = 6; ctx.stroke();
+  };
+  const D = (w, h, top = -6) => ({ path: () => { ctx.beginPath(); ctx.moveTo(mx - w, my + top); ctx.quadraticCurveTo(mx, my + top + 6, mx + w, my + top); ctx.quadraticCurveTo(mx + w * 0.92, my + top + h, mx, my + top + h); ctx.quadraticCurveTo(mx - w * 0.92, my + top + h, mx - w, my + top); ctx.closePath(); }, tongue: { y: my + top + h * 0.74, rx: w * 0.5, ry: Math.max(8, h * 0.42) } });
+  switch (shape) {
+    case 'closed': {
+      ctx.strokeStyle = blk; ctx.lineWidth = 6.5; ctx.beginPath();
+      const c = emo === 'sad' || emo === 'tired' ? -12 : emo === 'angry' ? -5 : emo === 'meh' || emo === 'think' ? 0 : 15;
+      ctx.moveTo(mx - 21, my); ctx.quadraticCurveTo(mx, my + c, mx + 21, my); ctx.stroke(); break;
+    }
+    case 'small': inside(() => { ctx.beginPath(); ctx.ellipse(mx, my + 4, 14, 8 + open * 7, 0, 0, TAU); }, null); break;
+    case 'O': { const ry = 16 + open * 10; inside(() => { ctx.beginPath(); ctx.ellipse(mx, my + 6, 13 + open * 4, ry, 0, 0, TAU); }, { y: my + 6 + ry * 0.6, rx: 9, ry: 7 }); break; }
+    case 'ee': { const d = D(27, 18 + open * 10, -4); inside(d.path, { y: my + 14 + open * 8, rx: 12, ry: 6 }, my - 4); break; }
+    case 'wide': { const d = D(32, 34 + open * 18); inside(d.path, d.tongue, my - 6); break; }
+    default: { const d = D(26, 20 + open * 22); inside(d.path, d.tongue); } // 'open'
+  }
+}
+
+// Cara viva: ojos que parpadean y miran, cejas según emoción, boca sincronizada con la voz.
+function drawFace(ctx, hx, hy, f, emo, speech, g, seed) {
+  const ink = FIG, ex = f * 9;
+  const L = hx + ex - 23, Rr = hx + ex + 23, ey = hy - 8, mx = hx + ex, my = hy + 30;
+  const blink = ((g + seed * 1.7) % 3.4) < 0.12;
+  // mirada: pequeños saltos de los ojos cada ~1 s
+  const gi = Math.floor(g * 0.9 + seed * 3);
+  const lookX = f * 3 + (hash(gi * 7 + seed) - 0.5) * 8, lookY = (hash(gi * 13 + seed) - 0.5) * 5;
+  const amp = speech ? speech.amp : 0;
+  const lift = amp * 7; // las cejas suben al enfatizar
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const eyes = ({ rx = 17, ry = 21, pr = 9, lid = 0, pdx = lookX, pdy = lookY } = {}) => {
+    if (blink) { for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, ey, rx * 0.9, 0.3, Math.PI - 0.3); ctx.stroke(); } return; }
     for (const x of [L, Rr]) {
-      ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 4.5; ctx.beginPath(); ctx.ellipse(x, ey, rx, ry, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(x, ey, rx, ry, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.beginPath(); ctx.ellipse(x, ey, rx - 2, ry - 2, 0, 0, TAU); ctx.clip();
       ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x + pdx, ey + pdy, pr, 0, TAU); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + pdx + 2.5, ey + pdy - 2.5, pr * 0.32, 0, TAU); ctx.fill();
-      if (lid > 0) { ctx.save(); ctx.beginPath(); ctx.ellipse(x, ey, rx + 1, ry + 1, 0, 0, TAU); ctx.clip(); ctx.fillStyle = '#fff'; ctx.fillRect(x - rx - 3, ey - ry - 3, rx * 2 + 6, (ry * 2 + 6) * lid); ctx.restore(); line(ctx, [[x - rx, ey - ry + ry * 2 * lid], [x + rx, ey - ry + ry * 2 * lid]], ink, 5); }
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + pdx + 3, ey + pdy - 3, pr * 0.33, 0, TAU); ctx.fill();
+      if (lid > 0) { ctx.fillStyle = '#fff'; ctx.fillRect(x - rx - 2, ey - ry - 2, rx * 2 + 4, (ry * 2 + 4) * lid); }
+      ctx.restore();
+      if (lid > 0) line(ctx, [[x - rx + 1, ey - ry + ry * 2 * lid], [x + rx - 1, ey - ry + ry * 2 * lid]], ink, 5.5);
     }
   };
-  const brows = (inner, outer, y = ey - 26) => { line(ctx, [[L - 14, y + outer], [L + 10, y + inner]], ink, 6); line(ctx, [[Rr + 14, y + outer], [Rr - 10, y + inner]], ink, 6); };
-  const smileOpen = (w, h) => {
-    ctx.fillStyle = ink; ctx.beginPath(); ctx.moveTo(mx - w, my - 6); ctx.quadraticCurveTo(mx, my - 2, mx + w, my - 6); ctx.quadraticCurveTo(mx + w * 0.8, my + h, mx, my + h); ctx.quadraticCurveTo(mx - w * 0.8, my + h, mx - w, my - 6); ctx.closePath(); ctx.fill();
-    if (h > 12) { ctx.save(); ctx.clip(); ctx.fillStyle = '#ff6b81'; ctx.beginPath(); ctx.ellipse(mx, my + h, w * 0.55, h * 0.45, 0, 0, TAU); ctx.fill(); ctx.restore(); }
-  };
-  const curve = (w, c, y = my, lw = 5) => { ctx.strokeStyle = ink; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(mx - w, y); ctx.quadraticCurveTo(mx, y + c, mx + w, y); ctx.stroke(); };
-  const talk = mouthOpen > 0.15;
+  // cejas: (inclinación interior, exterior, altura extra)
+  const brows = (inner, outer, up = 0) => { const y = ey - 31 - Math.min(10, up + lift); line(ctx, [[L - 13, y + outer], [L + 10, y + inner]], ink, 7.5); line(ctx, [[Rr + 13, y + outer], [Rr - 10, y + inner]], ink, 7.5); };
+  // forma de boca: si habla, sale de la voz real; si no, de la emoción
+  let shape = 'closed', open = 0;
+  if (speech && speech.talking) { shape = speech.shape; open = amp; }
   switch (emo) {
-    case 'happy': eyes(); if (talk) smileOpen(17, 6 + mouthOpen * 20); else smileOpen(18, 18); break;
-    case 'laugh': for (const x of [L, Rr]) line(ctx, [[x - 12, ey + 4], [x, ey - 8], [x + 12, ey + 4]], ink, 6); smileOpen(24, 34); break;
-    case 'sad': eyes({ pdy: 5, pdx: 0, ry: 15 }); brows(-8, 6); curve(15, -12, my + 10); break;
-    case 'cry': for (const x of [L, Rr]) line(ctx, [[x - 11, ey - 7], [x + 9, ey], [x - 11, ey + 7]].map(p => [x + (p[0] - x) * (x === L ? 1 : -1), p[1]]), ink, 6);
-      ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 8, 18, 14 + Math.sin(g * 10) * 3, 0, 0, TAU); ctx.fill(); break;
-    case 'angry': eyes({ ry: 13, pr: 6, lid: 0.3 }); brows(10, -6, ey - 22); ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 4; rr(ctx, mx - 18, my - 4, 36, 18, 6); ctx.fill(); ctx.stroke(); line(ctx, [[mx - 16, my + 5], [mx + 16, my + 5]], ink, 3); break;
-    case 'shock': eyes({ rx: 16, ry: 20, pr: 5, pdx: 0, pdy: 0 }); ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 8, 12, 17, 0, 0, TAU); ctx.fill(); break;
-    case 'love': ctx.fillStyle = BW ? '#111' : '#e03131'; heartPath(ctx, L, ey, 32); ctx.fill(); heartPath(ctx, Rr, ey, 32); ctx.fill(); smileOpen(16, 16); break;
-    case 'tired': eyes({ lid: 0.5, pdy: 4, pdx: 0 }); ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(mx - 15, my + 4); for (let i = 1; i <= 5; i++) ctx.lineTo(mx - 15 + i * 6, my + 4 + (i % 2 ? -5 : 3)); ctx.stroke(); break;
-    case 'sleep': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey - 2, 11, 0.3, Math.PI - 0.3); ctx.stroke(); } ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 6, 6, 7 + Math.sin(g * 2) * 2, 0, 0, TAU); ctx.fill(); break;
-    case 'think': eyes({ pdx: f * 4 + 2, pdy: -7 }); brows(0, 4, ey - 26 - 4); line(ctx, [[mx - 10, my + 4], [mx + 12, my - 1]], ink, 5); break;
-    case 'meh': eyes({ lid: 0.38 }); line(ctx, [[mx - 14, my + 4], [mx + 14, my + 4]], ink, 5); break;
-    case 'peace': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey - 4, 11, 0.35, Math.PI - 0.35); ctx.stroke(); } curve(13, 10, my); break;
-    case 'dizzy': ctx.fillStyle = ink; ctx.font = `700 34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('@', L, ey); ctx.fillText('@', Rr, ey); ctx.textBaseline = 'alphabetic'; curve(13, 8); break;
-    default: eyes(); if (talk) smileOpen(15, 5 + mouthOpen * 16); else curve(15, 9);
+    case 'happy': eyes(); brows(-2, 2, 2); if (shape === 'closed') drawMouth(ctx, mx, my, 'open', 0.35, emo); else drawMouth(ctx, mx, my, shape, open, emo); break;
+    case 'laugh': for (const x of [L, Rr]) line(ctx, [[x - 13, ey + 5], [x, ey - 9], [x + 13, ey + 5]], ink, 7); brows(-4, 2, 6); drawMouth(ctx, mx, my, 'wide', 0.8 + Math.sin(g * 14) * 0.2, emo); break;
+    case 'sad': eyes({ pdy: 5, pdx: 0, ry: 17 }); brows(-12, 8); if (shape === 'closed') drawMouth(ctx, mx, my + 8, 'closed', 0, 'sad'); else drawMouth(ctx, mx, my, shape, open * 0.7, emo); break;
+    case 'cry': for (const x of [L, Rr]) { const s2 = x === L ? 1 : -1; line(ctx, [[x - 12 * s2, ey - 8], [x + 10 * s2, ey], [x - 12 * s2, ey + 8]], ink, 7); } brows(-14, 8);
+      drawMouth(ctx, mx, my + 4, 'wide', 0.6 + Math.sin(g * 9) * 0.25, emo); break;
+    case 'angry': eyes({ ry: 15, pr: 7, lid: 0.32 }); brows(12, -8, -4); drawMouth(ctx, mx, my, shape === 'closed' ? 'ee' : shape, Math.max(0.15, open), emo); break;
+    case 'shock': eyes({ rx: 20, ry: 25, pr: 6, pdx: 0, pdy: 0 }); brows(-6, -2, 10); drawMouth(ctx, mx, my + 4, 'O', 0.9, emo); break;
+    case 'love': ctx.fillStyle = BW ? '#111' : '#e03131'; const hs = 34 + Math.sin(g * 9) * 4; heartPath(ctx, L, ey, hs); ctx.fill(); heartPath(ctx, Rr, ey, hs); ctx.fill(); brows(-4, 2, 6); drawMouth(ctx, mx, my, shape === 'closed' ? 'open' : shape, Math.max(0.3, open), emo); break;
+    case 'tired': eyes({ lid: 0.52, pdy: 5, pdx: 0 }); brows(-8, 6); if (shape === 'closed') { ctx.strokeStyle = ink; ctx.lineWidth = 5.5; ctx.beginPath(); ctx.moveTo(mx - 17, my + 4); for (let i = 1; i <= 6; i++) ctx.lineTo(mx - 17 + i * 5.7, my + 4 + (i % 2 ? -5 : 3)); ctx.stroke(); } else drawMouth(ctx, mx, my, shape, open * 0.6, emo); break;
+    case 'sleep': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, ey - 2, 12, 0.3, Math.PI - 0.3); ctx.stroke(); } drawMouth(ctx, mx, my + 4, 'small', 0.2 + Math.sin(g * 2) * 0.15, emo); break;
+    case 'think': eyes({ pdx: f * 5 + 3, pdy: -8 }); line(ctx, [[L - 13, ey - 33], [L + 10, ey - 39]], ink, 7.5); line(ctx, [[Rr - 10, ey - 30], [Rr + 13, ey - 30]], ink, 7.5); if (shape === 'closed') line(ctx, [[mx - 12, my + 5], [mx + 14, my - 1]], ink, 5.5); else drawMouth(ctx, mx, my, shape, open, emo); break;
+    case 'meh': eyes({ lid: 0.4 }); brows(2, 2); if (shape === 'closed') line(ctx, [[mx - 15, my + 4], [mx + 15, my + 4]], ink, 5.5); else drawMouth(ctx, mx, my, shape, open, emo); break;
+    case 'peace': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(x, ey - 4, 12, 0.35, Math.PI - 0.35); ctx.stroke(); } brows(-3, 3, 3); if (shape === 'closed') drawMouth(ctx, mx, my, 'closed', 0, 'happy'); else drawMouth(ctx, mx, my, shape, open * 0.7, emo); break;
+    case 'dizzy': ctx.fillStyle = ink; ctx.font = `700 38px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('@', L, ey); ctx.fillText('@', Rr, ey); ctx.textBaseline = 'alphabetic'; drawMouth(ctx, mx, my, 'small', 0.4, emo); break;
+    default: eyes(); brows(0, 2); drawMouth(ctx, mx, my, shape, open, emo);
   }
 }
 
 function drawHandProp(ctx, type, x, y) {
-  if (type === 'phone') { ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#212529'; rr(ctx, -20, -36, 40, 68, 9); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#a5d8ff'; rr(ctx, -15, -30, 30, 54, 5); ctx.fill(); ctx.restore(); }
-  if (type === 'gift') { ctx.fillStyle = C('#e64980'); rr(ctx, x - 38, y - 64, 76, 64, 6); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = C('#ffd43b'); ctx.fillRect(x - 8, y - 64, 16, 64); ctx.fillRect(x - 38, y - 40, 76, 13); }
-  if (type === 'boxup') { ctx.fillStyle = C('#d4a373'); rr(ctx, x - 95, y - 125, 190, 125, 8); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); line(ctx, [[x - 95, y - 62], [x + 95, y - 62]], FIG, 4); }
-  if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
+  if (type === 'phone') { ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#212529'; rr(ctx, -21, -38, 42, 72, 9); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#a5d8ff'; rr(ctx, -16, -32, 32, 58, 5); ctx.fill(); ctx.restore(); }
+  if (type === 'gift') { ctx.fillStyle = C('#e64980'); rr(ctx, x - 40, y - 66, 80, 66, 6); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#ffd43b'); ctx.fillRect(x - 8, y - 66, 16, 66); ctx.fillRect(x - 40, y - 42, 80, 13); }
+  if (type === 'boxup') { ctx.fillStyle = C('#d4a373'); rr(ctx, x - 95, y - 125, 190, 125, 8); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke(); line(ctx, [[x - 95, y - 62], [x + 95, y - 62]], FIG, 4); }
+  if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
 }
 
-function drawFigure(ctx, ch, P, g) {
-  const f = ch.f, lw = 19;
+// Marioneta: piernas, camiseta (torso), brazos con mangas y cabeza, cada parte con su propio movimiento.
+function drawFigure(ctx, ch, P, g, speech) {
+  const f = ch.f, lw = 15;
   ctx.save();
   const sc = ch.kid ? 0.7 : 1;
   ctx.translate(ch.x + (P.shake ? Math.sin(g * 9) * P.shake * 0.6 : 0), GY);
   if (P.rot) ctx.rotate(-f * P.rot);
   ctx.scale(sc, sc);
-  // sombra
-  ctx.globalAlpha = 0.16; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 74, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
-  // piernas (rodilla flexible)
+  ctx.globalAlpha = 0.18; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 76, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
   const legs = P.legs.map(Lg => { const kx = f * Math.sin(Lg.a) * SK.thigh, ky = Math.cos(Lg.a) * SK.thigh, sa = Lg.a - Lg.k; return [[0, 0], [kx, ky], [kx + f * Math.sin(sa) * SK.shin, ky + Math.cos(sa) * SK.shin]]; });
   const standY = Math.max(...legs.map(l => l[2][1])) + 8;
   const maxY = lerp(standY, 118, P.sitAmt || 0);
   const hipY = -maxY + (P.y || 0);
   ctx.translate(0, hipY);
-  if ((P.sitAmt || 0) > 0.5) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 4; rr(ctx, -f * 70 - 12 + (f < 0 ? 0 : 0), 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
-  for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 9, l[2][1] + 2, 18, 10, 0, 0, TAU); ctx.fill(); }
-  // torso con curva (columna flexible)
+  if ((P.sitAmt || 0) > 0.5) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 5; rr(ctx, -f * 70 - 12, 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
+  for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 10, l[2][1] + 2, 20, 11, 0, 0, TAU); ctx.fill(); }
   const lean = P.lean || 0, bend = P.bend || 0;
   const neck = [f * Math.sin(lean) * SK.torso, -Math.cos(lean) * SK.torso];
-  const sh = [f * Math.sin(lean) * (SK.torso - 18), -Math.cos(lean) * (SK.torso - 18)];
-  ctx.strokeStyle = FIG; ctx.lineWidth = lw + 1; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(neck[0] / 2 + f * bend * 55, neck[1] / 2, neck[0], neck[1]); ctx.stroke();
-  const ha = lean + (P.tilt || 0);
+  const sh = [f * Math.sin(lean) * (SK.torso - 22), -Math.cos(lean) * (SK.torso - 22)];
+  // camiseta: cuerpo con forma, ligeramente curvo según la postura
+  const shirt = BW ? '#d9d9d9' : (SHIRT[ch.role] || SHIRT.A);
+  const px = Math.cos(lean), py = Math.sin(lean) * f; // perpendicular al torso
+  const mid = [neck[0] / 2 + f * bend * 50, neck[1] / 2];
+  const wS = 44, wH = 38;
+  ctx.beginPath();
+  ctx.moveTo(sh[0] - px * wS, sh[1] - py * wS);
+  ctx.quadraticCurveTo(mid[0] - px * (wS + 4), mid[1] - py * (wS + 4), -px * wH, 14 - py * wH);
+  ctx.lineTo(px * wH, 14 + py * wH);
+  ctx.quadraticCurveTo(mid[0] + px * (wS + 4), mid[1] + py * (wS + 4), sh[0] + px * wS, sh[1] + py * wS);
+  ctx.quadraticCurveTo(neck[0], neck[1] + 6, sh[0] - px * wS, sh[1] - py * wS);
+  ctx.closePath(); ctx.fillStyle = shirt; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
+  const ha = lean + (P.tilt || 0) + (speech && speech.talking ? speech.amp * 0.07 * Math.sin(g * 5) : 0);
   const hx = neck[0] + f * Math.sin(ha) * (SK.neck + SK.head), hy = neck[1] - Math.cos(ha) * (SK.neck + SK.head);
+  const shoulders = [[sh[0] - px * (wS - 6), sh[1] - py * (wS - 6)], [sh[0] + px * (wS - 6), sh[1] + py * (wS - 6)]];
   const arms = P.arms.map((A, i) => {
-    const side = i === 0 ? -1 : 1; const a = A.a, e = A.e;
-    const el = [sh[0] + side * Math.sin(a) * SK.upper, sh[1] + Math.cos(a) * SK.upper];
+    const side = i === 0 ? -1 : 1; const s0 = shoulders[i]; const a = A.a, e = A.e;
+    const el = [s0[0] + side * Math.sin(a) * SK.upper, s0[1] + Math.cos(a) * SK.upper];
     const hd = [el[0] + side * Math.sin(a + e) * SK.fore, el[1] + Math.cos(a + e) * SK.fore];
-    return [sh, el, hd];
+    return [s0, el, hd];
   });
-  if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = ch.look === 'granny' ? '#6c6c6c' : FIG; ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 14, SK.head + 9, SK.head + 20, 0, 0, TAU); ctx.fill(); }
-  // cabeza
-  circle(ctx, hx, hy, SK.head, '#ffffff', FIG, 8);
+  if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = ch.look === 'granny' ? '#8a8a8a' : FIG; ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 16, SK.head + 9, SK.head + 20, 0, 0, TAU); ctx.fill(); }
+  // cabeza: blanco puro, contorno negro grueso; se estira un poco al sorprenderse
+  const stretch = P.emo === 'shock' ? 1.06 : 1;
+  ctx.save(); ctx.translate(hx, hy); ctx.scale(1 / Math.sqrt(stretch), stretch); circle(ctx, 0, 0, SK.head, '#ffffff', FIG, 8); ctx.restore();
   if (ch.look === 'hair') { ctx.fillStyle = FIG; ctx.beginPath(); ctx.arc(hx, hy - 4, SK.head + 4, Math.PI * 1.08, Math.PI * 1.92); ctx.quadraticCurveTo(hx, hy - SK.head + 18, hx - (SK.head + 2), hy - 12); ctx.fill(); }
-  if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 12, 24, '#6c6c6c', FIG, 5); for (const dx of [-20, 20]) circle(ctx, hx + f * 9 + dx, hy - 10, 18, null, FIG, 4); }
+  if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 12, 24, '#8a8a8a', FIG, 5); for (const dx of [-22, 22]) circle(ctx, hx + f * 9 + dx, hy - 12, 20, null, FIG, 4); }
   if (ch.look === 'kid') { line(ctx, [[hx - 10, hy - SK.head + 2], [hx - 2, hy - SK.head - 24], [hx + 8, hy - SK.head - 2], [hx + 18, hy - SK.head - 20], [hx + 24, hy - SK.head + 6]], FIG, 7); }
-  drawFace(ctx, hx, hy, f, P.emo, P.mouth || 0, g, ch.seed);
-  // brazos por delante (codo flexible) y manos
-  for (const a of arms) { limb(ctx, a[0], a[1], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); }
+  drawFace(ctx, hx, hy, f, P.emo, speech, g, ch.seed);
+  // brazos: manga de color + brazo negro flexible + mano
+  for (const a of arms) {
+    const sl = [lerp(a[0][0], a[1][0], 0.45), lerp(a[0][1], a[1][1], 0.45)];
+    ctx.lineCap = 'round'; ctx.strokeStyle = FIG; ctx.lineWidth = 34; ctx.beginPath(); ctx.moveTo(a[0][0], a[0][1]); ctx.lineTo(sl[0], sl[1]); ctx.stroke();
+    ctx.strokeStyle = shirt; ctx.lineWidth = 23; ctx.beginPath(); ctx.moveTo(a[0][0], a[0][1]); ctx.lineTo(sl[0], sl[1]); ctx.stroke();
+    limb(ctx, sl, [lerp(a[0][0], a[1][0], 0.9), lerp(a[0][1], a[1][1], 0.9)], a[2], lw);
+    circle(ctx, a[2][0], a[2][1], 12, FIG);
+  }
   const fh = arms[f > 0 ? 1 : 0][2];
   if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 12);
   if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10);
@@ -499,7 +551,7 @@ function drawProp(ctx, prop, t, g, lang, beat) {
 }
 
 // ---------- CÁMARA ----------
-function cameraFor(beat, bi, t, chars) {
+function cameraFor(beat, bi, t, chars, bgBox) {
   const n = beat.shots, sd = beat.dur / n; const si = Math.min(n - 1, Math.floor(t / sd)); const st = t - si * sd; const sp = st / sd;
   const h = hash(bi * 31 + si * 7 + 3);
   const mainX = chars.length ? chars[0].x : 540;
@@ -531,7 +583,13 @@ function cameraFor(beat, bi, t, chars) {
   const ox = Math.sin(t * 0.9 + bi) * 10 + Math.sin(t * 1.6 + bi * 2) * 3 * lvl;
   const oy = Math.cos(t * 0.7 + bi) * 6 + Math.cos(t * 1.3 + bi) * 2 * lvl;
   rot += Math.sin(t * 0.6 + bi) * 0.01 + (beat.kind === 'rep' ? Math.sin(t * 1.2 + bi) * 0.006 * lvl : 0);
-  return { z, fx: fx + ox, fy: fy + oy, rot, si, st };
+  fx += ox; fy += oy;
+  // franjas: los personajes siempre entre y=560 y y=1430 de la pantalla (arriba textos, abajo subtítulos)
+  z = Math.min(z, 1.6);
+  const lo = 1390 - 470 / z, hi = 860 + 400 / z;
+  fy = lo <= hi ? clamp(fy, lo, hi) : (lo + hi) / 2;
+  if (bgBox) { fx = clamp(fx, bgBox.l + 540 / z + 20, bgBox.r - 540 / z - 20); fy = Math.min(fy, bgBox.b - 960 / z - 20); }
+  return { z, fx, fy, rot, si, st };
 }
 
 // ---------- TEXTOS ----------
@@ -546,8 +604,8 @@ function drawCaption(ctx, beat, t, opts) {
   const kind = beat.kind;
   ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   if (kind === 'hook') {
-    const { size, lines } = fitText(ctx, text.toUpperCase(), 900, 4, 92, 54, 700);
-    const lh = size * 1.12; const total = lines.length * lh; const y0 = 330 - total / 2;
+    const { size, lines } = fitText(ctx, text.toUpperCase(), 920, 3, 84, 50, 700);
+    const lh = size * 1.12; const total = lines.length * lh; const y0 = 310 - total / 2;
     const words = lines.flat(); const cum = wordWeights(words); const { p } = activeWord(beat, t, words.length);
     const boxW = Math.min(1000, Math.max(...lines.map(l => ctx.measureText(l.join(' ')).width)) + 80);
     const pin = 0.85 + 0.15 * backOut(t / 0.3);
@@ -562,8 +620,8 @@ function drawCaption(ctx, beat, t, opts) {
   }
   if (kind === 'reflect') {
     const fade = clamp(t / 0.5, 0, 1) * clamp((beat.dur - t) / 0.3, 0, 1);
-    const { size, lines } = fitText(ctx, text, 900, 5, 84, 52, 700);
-    const lh = size * 1.2; const total = lines.length * lh; const y0 = 640 - total / 2;
+    const { size, lines } = fitText(ctx, text, 940, 4, 74, 46, 700);
+    const lh = size * 1.2; const total = lines.length * lh; const y0 = 320 - total / 2;
     const words = lines.flat(); const cum = wordWeights(words); const { p } = activeWord(beat, t, words.length);
     let wi = 0; ctx.globalAlpha = fade; ctx.lineJoin = 'round';
     lines.forEach((ln, li) => {
@@ -573,8 +631,8 @@ function drawCaption(ctx, beat, t, opts) {
     ctx.restore(); return;
   }
   // subtítulo normal (grande, palabra activa resaltada)
-  const yC = kind === 'cta' ? (beat.ctaTypes && beat.ctaTypes.length > 1 ? 1310 : 1180) : 1530;
-  const { size, lines } = fitText(ctx, text, 920, 3, kind === 'twist' ? 84 : 76, 48, 700);
+  const yC = 1615;
+  const { size, lines } = fitText(ctx, text, 940, 3, kind === 'twist' ? 76 : 70, 44, 700);
   const lh = size * 1.18; const total = lines.length * lh; const y0 = yC - total / 2;
   const words = lines.flat(); const cum = wordWeights(words); const { p, started } = activeWord(beat, t, words.length);
   let cur = cum.findIndex(c => c >= p); if (!started) cur = -1;
@@ -666,14 +724,14 @@ function ctaWidget(ctx, type, t, clickT, g, opts) {
 function drawCTA(ctx, beat, t, g, opts) {
   const types = beat.ctaTypes && beat.ctaTypes.length ? beat.ctaTypes : [beat.ctaType || 'like'];
   const two = types.length > 1;
-  const slots = two ? [{ y: 370, s: 0.86, click: 1.0 }, { y: 820, s: 0.86, click: 1.9 }] : [{ y: 560, s: 1, click: 1.1 }];
+  const slots = two ? [{ x: 290, y: 330, s: 0.56, click: 1.0 }, { x: 790, y: 330, s: 0.56, click: 1.9 }] : [{ x: 540, y: 320, s: 0.74, click: 1.1 }];
   const hits = [];
   types.forEach((type, i) => {
     const sl = slots[i]; const ap = backOut((t - i * 0.18) / 0.4);
-    ctx.save(); ctx.translate(540, sl.y + Math.sin(g * 2 + i) * 6); ctx.scale(sl.s * ap, sl.s * ap);
+    ctx.save(); ctx.translate(sl.x, sl.y + Math.sin(g * 2 + i) * 6); ctx.scale(sl.s * ap, sl.s * ap);
     const hit = ctaWidget(ctx, type, t, sl.click, g, opts);
     ctx.restore();
-    hits.push({ x: 540 + hit.x * sl.s, y: sl.y + hit.y * sl.s, click: sl.click });
+    hits.push({ x: sl.x + hit.x * sl.s, y: sl.y + hit.y * sl.s, click: sl.click });
   });
   // el cursor viaja de un botón al otro y los toca
   let cx = 860, cy = 1500, press = false;
@@ -743,34 +801,20 @@ export function beatAt(project, time) {
   return i;
 }
 
-function lastAiImage(project, bi) { for (let i = bi - 1; i >= 0; i--) { const im = project.aiImages.get(i); if (im) return im; } return null; }
-
-// Escena con imagen de IA: pantalla completa con zoom y paneo continuo (cámara viva, sin temblores)
-function drawAIScene(ctx, img, beat, bi, t, g) {
-  const n = beat.shots || 1, sd = beat.dur / n; const si = Math.min(n - 1, Math.floor(t / sd)); const st = t - si * sd; const sp = clamp(st / sd, 0, 1);
-  const h = hash(bi * 31 + si * 7 + 3);
-  let z0 = 1.05, z1 = 1.18, px = (h - 0.5) * 2, py = (hash(bi * 17 + si) - 0.5) * 2;
-  if (h > 0.5) { z0 = 1.2; z1 = 1.06; }
-  if (beat.kind === 'hook' && si === 0) { z0 = 1.0; z1 = 1.18; }
-  if (beat.kind === 'twist' && si === 0) { z0 = 1.35; z1 = 1.12; }
-  if (beat.kind === 'reflect' || beat.kind === 'cta') { z0 = 1.02; z1 = 1.12; px *= 0.4; py *= 0.4; }
-  const k = beat.kind === 'twist' && si === 0 ? easeOut(sp * 1.5) : easeInOut(sp);
-  const z = lerp(z0, z1, k) * (1 + Math.pow(Math.max(0, 1 - st / 0.3), 2) * 0.04);
-  const s0 = Math.max(W / img.width, H / img.height) * z;
-  const dw = img.width * s0, dh = img.height * s0;
-  const maxX = (dw - W) / 2, maxY = (dh - H) / 2;
-  const ox = clamp(px * maxX * lerp(0.2, 0.9, k) + Math.sin(g * 0.8 + bi) * 6, -maxX, maxX);
-  const oy = clamp(py * maxY * lerp(0.2, 0.9, k) + Math.cos(g * 0.6 + bi) * 5, -maxY, maxY);
-  const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
-  ctx.save();
-  if (BW && 'filter' in ctx) ctx.filter = 'grayscale(1) contrast(1.1)';
-  ctx.drawImage(img, (W - dw) / 2 + ox + dir * whip * whip * 700, (H - dh) / 2 + oy, dw, dh);
-  ctx.restore();
-  const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
-  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.1 * intensity; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 620 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(540 + Math.cos(a) * r0, 960 + Math.sin(a) * r0); ctx.lineTo(540 + Math.cos(a) * 1600, 960 + Math.sin(a) * 1600); ctx.stroke(); } ctx.restore(); }
-  // degradado inferior para que los subtítulos se lean siempre
-  const gr = ctx.createLinearGradient(0, H * 0.62, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.45)'); ctx.fillStyle = gr; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+// Voz → forma de la boca (visemas) a partir del volumen y el "brillo" del audio real
+function speechFor(beat, t, g, seed) {
+  const vt = t - (beat.voiceLead || 0); const vd = beat.voiceDur || 0;
+  if (vt < 0 || vt > (vd || beat.dur - 0.4)) return { talking: false, amp: 0 };
+  let amp, z;
+  if (beat.lip) { const i = Math.min(beat.lip.amp.length - 1, Math.max(0, Math.floor(vt * 60))); amp = beat.lip.amp[i]; z = beat.lip.zcr[i]; }
+  else { amp = Math.max(0, Math.sin(g * 17 + seed) * 0.5 + Math.sin(g * 7.3) * 0.4); z = (Math.sin(g * 3.1 + seed) + 1) / 4; }
+  let shape = 'closed';
+  if (amp > 0.1) shape = amp < 0.28 ? 'small' : z > 0.5 ? 'ee' : amp > 0.75 ? 'wide' : z < 0.14 ? 'O' : 'open';
+  return { talking: true, amp: clamp(amp, 0, 1), shape };
 }
+
+function bgImageFor(project, beat) { return project.aiBg && beat.bgKey ? project.aiBg.get(beat.bgKey) : null; }
+function bgRect(img) { const Hi = 2600, Wi = img.width / img.height * Hi; const top = (GY - 60) - 0.72 * Hi; return { l: 540 - Wi / 2, r: 540 + Wi / 2, t: top, b: top + Hi, w: Wi, h: Hi }; }
 
 export function drawFrame(ctx, project, time, scale = 1) {
   BW = !project.color; cache.clear();
@@ -778,59 +822,54 @@ export function drawFrame(ctx, project, time, scale = 1) {
   const bi = beatAt(project, time); const beat = project.beats[bi]; const t = Math.max(0, time - beat.start); const g = time;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.fillStyle = BW ? '#ffffff' : '#000'; ctx.fillRect(0, 0, W, H);
-  const aiImg = project.aiImages ? (project.aiImages.get(bi) || (beat.kind === 'cta' ? lastAiImage(project, bi) : null)) : null;
-  if (aiImg) drawAIScene(ctx, aiImg, beat, bi, t, g);
-  else {
-    const chars = sceneChars(beat, t, opts);
-    const cam = cameraFor(beat, bi, t, chars);
-    // transición de barrido al entrar al beat
-    const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
-    ctx.save();
-    ctx.translate(W / 2 + dir * whip * whip * 700, H / 2);
-    ctx.rotate(cam.rot); ctx.scale(cam.z, cam.z); ctx.translate(-cam.fx, -cam.fy);
-    const env = beat.env;
-    (ENV_DRAW[env] || ENV_DRAW.vacio)(ctx, g, beat);
-    // líneas de velocidad en repeticiones intensas o giro
-    const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
-    if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.12 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 560 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
-    // personajes
-    const speakingRoles = new Set(); const acts = parseActs(beat.a);
-    for (const c of chars) if (c.act === 'talk' || c.act === 'point') speakingRoles.add(c.role);
-    if (!speakingRoles.size && (beat.kind === 'hook' || beat.kind === 'setup') && chars[0]) speakingRoles.add(chars[0].role);
-    const vt = t - (beat.voiceLead || 0); const speaking = vt > 0 && vt < (beat.voiceDur || beat.dur);
-    // transición suave: mezcla la pose final de la escena anterior con la nueva
-    const BL = 0.45; let prevMap = null, pb = null;
-    if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
-    for (const c of chars) {
-      let P = charPose(c, t, g);
-      const pc = prevMap && prevMap.get(c.role);
-      if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
-      if (speaking && speakingRoles.has(c.role)) { P.mouth = (Math.sin(g * 26 + c.seed) + 1) / 2; if (P.emo === 'neutral') P.emo = 'happy'; }
-      if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
-      const head = drawFigure(ctx, c, P, g);
-      drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
-    }
-    ctx.restore();
-    // objetos de escena en capa de pantalla (siempre visibles aunque la cámara haga zoom)
-    if (beat.kind !== 'reflect' && beat.kind !== 'hook') { ctx.save(); const ps = 0.82; ctx.translate(540, 470); ctx.scale(ps, ps); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
-    if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
-  }
-  // capa de reflexión: oscurece y da calidez
+  const img = bgImageFor(project, beat); const box = img ? bgRect(img) : null;
+  const chars = sceneChars(beat, t, opts);
+  const cam = cameraFor(beat, bi, t, chars, box);
+  const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
+  ctx.save();
+  ctx.translate(W / 2 + dir * whip * whip * 700, H / 2);
+  ctx.rotate(cam.rot); ctx.scale(cam.z, cam.z); ctx.translate(-cam.fx, -cam.fy);
+  if (img) {
+    ctx.save(); if (BW && 'filter' in ctx) ctx.filter = 'grayscale(1)'; ctx.drawImage(img, box.l, box.t, box.w, box.h); ctx.restore();
+    if (beat.env === 'caminos' && beat.sign) drawSigns(ctx, beat.sign.replace('sign:', '').split('|'), project.lang, g, beat.side || 0);
+  } else (ENV_DRAW[beat.env] || ENV_DRAW.vacio)(ctx, g, beat);
+  const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
+  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.1 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 600 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
+  // reflexión: oscurece SOLO el fondo (las cabezas siguen blancas)
   if (beat.kind === 'reflect') {
-    const k = clamp(t / 0.6, 0, 1); const gr = ctx.createLinearGradient(0, 0, 0, H);
-    gr.addColorStop(0, BW ? `rgba(0,0,0,${0.75 * k})` : `rgba(20,10,40,${0.78 * k})`); gr.addColorStop(0.6, BW ? `rgba(0,0,0,${0.55 * k})` : `rgba(60,20,60,${0.5 * k})`); gr.addColorStop(1, `rgba(0,0,0,${0.2 * k})`);
+    const k = clamp(t / 0.6, 0, 1);
+    ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const gr = ctx.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, `rgba(15,8,35,${0.82 * k})`); gr.addColorStop(0.55, `rgba(40,15,50,${0.5 * k})`); gr.addColorStop(1, `rgba(0,0,0,${0.35 * k})`);
     ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
     for (let i = 0; i < 26; i++) { const ph = (g * 0.05 + hash(i)) % 1; ctx.globalAlpha = 0.5 * Math.sin(ph * Math.PI) * k; circle(ctx, hash(i + 7) * W, H - ph * H, 3 + hash(i + 3) * 6, BW ? '#fff' : '#ffe8a3'); }
-    ctx.globalAlpha = 1;
+    ctx.restore();
   }
-  if (beat.kind === 'cta') { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, W, H); drawCTA(ctx, beat, t, g, opts); }
-  // destello en el giro
+  if (beat.kind === 'cta') { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  // quién habla: el que está hablando/señalando; si no, el protagonista narra
+  const speakers = new Set(chars.filter(c => c.act === 'talk' || c.act === 'point').map(c => c.role));
+  if (!speakers.size && chars[0] && !['sleep', 'cry', 'laugh', 'fall'].includes(chars[0].act)) speakers.add(chars[0].role);
+  const BL = 0.45; let prevMap = null, pb = null;
+  if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
+  for (const c of chars) {
+    let P = charPose(c, t, g);
+    const pc = prevMap && prevMap.get(c.role);
+    if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
+    const speech = speakers.has(c.role) ? speechFor(beat, t, g, c.seed) : null;
+    if (speech && speech.talking && P.emo === 'neutral') P.emo = 'happy';
+    if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
+    const head = drawFigure(ctx, c, P, g, speech);
+    drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
+  }
+  ctx.restore();
+  // objetos de escena: franja superior
+  if (beat.kind !== 'reflect' && beat.kind !== 'hook' && beat.kind !== 'cta') { ctx.save(); ctx.translate(540, 330); ctx.scale(0.62, 0.62); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
+  if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
+  if (beat.kind === 'cta') drawCTA(ctx, beat, t, g, opts);
   if (beat.kind === 'twist' && t < 0.14) { ctx.fillStyle = `rgba(255,255,255,${1 - t / 0.14})`; ctx.fillRect(0, 0, W, H); }
-  if (beat.kind === 'twist' && t > 0.05 && t < (beat.voiceLead || 0.5)) { ctx.save(); setFont(ctx, 200, 700); ctx.textAlign = 'center'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.fillStyle = BW ? '#fff' : '#ffd60a'; const s = backOut((t - 0.05) / 0.2); ctx.translate(540, 760); ctx.scale(s, s); ctx.rotate(-0.08); ctx.strokeText('¿¡!?', 0, 0); ctx.fillText('¿¡!?', 0, 0); ctx.restore(); }
+  if (beat.kind === 'twist' && t > 0.05 && t < (beat.voiceLead || 0.5) + 0.3) { ctx.save(); setFont(ctx, 180, 700); ctx.textAlign = 'center'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.fillStyle = BW ? '#fff' : '#ffd60a'; const s2 = backOut((t - 0.05) / 0.2); ctx.translate(540, 360); ctx.scale(s2, s2); ctx.rotate(-0.08); ctx.strokeText('¿¡!?', 0, 0); ctx.fillText('¿¡!?', 0, 0); ctx.restore(); }
   drawCaption(ctx, beat, t, opts);
-  // marca de agua / página
-  if (opts.page && opts.page.trim()) { ctx.save(); setFont(ctx, 36, 700); ctx.textAlign = 'left'; ctx.globalAlpha = 0.85; ctx.lineWidth = 8; ctx.strokeStyle = '#111'; ctx.strokeText(opts.page.trim(), 50, 130); ctx.fillStyle = '#fff'; ctx.fillText(opts.page.trim(), 50, 130); ctx.restore(); }
-  // barra de progreso superior (anima la retención)
+  if (opts.page && opts.page.trim()) { ctx.save(); setFont(ctx, 34, 700); ctx.textAlign = 'left'; ctx.globalAlpha = 0.85; ctx.lineWidth = 8; ctx.strokeStyle = '#111'; ctx.strokeText(opts.page.trim(), 40, 70); ctx.fillStyle = '#fff'; ctx.fillText(opts.page.trim(), 40, 70); ctx.restore(); }
   ctx.fillStyle = BW ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.3)'; ctx.fillRect(0, 0, W, 10);
   ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.fillRect(0, 0, W * clamp(time / project.total, 0, 1), 10);
 }

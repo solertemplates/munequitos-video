@@ -1,9 +1,9 @@
 // Construye el guion (beats) a partir de las elecciones del usuario y le asigna tiempos.
-import { fillCta, combineCtas } from './content.js';
+import { fillCta, combineCtas, ctaTypesFor } from './content.js';
 
 export const DURATIONS = {
-  s: { min: 12, max: 25, reps: 2, after: false, reflect: 1, pace: 1.12, label: { es: '12–25 s', en: '12–25 s' } },
-  m: { min: 25, max: 45, reps: 4, after: true, reflect: 2, pace: 1.0, label: { es: '25–45 s', en: '25–45 s' } },
+  s: { min: 12, max: 25, reps: 3, after: false, reflect: 1, pace: 1.12, label: { es: '12–25 s', en: '12–25 s' } },
+  m: { min: 25, max: 45, reps: 5, after: true, reflect: 2, pace: 1.0, label: { es: '25–45 s', en: '25–45 s' } },
   l: { min: 45, max: 60, reps: 6, after: true, reflect: 2, pace: 0.94, label: { es: '45–60 s', en: '45–60 s' } },
 };
 
@@ -37,7 +37,7 @@ export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
 
   beats.push(mk('hook', { t: hook, a: situation.mode === 'caminos' ? 'all:think' : 'all:shock', fx: 'whoosh' }));
   situation.setup.forEach(s => beats.push(mk('setup', s, situation.mode === 'caminos' ? { env: 'caminos', sign: signProp } : {})));
-  const reps = pickReps(situation.reps, D.reps);
+  const reps = situation.ai ? situation.reps.slice() : pickReps(situation.reps, D.reps);
   reps.forEach((r, i) => beats.push(mk('rep', r, {
     level: (i + 1) / reps.length,
     ...(situation.mode === 'caminos' ? { env: 'caminos', sign: signProp, side: r.p === 'left' ? -1 : r.p === 'right' ? 1 : 0, p: '' } : {}),
@@ -47,7 +47,7 @@ export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
   const refl = situation.reflect.map(T);
   if (D.reflect === 1) beats.push(mk('reflect', { t: refl.join(' '), a: 'A:hug B:hug all:idle', p: '' }));
   else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
-  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctas.map(c => c.type) }));
+  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctaTypesFor(ctas) }));
   return beats;
 }
 

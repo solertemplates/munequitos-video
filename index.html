@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=3">
+<link rel="stylesheet" href="css/app.css?v=4">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -60,7 +60,17 @@
     </div>
 
     <div class="card">
-      <h2><span class="n">4</span><span data-i18n="s4">Situación cotidiana</span></h2>
+      <div class="h2row"><h2><span class="n">4</span><span data-i18n="s4">Situación cotidiana</span></h2><button id="appSits" class="ghost" type="button" data-i18n="appSits" hidden>Historias de la app</button></div>
+      <div class="aiwriter">
+        <label class="lbl" for="trend" data-i18n="trendLbl">Tendencia del momento (opcional)</label>
+        <input id="trend" type="text" maxlength="160" data-i18n-ph="trendPh" placeholder="Ej.: el precio de los huevos, la renta en Miami, las propinas">
+        <div id="trendChips" class="chips small" style="margin-top:8px"></div>
+        <div class="airow">
+          <button id="trendBtn" class="ghost" type="button" data-i18n="trendBtn">🔎 Buscar lo viral ahora</button>
+          <button id="writeBtn" class="ghost strong" type="button" data-i18n="writeBtn">✨ Escribir 3 historias con IA</button>
+        </div>
+        <p class="hint" id="writerHint"></p>
+      </div>
       <div id="sits" class="options"></div>
     </div>
 
@@ -109,21 +119,22 @@
     </div>
 
     <div class="card ai">
-      <h2><span class="n">8</span><span data-i18n="s8">Imágenes con IA</span></h2>
-      <label class="check"><input id="aiOn" type="checkbox"> <span data-i18n="aiOn">Usar imágenes generadas con IA (OpenAI)</span></label>
-      <p class="hint" data-i18n="aiIntro">En vez de los muñequitos dibujados por la app, cada escena será una ilustración estilo caricatura creada con IA, con movimiento de cámara.</p>
+      <h2><span class="n">8</span><span data-i18n="s8">Fondos con IA</span></h2>
+      <p class="hint" data-i18n="keyNote" style="margin:0 0 8px">Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.</p>
+      <label class="check"><input id="aiOn" type="checkbox"> <span data-i18n="aiOn">Usar fondos dibujados con IA (OpenAI)</span></label>
+      <p class="hint" data-i18n="aiIntro">La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.</p>
+      <label class="lbl" for="aiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
+      <input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-...">
       <div id="aiCfg" hidden>
-        <label class="lbl" for="aiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
-        <input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-...">
         <div class="row">
           <div class="field grow"><label class="lbl" for="aiModel" data-i18n="aiModel">Modelo</label><select id="aiModel"></select></div>
           <div class="field grow"><label class="lbl" for="aiQuality" data-i18n="aiQuality">Calidad</label><select id="aiQuality"></select></div>
         </div>
-        <label class="check"><input id="aiConsistent" type="checkbox" checked> <span data-i18n="aiConsistent">Mantener los mismos personajes en todas las escenas</span></label>
         <p class="hint" id="aiHint"></p>
       </div>
     </div>
 
+    <div id="costBox" class="cost" hidden></div>
     <button id="genBtn" class="primary" type="button" data-i18n="generate">Generar vista previa</button>
     <p id="status" class="status" role="status" aria-live="polite"></p>
   </section>
@@ -157,6 +168,6 @@
   </section>
 </main>
 <footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
-<script type="module" src="js/app.js?v=3"></script>
+<script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>

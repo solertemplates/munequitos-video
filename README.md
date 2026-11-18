@@ -16,7 +16,7 @@ Todo se genera en el navegador: no hay servidor, ni claves de API, ni costos.
    Luego entra a <http://localhost:8000> con **Chrome o Edge** (recomendado) o con Safari.
 2. Elige el **tema**, la **cantidad de personajes** (1–4), el **entorno**, el **estilo** (color o blanco y negro) y el **idioma** (botón ES/EN arriba a la derecha).
 3. Elige la **duración**: 12–25 s, 25–45 s o 45–60 s. La app ajusta el número de escenas, el ritmo de la voz y las pausas para quedar dentro del rango.
-4. Elige una de las **3 situaciones cotidianas** sugeridas, uno de los **3 ganchos iniciales** y **uno o dos llamados a la acción** (si eliges dos, se combinan en una frase, por ejemplo «Dale me gusta si te tocó el corazón y sigue la página»). «Otras opciones» propone más ganchos y llamados.
+4. Elige una de las **3 situaciones cotidianas** sugeridas (o pide 3 nuevas a la IA), uno de los **3 ganchos iniciales** y **uno o dos llamados a la acción** (si eliges dos, se combinan en una frase, por ejemplo «Dale me gusta si te tocó el corazón y sigue la página»). «Otras opciones» propone más ganchos y llamados.
    - En «Configurar página y enlace» puedes poner el nombre de tu página (sale en el video) y tu enlace. Con un enlace configurado aparecen los llamados de tipo «Enlace».
 5. Elige la voz, la música y si quieres efectos de sonido.
 6. Pulsa **Generar vista previa**, mírala con ▶ y, si quieres, edita el guion y pulsa «Aplicar cambios».
@@ -43,16 +43,24 @@ Todo se genera en el navegador: no hay servidor, ni claves de API, ni costos.
 
 Las claves se guardan solo en el navegador del teléfono. Si una voz de la nube falla (clave mala o sin créditos), la app usa la voz neural gratuita y explica el motivo.
 
-## Imágenes con IA (opcional)
+## Historias con IA y tendencias (opcional, usa tu clave de OpenAI)
 
-En la sección **8 · Imágenes con IA** activa «Usar imágenes generadas con IA (OpenAI)» y pega tu clave de OpenAI (la misma de la voz).
+En **4 · Situación cotidiana**:
+- **🔎 Buscar lo viral ahora**: la IA busca en internet lo que está dando de qué hablar esta semana (precios, renta, trabajo, economía, memes) y te muestra 6 tendencias. Toca una para usarla, o escribe la tuya en «Tendencia del momento».
+- **✨ Escribir 3 historias con IA**: escribe 3 guiones nuevos sobre el tema, usando la tendencia, en español de la calle (Miami, sabor cubano y latino de EE. UU., con su toque de inglés) o en inglés coloquial. Humor con picardía pero limpio, un golpe nuevo cada pocos segundos y giro final. Aparecen marcados «IA». «Historias de la app» vuelve a las historias incluidas.
 
-- Cada escena se convierte en una ilustración de caricatura (cabezas grandes y blancas, contorno negro, camisetas de color, fondos detallados) con zoom y paneo de cámara.
-- La primera imagen se usa como referencia para que los personajes sean los mismos en todo el video.
-- Costo aproximado por video (8–11 imágenes): **0,10–0,20 USD** con el modelo económico en calidad media; **0,50–0,80 USD** con gpt-image-1 en calidad media. Se cobra de tu saldo de OpenAI.
-- Tarda de 1 a 3 minutos. Si una imagen falla, esa escena usa los muñequitos de la app.
-- La primera vez OpenAI puede pedir **verificar tu organización** (platform.openai.com → Settings → Organization → General → Verify Organization).
-- Instagram, TikTok, YouTube y Facebook piden marcar el contenido como **generado con IA** al publicarlo.
+## Fondos con IA (opcional)
+
+En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (sin personas). Encima, la app anima a los personajes como marionetas: la boca se mueve según la voz real (con lengua y dientes), los ojos parpadean y miran, las cejas cambian con la emoción y el cuerpo camina y gesticula.
+
+- Costo aproximado por video: **0,05 USD** (económico, calidad media) a **0,20 USD** (mejor calidad).
+- Antes de generar, la app muestra el **costo aproximado total** (tendencias, guion, fondos y voz).
+- La primera vez OpenAI puede pedir **verificar tu organización** (platform.openai.com → Settings → Organization → General).
+
+## Diseño del video
+
+- **Personajes**: cabeza blanca pura, contorno y extremidades negras gruesas, camiseta de color por personaje (verde, naranja, amarillo, azul).
+- **Textos que nunca tapan a nadie**: el gancho, la reflexión y los botones van en la franja de arriba; los subtítulos en la de abajo; la cámara mantiene a los personajes en la franja del medio.
 
 ## Exportación
 

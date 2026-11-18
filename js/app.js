@@ -1,7 +1,9 @@
 import { THEMES, ENVIRONMENTS, SITUATIONS, hookOptions, ctaOptions, combineCtas, fillCta } from './content.js';
 import { DURATIONS, buildBeats, timeBeats, speakable, toSRT } from './script.js';
 import { drawFrame, prepareProject, FONT, LOOKS } from './render.js';
-import { IMAGE_MODELS, generateSceneImages, estimateCost } from './aiimages.js';
+import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice } from './aiimages.js';
+import { searchTrends, writeIdeas, PRICE } from './scriptai.js';
+import { computeLip } from './lipsync.js';
 import { renderMix, MUSIC_STYLES } from './audio.js';
 import { VOICES, synth, ELEVEN_DEFAULT_VOICES, OPENAI_VOICES, elevenVoices } from './tts.js';
 import { exportMP4 } from './export.js';
@@ -21,7 +23,7 @@ const I18N = {
     color: 'Color', bw: 'B/N', escalada: 'Repetición + giro', caminos: 'Dos caminos',
     ctaTypes: { like: 'Me gusta', follow: 'Seguir', stars: 'Estrellas', link: 'Enlace', combo: 'Combo' },
     kinds: { hook: 'Gancho', setup: 'Inicio', rep: 'Repetición', twist: 'Giro final', after: 'Remate', reflect: 'Reflexión', cta: 'Llamado a la acción' },
-    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', s8: 'Imágenes con IA', aiOn: 'Usar imágenes generadas con IA (OpenAI)', aiIntro: 'En vez de los muñequitos dibujados por la app, cada escena será una ilustración estilo caricatura creada con IA, con movimiento de cámara.', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Este video usará unas ${n} imágenes: costo aproximado ${c} USD, que OpenAI cobra de tu saldo. Tarda de 1 a 3 minutos; deja la pantalla encendida. La misma clave sirve para la voz de OpenAI. Si OpenAI te pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Creando imágenes con IA ${i}/${n}… (puede tardar 1–3 minutos)`, imgFail: 'No se pudieron crear las imágenes con IA; se usaron los muñequitos de la app. Motivo: ', imgSome: n => `${n} escena(s) sin imagen de IA usan los muñequitos de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
+    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', s8: 'Fondos con IA', aiOn: 'Usar fondos dibujados con IA (OpenAI)', aiIntro: 'La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.', appSits: 'Historias de la app', trendLbl: 'Tendencia del momento (opcional)', trendPh: 'Ej.: el precio de los huevos, la renta en Miami, las propinas', trendBtn: '🔎 Buscar lo viral ahora', writeBtn: '✨ Escribir 3 historias con IA', writerHint: 'Usa tu clave de OpenAI (pégala en la sección 8). La IA busca en internet lo que está viral y escribe historias con humor, a lo Miami.', searching: 'Buscando lo que está viral ahora…', writing: 'Escribiendo 3 historias nuevas…', trendsFound: n => `Encontré ${n} tendencias. Toca una para usarla.`, written: 'Listo: 3 historias nuevas escritas con IA (marcadas «IA»). Elige una.', noTrends: 'No encontré tendencias ahora; escribe una tú arriba.', needKeyAI: 'Primero pega tu clave de OpenAI en la sección 8.', costTitle: 'Costo aproximado de este video:', cTrends: 'búsqueda de tendencias', cWrite: 'guion con IA', cBg: n => `${n} fondos con IA`, cVoice: 'voz OpenAI', cEleven: 'voz ElevenLabs (créditos de tu plan)', costFree: 'Este video no tiene costo (todo se genera en tu teléfono).', keyNote: 'Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.', iaTag: 'IA', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Cada video usa 2–3 fondos (≈ ${c} USD con esta calidad), cobrados de tu saldo de OpenAI. Tarda 1–2 minutos; deja la pantalla encendida. Esta misma clave sirve para la voz de OpenAI y para escribir historias con IA. Si OpenAI pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Dibujando fondos con IA ${i}/${n}… (1–2 minutos)`, imgFail: 'No se pudieron crear los fondos con IA; se usaron los fondos de la app. Motivo: ', imgSome: n => `${n} fondo(s) no se pudieron crear y se usaron los de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
     stVoice: (i, n) => `Generando voz ${i}/${n}…`, stDl: (p) => `Descargando voz neural… ${p}`, stMix: 'Mezclando música y efectos…',
     stReady: (s, n) => `Listo: ${s.toFixed(1)} s · ${n} escenas. Revisa la vista previa y exporta.`, stFallback: 'No se pudo cargar la voz neural (¿sin internet?). Usando la voz básica sin conexión.',
     exporting: p => `Exportando… ${Math.round(p * 100)} %`, exported: 'Descargar video', exportErr: 'Error al exportar: ', webmNote: 'Tu navegador no graba MP4: se exportó en WebM. Para MP4 usa Chrome, Edge o Safari actualizados.',
@@ -40,7 +42,7 @@ const I18N = {
     color: 'Color', bw: 'B/W', escalada: 'Rising gag + twist', caminos: 'Two paths',
     ctaTypes: { like: 'Like', follow: 'Follow', stars: 'Stars', link: 'Link', combo: 'Combo' },
     kinds: { hook: 'Hook', setup: 'Setup', rep: 'Repetition', twist: 'Final twist', after: 'Punchline', reflect: 'Reflection', cta: 'Call to action' },
-    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', s8: 'AI images', aiOn: 'Use AI-generated images (OpenAI)', aiIntro: 'Instead of the stick figures drawn by the app, each scene becomes a cartoon illustration created with AI, with camera motion.', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `This video will use about ${n} images: approx. ${c} USD charged to your OpenAI balance. Takes 1–3 minutes; keep the screen on. The same key works for the OpenAI voice. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Creating AI images ${i}/${n}… (may take 1–3 minutes)`, imgFail: 'Could not create the AI images; the app stick figures were used. Reason: ', imgSome: n => `${n} scene(s) without an AI image use the app stick figures.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
+    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', s8: 'AI backgrounds', aiOn: 'Use AI-drawn backgrounds (OpenAI)', aiIntro: 'The AI draws detailed scenery (houses, streets, office, church…) and the app animates the stick figures on top: they talk, blink, gesture and walk.', appSits: 'App stories', trendLbl: 'Current trend (optional)', trendPh: 'E.g.: egg prices, rent, tipping culture', trendBtn: '🔎 Find what\'s viral now', writeBtn: '✨ Write 3 stories with AI', writerHint: 'Uses your OpenAI key (paste it in section 8). The AI searches the web for what\'s viral and writes funny stories.', searching: 'Searching what\'s viral right now…', writing: 'Writing 3 new stories…', trendsFound: n => `Found ${n} trends. Tap one to use it.`, written: 'Done: 3 new AI stories (tagged "AI"). Pick one.', noTrends: 'No trends found right now; type one above.', needKeyAI: 'Paste your OpenAI key in section 8 first.', costTitle: 'Approximate cost of this video:', cTrends: 'trend search', cWrite: 'AI script', cBg: n => `${n} AI backgrounds`, cVoice: 'OpenAI voice', cEleven: 'ElevenLabs voice (your plan credits)', costFree: 'This video is free (everything runs on your phone).', keyNote: 'Your OpenAI key is used for backgrounds, the OpenAI voice and AI stories.', iaTag: 'AI', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `Each video uses 2–3 backgrounds (≈ ${c} USD at this quality), charged to your OpenAI balance. Takes 1–2 minutes; keep the screen on. The same key works for the OpenAI voice and AI story writing. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Drawing AI backgrounds ${i}/${n}… (1–2 minutes)`, imgFail: 'Could not create the AI backgrounds; the app backgrounds were used. Reason: ', imgSome: n => `${n} background(s) failed and the app ones were used.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
     stVoice: (i, n) => `Generating voice ${i}/${n}…`, stDl: (p) => `Downloading neural voice… ${p}`, stMix: 'Mixing music and sound effects…',
     stReady: (s, n) => `Ready: ${s.toFixed(1)} s · ${n} scenes. Check the preview and export.`, stFallback: 'Could not load the neural voice (offline?). Using the basic offline voice.',
     exporting: p => `Exporting… ${Math.round(p * 100)}%`, exported: 'Download video', exportErr: 'Export error: ', webmNote: 'Your browser cannot record MP4, so it was exported as WebM. Use an up-to-date Chrome, Edge or Safari for MP4.',
@@ -50,7 +52,7 @@ const I18N = {
 
 // ---------- estado ----------
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const DEFAULTS = { lang: 'es', theme: 'amistad', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiConsistent: true, elevenList: null, page: '', linkUrl: '', linkLabel: '', engine: 'piper', voiceId: { es: IOS ? 'es_MX-ald-medium' : 'es_MX-claude-high', en: 'en_US-hfc_female-medium' }, music: 'alegre', musicVol: 0.6, sfx: true };
+const DEFAULTS = { lang: 'es', theme: 'amistad', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, elevenList: null, page: '', linkUrl: '', linkLabel: '', engine: 'piper', voiceId: { es: IOS ? 'es_MX-ald-medium' : 'es_MX-claude-high', en: 'en_US-hfc_female-medium' }, music: 'alegre', musicVol: 0.6, sfx: true };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-state') || '{}') }; } catch { /* sin almacenamiento */ }
 const save = () => { try { localStorage.setItem('munequitos-state', JSON.stringify(S)); } catch { /* ignorar */ } };
@@ -81,8 +83,8 @@ function renderAll() {
   $('#envs').replaceChildren(...ENVIRONMENTS.map(e => btn('chip', `${e.emoji} ${esc(e.name[S.lang])}`, S.env === e.id, () => { S.env = e.id; change(); })));
   $('#durs').replaceChildren(...Object.entries(DURATIONS).map(([k, d]) => btn('', `${d.label[S.lang]}<small>${k === 's' ? (S.lang === 'es' ? 'Rápido' : 'Quick') : k === 'm' ? (S.lang === 'es' ? 'Estándar' : 'Standard') : (S.lang === 'es' ? 'Completo' : 'Full')}</small>`, S.dur === k, () => { S.dur = k; change(); })));
 
-  const sits = SITUATIONS[S.theme];
-  $('#sits').replaceChildren(...sits.map((s, i) => btn('opt', `<span class="tag">${s.mode === 'caminos' ? L.caminos : L.escalada}</span><div><b>${esc(s.title[S.lang])}</b><span class="d">${esc(s.hook[S.lang])}</span></div>`, S.sit === i, () => { S.sit = i; S.hook = 0; change(); })));
+  const sits = currentSits();
+  $('#sits').replaceChildren(...sits.map((s, i) => btn('opt', `<span class="tag${s.ai ? ' ia' : ''}">${s.ai ? L.iaTag + ' · ' : ''}${s.mode === 'caminos' ? L.caminos : L.escalada}</span><div><b>${esc(s.title[S.lang])}</b><span class="d">${esc(s.hook[S.lang])}</span></div>`, S.sit === i, () => { S.sit = i; S.hook = 0; change(); })));
   const sit = sits[S.sit] || sits[0];
   const hooks = hookOptions(S.theme, sit, S.hookSeed);
   $('#hooks').replaceChildren(...hooks.map((h, i) => btn('opt', `<span class="tag">${i + 1}</span><div><b>${esc(h[S.lang])}</b></div>`, S.hook === i, () => { S.hook = i; change(); })));
@@ -106,16 +108,22 @@ function renderAll() {
   $('#voiceHint').textContent = engine === 'piper' ? L.hintPiper : engine === 'mespeak' ? L.hintMe : engine === 'none' ? L.hintNone : '';
   $('#cloudCfg').hidden = !cloud;
   if (cloud) { $('#apiKeyLbl').textContent = engine === 'eleven' ? L.keyEleven : L.keyOpenai; $('#cloudHint').innerHTML = engine === 'eleven' ? L.cloudEleven : L.cloudOpenai; $('#loadVoices').hidden = engine !== 'eleven'; if (document.activeElement !== $('#apiKey')) $('#apiKey').value = KEYS[engine] || ''; $('#apiKey').placeholder = engine === 'eleven' ? 'sk_...' : 'sk-...'; }
-  $('#aiOn').checked = S.aiOn; $('#aiCfg').hidden = !S.aiOn; $('#aiConsistent').checked = S.aiConsistent;
+  $('#aiOn').checked = S.aiOn; $('#aiCfg').hidden = !S.aiOn;
   if (document.activeElement !== $('#aiKey')) $('#aiKey').value = KEYS.openai || '';
   $('#aiModel').replaceChildren(...IMAGE_MODELS.map(m => new Option(m.label[S.lang], m.id))); $('#aiModel').value = S.aiModel;
   $('#aiQuality').replaceChildren(new Option(L.qLow, 'low'), new Option(L.qMedium, 'medium'), new Option(L.qHigh, 'high')); $('#aiQuality').value = S.aiQuality;
-  { const D = DURATIONS[S.dur]; const nImg = 2 + D.reps + 1 + (D.after ? 1 : 0) + 1; $('#aiHint').textContent = L.aiHintTxt(nImg, estimateCost(nImg, S.aiModel, S.aiQuality).toFixed(2)); }
+  $('#aiHint').textContent = L.aiHintTxt(3, (3 * imagePrice(S.aiModel, S.aiQuality)).toFixed(2));
+  $('#trend').value = document.activeElement === $('#trend') ? $('#trend').value : (S.trend || ''); $('#trend').placeholder = L.trendPh;
+  $('#trendChips').replaceChildren(...(S.trends || []).map(tr2 => btn('chip trend', `<b>${esc(tr2.title)}</b>${tr2.summary ? '<br><small>' + esc(tr2.summary) + '</small>' : ''}`, S.trend === tr2.title, () => { S.trend = tr2.title; save(); renderAll(); })));
+  $('#writerHint').textContent = L.writerHint;
+  $('#appSits').hidden = !(S.aiIdeas && S.aiIdeas[S.theme + '|' + S.lang]);
+  renderCost();
   $('#music').replaceChildren(...MUSIC_STYLES.map(m => new Option(m.name[S.lang], m.id))); $('#music').value = S.music;
   $('#musicVol').value = S.musicVol; $('#sfx').checked = S.sfx;
   $('#page').value = S.page; $('#linkUrl').value = S.linkUrl; $('#linkLabel').value = S.linkLabel;
   if (project) $('#meta').textContent = L.meta(project.total, project.beats.length, project.beats.reduce((s, b) => s + b.shots, 0));
 }
+function currentSits() { const k = S.theme + '|' + S.lang; return (S.aiIdeas && S.aiIdeas[k] && S.aiIdeas[k].length) ? S.aiIdeas[k] : SITUATIONS[S.theme]; }
 function fillPreview(text, type) {
   const page = S.page.trim() || (S.lang === 'es' ? 'la página' : 'the page');
   const link = (S.linkLabel || S.linkUrl).trim() || (S.lang === 'es' ? 'en la descripción' : 'in the description');
@@ -133,8 +141,28 @@ $('#loadVoices').addEventListener('click', async () => {
   try { const list = await elevenVoices(KEYS.eleven); if (list.length) { S.elevenList = list; S.voiceSel = { ...S.voiceSel, [S.lang]: 'eleven:' + list[0].id }; save(); renderAll(); setStatus(L.voicesLoaded(list.length)); } }
   catch (e) { setStatus(String(e.message || e), true); }
 });
+$('#trend').addEventListener('input', e => { S.trend = e.target.value; save(); });
+$('#appSits').addEventListener('click', () => { delete S.aiIdeas[S.theme + '|' + S.lang]; S.sit = 0; S.hook = 0; change(); });
+$('#trendBtn').addEventListener('click', async () => {
+  const L = tr(); if (!KEYS.openai) { setStatus(L.needKeyAI, true); return; }
+  const b = $('#trendBtn'); b.disabled = true; setStatus(L.searching);
+  try { const list = await searchTrends(KEYS.openai, { lang: S.lang, theme: S.theme }); S.trends = list; S.usedAI = { ...S.usedAI, [S.theme + '|' + S.lang + '|t']: true }; save(); renderAll(); setStatus(list.length ? L.trendsFound(list.length) : L.noTrends, !list.length); }
+  catch (e) { console.warn(e); setStatus(String(e.message || e), true); }
+  finally { b.disabled = false; }
+});
+$('#writeBtn').addEventListener('click', async () => {
+  const L = tr(); if (!KEYS.openai) { setStatus(L.needKeyAI, true); return; }
+  const b = $('#writeBtn'); b.disabled = true; setStatus(L.writing);
+  try {
+    const th = THEMES.find(t => t.id === S.theme);
+    const ideas = await writeIdeas(KEYS.openai, { lang: S.lang, theme: S.theme, themeName: th.name[S.lang], trend: (S.trend || '').trim(), nChars: S.nChars, dur: S.dur });
+    if (!ideas.length) throw new Error('La IA no devolvió historias.');
+    S.aiIdeas = { ...S.aiIdeas, [S.theme + '|' + S.lang]: ideas }; S.sit = 0; S.hook = 0; S.hookSeed = 1; dirty = true; save(); renderAll(); setStatus(L.written);
+    document.querySelector('#sits').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) { console.warn(e); setStatus(String(e.message || e), true); }
+  finally { b.disabled = false; }
+});
 $('#aiOn').addEventListener('change', e => { S.aiOn = e.target.checked; dirty = true; save(); renderAll(); });
-$('#aiConsistent').addEventListener('change', e => { S.aiConsistent = e.target.checked; dirty = true; save(); });
 $('#aiModel').addEventListener('change', e => { S.aiModel = e.target.value; dirty = true; save(); renderAll(); });
 $('#aiQuality').addEventListener('change', e => { S.aiQuality = e.target.value; dirty = true; save(); renderAll(); });
 $('#aiKey').addEventListener('input', e => { KEYS.openai = e.target.value.trim(); saveKeys(); dirty = true; });
@@ -144,6 +172,19 @@ $('#sfx').addEventListener('change', e => { S.sfx = e.target.checked; dirty = tr
 for (const id of ['page', 'linkUrl', 'linkLabel']) $('#' + id).addEventListener('input', e => { S[id] = e.target.value; save(); dirty = true; clearTimeout(window._rt); window._rt = setTimeout(() => { const f = document.activeElement; renderAll(); f && f.focus && f.focus(); }, 500); });
 
 // ---------- generación ----------
+function renderCost() {
+  const L = tr(); const items = []; const { engine } = voiceParts();
+  const k = S.theme + '|' + S.lang; const aiStory = !!(S.aiIdeas && S.aiIdeas[k]);
+  if (S.usedAI && S.usedAI[k + '|t']) items.push([L.cTrends, PRICE.trends]);
+  if (aiStory) items.push([L.cWrite, PRICE.write]);
+  if (S.aiOn) { const n = S.dur === 's' ? 2 : 3; items.push([L.cBg(n), n * imagePrice(S.aiModel, S.aiQuality)]); }
+  if (engine === 'openai') items.push([L.cVoice, S.dur === 's' ? 0.008 : S.dur === 'm' ? 0.014 : 0.02]);
+  const box = $('#costBox');
+  if (!items.length && engine !== 'eleven') { box.hidden = false; box.textContent = L.costFree; return; }
+  const total = items.reduce((a, b) => a + b[1], 0);
+  box.hidden = false;
+  box.innerHTML = `${esc(L.costTitle)} <b>≈ ${total.toFixed(2)} USD</b><br><small>${items.map(([n, c]) => `${esc(n)}: ${c.toFixed(3)}`).join(' · ')}${engine === 'eleven' ? ' · ' + esc(L.cEleven) : ''}</small>`;
+}
 function setStatus(msg, err = false) { const el = $('#status'); el.textContent = msg; el.classList.toggle('err', err); }
 
 async function generate(customTexts = null) {
@@ -151,7 +192,7 @@ async function generate(customTexts = null) {
   $('#genBtn').disabled = true;
   try {
     await document.fonts.load(`700 80px ${FONT}`).catch(() => {});
-    const sits = SITUATIONS[S.theme]; const sit = sits[S.sit] || sits[0];
+    const sits = currentSits(); const sit = sits[S.sit] || sits[0];
     const hooks = hookOptions(S.theme, sit, S.hookSeed); const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
     const settings = { env: S.env, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel };
     const beats = buildBeats({ situation: sit, lang: S.lang, dur: S.dur, hook: hooks[S.hook] || hooks[0], ctas: S.ctaSel.map(i => ctas[i]).filter(Boolean).length ? S.ctaSel.map(i => ctas[i]).filter(Boolean) : [ctas[0]], settings });
@@ -171,7 +212,7 @@ async function generate(customTexts = null) {
           if (engine === 'piper') { fallbackWhy = (fallbackWhy ? fallbackWhy + ' / ' : '') + (e.message || String(e)); engine = 'mespeak'; setStatus(L.stFallback, true); await new Promise(r => setTimeout(r, 1200)); i--; continue; }
           throw e;
         }
-        b.voiceBuffer = buf; b.voiceDur = buf ? buf.duration : 0;
+        b.voiceBuffer = buf; b.voiceDur = buf ? buf.duration : 0; b.lip = computeLip(buf);
         if (!buf) b.voiceDur = undefined;
       }
       total = timeBeats(beats, S.dur);
@@ -182,12 +223,11 @@ async function generate(customTexts = null) {
     let imgNote = '';
     if (S.aiOn) {
       try {
-        project.looks = LOOKS[sit.id] || {};
-        const { images, errors } = await generateSceneImages(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, consistent: S.aiConsistent, onProgress: (i, n) => setStatus(L.stImg(i, n)) });
-        if (images.size) project.aiImages = images;
+        const { images, errors } = await generateBackgrounds(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, onProgress: (i2, n) => setStatus(L.stImg(i2, n)) });
+        if (images.size) project.aiBg = images;
         if (!images.size) imgNote = L.imgFail + (errors[0] || '');
         else if (errors.length) imgNote = L.imgSome(errors.length) + ' ' + errors[0];
-      } catch (e) { console.warn('IA imágenes', e); imgNote = L.imgFail + (e.message || e); }
+      } catch (e) { console.warn('IA fondos', e); imgNote = L.imgFail + (e.message || e); }
     }
     setStatus(L.stMix);
     mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx });
@@ -254,7 +294,7 @@ $('#exportBtn').addEventListener('click', async () => {
     const { blob, ext, note } = await exportMP4(project, mix, { audioContext: actx, signal: abort.signal, onProgress: p => { bar.style.width = (p * 100).toFixed(1) + '%'; lbl.textContent = L.exporting(p); } });
     const a = $('#dl'); if (a.href) URL.revokeObjectURL(a.href);
     a.href = URL.createObjectURL(blob);
-    const sit = SITUATIONS[S.theme][S.sit];
+    const sit = currentSits()[S.sit] || currentSits()[0];
     const name = `munequitos-${S.theme}-${sit.id}-${S.lang}.${ext}`;
     a.download = name;
     a.textContent = `⬇ ${L.exported} (${ext.toUpperCase()}, ${(blob.size / 1e6).toFixed(1)} MB)`; a.hidden = false;

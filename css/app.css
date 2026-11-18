@@ -98,3 +98,11 @@ button.download { width: 100%; border: 0; cursor: pointer; font-size: 17px; }
 .ctaPreview { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ac2) 25%, var(--card)); font-weight: 700; }
 .ctaPreview:empty { display: none; }
 .card.ai { border: 2px solid color-mix(in srgb, var(--ac2) 60%, var(--bd)); }
+.aiwriter { padding: 12px; border-radius: 14px; background: var(--chip); border: 2px dashed var(--bd); margin-bottom: 12px; }
+.airow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.airow button { flex: 1 1 160px; }
+.ghost.strong { border-color: var(--ac); font-weight: 700; }
+.chip.trend { text-align: left; border-radius: 12px; }
+.cost { margin: 0 0 10px; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 2px solid var(--ac2); font-size: 15px; }
+.cost b { font-size: 17px; }
+.opt .tag.ia { background: #7048e8; color: #fff; }
