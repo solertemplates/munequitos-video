@@ -97,3 +97,4 @@ button.download { width: 100%; border: 0; cursor: pointer; font-size: 17px; }
 .cloud a { color: #1c7ed6; font-weight: 700; }
 .ctaPreview { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ac2) 25%, var(--card)); font-weight: 700; }
 .ctaPreview:empty { display: none; }
+.card.ai { border: 2px solid color-mix(in srgb, var(--ac2) 60%, var(--bd)); }

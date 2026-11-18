@@ -43,6 +43,17 @@ Todo se genera en el navegador: no hay servidor, ni claves de API, ni costos.
 
 Las claves se guardan solo en el navegador del teléfono. Si una voz de la nube falla (clave mala o sin créditos), la app usa la voz neural gratuita y explica el motivo.
 
+## Imágenes con IA (opcional)
+
+En la sección **8 · Imágenes con IA** activa «Usar imágenes generadas con IA (OpenAI)» y pega tu clave de OpenAI (la misma de la voz).
+
+- Cada escena se convierte en una ilustración de caricatura (cabezas grandes y blancas, contorno negro, camisetas de color, fondos detallados) con zoom y paneo de cámara.
+- La primera imagen se usa como referencia para que los personajes sean los mismos en todo el video.
+- Costo aproximado por video (8–11 imágenes): **0,10–0,20 USD** con el modelo económico en calidad media; **0,50–0,80 USD** con gpt-image-1 en calidad media. Se cobra de tu saldo de OpenAI.
+- Tarda de 1 a 3 minutos. Si una imagen falla, esa escena usa los muñequitos de la app.
+- La primera vez OpenAI puede pedir **verificar tu organización** (platform.openai.com → Settings → Organization → General → Verify Organization).
+- Instagram, TikTok, YouTube y Facebook piden marcar el contenido como **generado con IA** al publicarlo.
+
 ## Exportación
 
 - El video se renderiza fotograma a fotograma a **MP4 H.264 1080×1920 a 30 fps**.

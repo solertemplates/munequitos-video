@@ -2,7 +2,7 @@
 export const W = 1080, H = 1920, GY = 1390;
 const TAU = Math.PI * 2;
 const ROLES = ['A', 'B', 'C', 'D'];
-const LOOKS = {
+export const LOOKS = {
   cenar: { B: 'hair' }, orar: {}, lista: {}, detalles: { B: 'hair' }, celular: { B: 'hair' }, sueter: { B: 'hair', C: 'kid' },
   abuela: { B: 'granny' }, mama: { B: 'hair' }, jugar: { C: 'kid' }, opinan: { C: 'hair' }, grupo: {}, foto: { B: 'hair' },
 };
@@ -743,45 +743,78 @@ export function beatAt(project, time) {
   return i;
 }
 
+function lastAiImage(project, bi) { for (let i = bi - 1; i >= 0; i--) { const im = project.aiImages.get(i); if (im) return im; } return null; }
+
+// Escena con imagen de IA: pantalla completa con zoom y paneo continuo (cámara viva, sin temblores)
+function drawAIScene(ctx, img, beat, bi, t, g) {
+  const n = beat.shots || 1, sd = beat.dur / n; const si = Math.min(n - 1, Math.floor(t / sd)); const st = t - si * sd; const sp = clamp(st / sd, 0, 1);
+  const h = hash(bi * 31 + si * 7 + 3);
+  let z0 = 1.05, z1 = 1.18, px = (h - 0.5) * 2, py = (hash(bi * 17 + si) - 0.5) * 2;
+  if (h > 0.5) { z0 = 1.2; z1 = 1.06; }
+  if (beat.kind === 'hook' && si === 0) { z0 = 1.0; z1 = 1.18; }
+  if (beat.kind === 'twist' && si === 0) { z0 = 1.35; z1 = 1.12; }
+  if (beat.kind === 'reflect' || beat.kind === 'cta') { z0 = 1.02; z1 = 1.12; px *= 0.4; py *= 0.4; }
+  const k = beat.kind === 'twist' && si === 0 ? easeOut(sp * 1.5) : easeInOut(sp);
+  const z = lerp(z0, z1, k) * (1 + Math.pow(Math.max(0, 1 - st / 0.3), 2) * 0.04);
+  const s0 = Math.max(W / img.width, H / img.height) * z;
+  const dw = img.width * s0, dh = img.height * s0;
+  const maxX = (dw - W) / 2, maxY = (dh - H) / 2;
+  const ox = clamp(px * maxX * lerp(0.2, 0.9, k) + Math.sin(g * 0.8 + bi) * 6, -maxX, maxX);
+  const oy = clamp(py * maxY * lerp(0.2, 0.9, k) + Math.cos(g * 0.6 + bi) * 5, -maxY, maxY);
+  const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
+  ctx.save();
+  if (BW && 'filter' in ctx) ctx.filter = 'grayscale(1) contrast(1.1)';
+  ctx.drawImage(img, (W - dw) / 2 + ox + dir * whip * whip * 700, (H - dh) / 2 + oy, dw, dh);
+  ctx.restore();
+  const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
+  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.1 * intensity; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 620 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(540 + Math.cos(a) * r0, 960 + Math.sin(a) * r0); ctx.lineTo(540 + Math.cos(a) * 1600, 960 + Math.sin(a) * 1600); ctx.stroke(); } ctx.restore(); }
+  // degradado inferior para que los subtítulos se lean siempre
+  const gr = ctx.createLinearGradient(0, H * 0.62, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.45)'); ctx.fillStyle = gr; ctx.fillRect(0, H * 0.62, W, H * 0.38);
+}
+
 export function drawFrame(ctx, project, time, scale = 1) {
   BW = !project.color; cache.clear();
   const opts = project;
   const bi = beatAt(project, time); const beat = project.beats[bi]; const t = Math.max(0, time - beat.start); const g = time;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.fillStyle = BW ? '#ffffff' : '#000'; ctx.fillRect(0, 0, W, H);
-  const chars = sceneChars(beat, t, opts);
-  const cam = cameraFor(beat, bi, t, chars);
-  // transición de barrido al entrar al beat
-  const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
-  ctx.save();
-  ctx.translate(W / 2 + dir * whip * whip * 700, H / 2);
-  ctx.rotate(cam.rot); ctx.scale(cam.z, cam.z); ctx.translate(-cam.fx, -cam.fy);
-  const env = beat.env;
-  (ENV_DRAW[env] || ENV_DRAW.vacio)(ctx, g, beat);
-  // líneas de velocidad en repeticiones intensas o giro
-  const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
-  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.12 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 560 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
-  // personajes
-  const speakingRoles = new Set(); const acts = parseActs(beat.a);
-  for (const c of chars) if (c.act === 'talk' || c.act === 'point') speakingRoles.add(c.role);
-  if (!speakingRoles.size && (beat.kind === 'hook' || beat.kind === 'setup') && chars[0]) speakingRoles.add(chars[0].role);
-  const vt = t - (beat.voiceLead || 0); const speaking = vt > 0 && vt < (beat.voiceDur || beat.dur);
-  // transición suave: mezcla la pose final de la escena anterior con la nueva
-  const BL = 0.45; let prevMap = null, pb = null;
-  if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
-  for (const c of chars) {
-    let P = charPose(c, t, g);
-    const pc = prevMap && prevMap.get(c.role);
-    if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
-    if (speaking && speakingRoles.has(c.role)) { P.mouth = (Math.sin(g * 26 + c.seed) + 1) / 2; if (P.emo === 'neutral') P.emo = 'happy'; }
-    if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
-    const head = drawFigure(ctx, c, P, g);
-    drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
+  const aiImg = project.aiImages ? (project.aiImages.get(bi) || (beat.kind === 'cta' ? lastAiImage(project, bi) : null)) : null;
+  if (aiImg) drawAIScene(ctx, aiImg, beat, bi, t, g);
+  else {
+    const chars = sceneChars(beat, t, opts);
+    const cam = cameraFor(beat, bi, t, chars);
+    // transición de barrido al entrar al beat
+    const whip = bi > 0 ? Math.max(0, 1 - t / 0.16) : 0; const dir = bi % 2 ? 1 : -1;
+    ctx.save();
+    ctx.translate(W / 2 + dir * whip * whip * 700, H / 2);
+    ctx.rotate(cam.rot); ctx.scale(cam.z, cam.z); ctx.translate(-cam.fx, -cam.fy);
+    const env = beat.env;
+    (ENV_DRAW[env] || ENV_DRAW.vacio)(ctx, g, beat);
+    // líneas de velocidad en repeticiones intensas o giro
+    const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
+    if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.12 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 560 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
+    // personajes
+    const speakingRoles = new Set(); const acts = parseActs(beat.a);
+    for (const c of chars) if (c.act === 'talk' || c.act === 'point') speakingRoles.add(c.role);
+    if (!speakingRoles.size && (beat.kind === 'hook' || beat.kind === 'setup') && chars[0]) speakingRoles.add(chars[0].role);
+    const vt = t - (beat.voiceLead || 0); const speaking = vt > 0 && vt < (beat.voiceDur || beat.dur);
+    // transición suave: mezcla la pose final de la escena anterior con la nueva
+    const BL = 0.45; let prevMap = null, pb = null;
+    if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
+    for (const c of chars) {
+      let P = charPose(c, t, g);
+      const pc = prevMap && prevMap.get(c.role);
+      if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
+      if (speaking && speakingRoles.has(c.role)) { P.mouth = (Math.sin(g * 26 + c.seed) + 1) / 2; if (P.emo === 'neutral') P.emo = 'happy'; }
+      if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
+      const head = drawFigure(ctx, c, P, g);
+      drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
+    }
+    ctx.restore();
+    // objetos de escena en capa de pantalla (siempre visibles aunque la cámara haga zoom)
+    if (beat.kind !== 'reflect' && beat.kind !== 'hook') { ctx.save(); const ps = 0.82; ctx.translate(540, 470); ctx.scale(ps, ps); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
+    if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
   }
-  ctx.restore();
-  // objetos de escena en capa de pantalla (siempre visibles aunque la cámara haga zoom)
-  if (beat.kind !== 'reflect' && beat.kind !== 'hook') { ctx.save(); const ps = 0.82; ctx.translate(540, 470); ctx.scale(ps, ps); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
-  if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
   // capa de reflexión: oscurece y da calidez
   if (beat.kind === 'reflect') {
     const k = clamp(t / 0.6, 0, 1); const gr = ctx.createLinearGradient(0, 0, 0, H);

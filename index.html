@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=2">
+<link rel="stylesheet" href="css/app.css?v=3">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -108,6 +108,22 @@
       <label class="check"><input id="sfx" type="checkbox" checked> <span data-i18n="sfx">Efectos de sonido</span></label>
     </div>
 
+    <div class="card ai">
+      <h2><span class="n">8</span><span data-i18n="s8">Imágenes con IA</span></h2>
+      <label class="check"><input id="aiOn" type="checkbox"> <span data-i18n="aiOn">Usar imágenes generadas con IA (OpenAI)</span></label>
+      <p class="hint" data-i18n="aiIntro">En vez de los muñequitos dibujados por la app, cada escena será una ilustración estilo caricatura creada con IA, con movimiento de cámara.</p>
+      <div id="aiCfg" hidden>
+        <label class="lbl" for="aiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
+        <input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-...">
+        <div class="row">
+          <div class="field grow"><label class="lbl" for="aiModel" data-i18n="aiModel">Modelo</label><select id="aiModel"></select></div>
+          <div class="field grow"><label class="lbl" for="aiQuality" data-i18n="aiQuality">Calidad</label><select id="aiQuality"></select></div>
+        </div>
+        <label class="check"><input id="aiConsistent" type="checkbox" checked> <span data-i18n="aiConsistent">Mantener los mismos personajes en todas las escenas</span></label>
+        <p class="hint" id="aiHint"></p>
+      </div>
+    </div>
+
     <button id="genBtn" class="primary" type="button" data-i18n="generate">Generar vista previa</button>
     <p id="status" class="status" role="status" aria-live="polite"></p>
   </section>
@@ -141,6 +157,6 @@
   </section>
 </main>
 <footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
-<script type="module" src="js/app.js?v=2"></script>
+<script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

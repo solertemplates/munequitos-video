@@ -1,6 +1,7 @@
 import { THEMES, ENVIRONMENTS, SITUATIONS, hookOptions, ctaOptions, combineCtas, fillCta } from './content.js';
 import { DURATIONS, buildBeats, timeBeats, speakable, toSRT } from './script.js';
-import { drawFrame, prepareProject, FONT } from './render.js';
+import { drawFrame, prepareProject, FONT, LOOKS } from './render.js';
+import { IMAGE_MODELS, generateSceneImages, estimateCost } from './aiimages.js';
 import { renderMix, MUSIC_STYLES } from './audio.js';
 import { VOICES, synth, ELEVEN_DEFAULT_VOICES, OPENAI_VOICES, elevenVoices } from './tts.js';
 import { exportMP4 } from './export.js';
@@ -20,7 +21,7 @@ const I18N = {
     color: 'Color', bw: 'B/N', escalada: 'Repetición + giro', caminos: 'Dos caminos',
     ctaTypes: { like: 'Me gusta', follow: 'Seguir', stars: 'Estrellas', link: 'Enlace', combo: 'Combo' },
     kinds: { hook: 'Gancho', setup: 'Inicio', rep: 'Repetición', twist: 'Giro final', after: 'Remate', reflect: 'Reflexión', cta: 'Llamado a la acción' },
-    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
+    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', s8: 'Imágenes con IA', aiOn: 'Usar imágenes generadas con IA (OpenAI)', aiIntro: 'En vez de los muñequitos dibujados por la app, cada escena será una ilustración estilo caricatura creada con IA, con movimiento de cámara.', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Este video usará unas ${n} imágenes: costo aproximado ${c} USD, que OpenAI cobra de tu saldo. Tarda de 1 a 3 minutos; deja la pantalla encendida. La misma clave sirve para la voz de OpenAI. Si OpenAI te pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Creando imágenes con IA ${i}/${n}… (puede tardar 1–3 minutos)`, imgFail: 'No se pudieron crear las imágenes con IA; se usaron los muñequitos de la app. Motivo: ', imgSome: n => `${n} escena(s) sin imagen de IA usan los muñequitos de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
     stVoice: (i, n) => `Generando voz ${i}/${n}…`, stDl: (p) => `Descargando voz neural… ${p}`, stMix: 'Mezclando música y efectos…',
     stReady: (s, n) => `Listo: ${s.toFixed(1)} s · ${n} escenas. Revisa la vista previa y exporta.`, stFallback: 'No se pudo cargar la voz neural (¿sin internet?). Usando la voz básica sin conexión.',
     exporting: p => `Exportando… ${Math.round(p * 100)} %`, exported: 'Descargar video', exportErr: 'Error al exportar: ', webmNote: 'Tu navegador no graba MP4: se exportó en WebM. Para MP4 usa Chrome, Edge o Safari actualizados.',
@@ -39,7 +40,7 @@ const I18N = {
     color: 'Color', bw: 'B/W', escalada: 'Rising gag + twist', caminos: 'Two paths',
     ctaTypes: { like: 'Like', follow: 'Follow', stars: 'Stars', link: 'Link', combo: 'Combo' },
     kinds: { hook: 'Hook', setup: 'Setup', rep: 'Repetition', twist: 'Final twist', after: 'Punchline', reflect: 'Reflection', cta: 'Call to action' },
-    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
+    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', s8: 'AI images', aiOn: 'Use AI-generated images (OpenAI)', aiIntro: 'Instead of the stick figures drawn by the app, each scene becomes a cartoon illustration created with AI, with camera motion.', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `This video will use about ${n} images: approx. ${c} USD charged to your OpenAI balance. Takes 1–3 minutes; keep the screen on. The same key works for the OpenAI voice. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Creating AI images ${i}/${n}… (may take 1–3 minutes)`, imgFail: 'Could not create the AI images; the app stick figures were used. Reason: ', imgSome: n => `${n} scene(s) without an AI image use the app stick figures.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
     stVoice: (i, n) => `Generating voice ${i}/${n}…`, stDl: (p) => `Downloading neural voice… ${p}`, stMix: 'Mixing music and sound effects…',
     stReady: (s, n) => `Ready: ${s.toFixed(1)} s · ${n} scenes. Check the preview and export.`, stFallback: 'Could not load the neural voice (offline?). Using the basic offline voice.',
     exporting: p => `Exporting… ${Math.round(p * 100)}%`, exported: 'Download video', exportErr: 'Export error: ', webmNote: 'Your browser cannot record MP4, so it was exported as WebM. Use an up-to-date Chrome, Edge or Safari for MP4.',
@@ -49,7 +50,7 @@ const I18N = {
 
 // ---------- estado ----------
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const DEFAULTS = { lang: 'es', theme: 'amistad', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, elevenList: null, page: '', linkUrl: '', linkLabel: '', engine: 'piper', voiceId: { es: IOS ? 'es_MX-ald-medium' : 'es_MX-claude-high', en: 'en_US-hfc_female-medium' }, music: 'alegre', musicVol: 0.6, sfx: true };
+const DEFAULTS = { lang: 'es', theme: 'amistad', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiConsistent: true, elevenList: null, page: '', linkUrl: '', linkLabel: '', engine: 'piper', voiceId: { es: IOS ? 'es_MX-ald-medium' : 'es_MX-claude-high', en: 'en_US-hfc_female-medium' }, music: 'alegre', musicVol: 0.6, sfx: true };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-state') || '{}') }; } catch { /* sin almacenamiento */ }
 const save = () => { try { localStorage.setItem('munequitos-state', JSON.stringify(S)); } catch { /* ignorar */ } };
@@ -105,6 +106,11 @@ function renderAll() {
   $('#voiceHint').textContent = engine === 'piper' ? L.hintPiper : engine === 'mespeak' ? L.hintMe : engine === 'none' ? L.hintNone : '';
   $('#cloudCfg').hidden = !cloud;
   if (cloud) { $('#apiKeyLbl').textContent = engine === 'eleven' ? L.keyEleven : L.keyOpenai; $('#cloudHint').innerHTML = engine === 'eleven' ? L.cloudEleven : L.cloudOpenai; $('#loadVoices').hidden = engine !== 'eleven'; if (document.activeElement !== $('#apiKey')) $('#apiKey').value = KEYS[engine] || ''; $('#apiKey').placeholder = engine === 'eleven' ? 'sk_...' : 'sk-...'; }
+  $('#aiOn').checked = S.aiOn; $('#aiCfg').hidden = !S.aiOn; $('#aiConsistent').checked = S.aiConsistent;
+  if (document.activeElement !== $('#aiKey')) $('#aiKey').value = KEYS.openai || '';
+  $('#aiModel').replaceChildren(...IMAGE_MODELS.map(m => new Option(m.label[S.lang], m.id))); $('#aiModel').value = S.aiModel;
+  $('#aiQuality').replaceChildren(new Option(L.qLow, 'low'), new Option(L.qMedium, 'medium'), new Option(L.qHigh, 'high')); $('#aiQuality').value = S.aiQuality;
+  { const D = DURATIONS[S.dur]; const nImg = 2 + D.reps + 1 + (D.after ? 1 : 0) + 1; $('#aiHint').textContent = L.aiHintTxt(nImg, estimateCost(nImg, S.aiModel, S.aiQuality).toFixed(2)); }
   $('#music').replaceChildren(...MUSIC_STYLES.map(m => new Option(m.name[S.lang], m.id))); $('#music').value = S.music;
   $('#musicVol').value = S.musicVol; $('#sfx').checked = S.sfx;
   $('#page').value = S.page; $('#linkUrl').value = S.linkUrl; $('#linkLabel').value = S.linkLabel;
@@ -127,6 +133,11 @@ $('#loadVoices').addEventListener('click', async () => {
   try { const list = await elevenVoices(KEYS.eleven); if (list.length) { S.elevenList = list; S.voiceSel = { ...S.voiceSel, [S.lang]: 'eleven:' + list[0].id }; save(); renderAll(); setStatus(L.voicesLoaded(list.length)); } }
   catch (e) { setStatus(String(e.message || e), true); }
 });
+$('#aiOn').addEventListener('change', e => { S.aiOn = e.target.checked; dirty = true; save(); renderAll(); });
+$('#aiConsistent').addEventListener('change', e => { S.aiConsistent = e.target.checked; dirty = true; save(); });
+$('#aiModel').addEventListener('change', e => { S.aiModel = e.target.value; dirty = true; save(); renderAll(); });
+$('#aiQuality').addEventListener('change', e => { S.aiQuality = e.target.value; dirty = true; save(); renderAll(); });
+$('#aiKey').addEventListener('input', e => { KEYS.openai = e.target.value.trim(); saveKeys(); dirty = true; });
 $('#music').addEventListener('change', e => { S.music = e.target.value; dirty = true; save(); });
 $('#musicVol').addEventListener('change', e => { S.musicVol = +e.target.value; dirty = true; save(); });
 $('#sfx').addEventListener('change', e => { S.sfx = e.target.checked; dirty = true; save(); });
@@ -168,6 +179,16 @@ async function generate(customTexts = null) {
       speed = Math.min(1.35, speed * (total / D.max) * 1.02);
     }
     project = prepareProject({ beats, total, lang: S.lang, color: S.color, nChars: S.nChars, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: sit.id });
+    let imgNote = '';
+    if (S.aiOn) {
+      try {
+        project.looks = LOOKS[sit.id] || {};
+        const { images, errors } = await generateSceneImages(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, consistent: S.aiConsistent, onProgress: (i, n) => setStatus(L.stImg(i, n)) });
+        if (images.size) project.aiImages = images;
+        if (!images.size) imgNote = L.imgFail + (errors[0] || '');
+        else if (errors.length) imgNote = L.imgSome(errors.length) + ' ' + errors[0];
+      } catch (e) { console.warn('IA imágenes', e); imgNote = L.imgFail + (e.message || e); }
+    }
     setStatus(L.stMix);
     mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx });
     dirty = false;
@@ -175,6 +196,7 @@ async function generate(customTexts = null) {
     $('#emptyMsg').hidden = true; $('#player').hidden = false; $('#exportRow').hidden = false; $('#bigPlay').hidden = false; $('#dl').hidden = true;
     curTime = 0; drawAt(0);
     if (window.matchMedia('(max-width: 900px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (imgNote) { setStatus(imgNote, true); renderAll(); return; }
     setStatus(L.stReady(total, beats.length) + (engine !== chosen ? ' · ' + (chosen === 'eleven' || chosen === 'openai' ? L.cloudFallback : L.stFallback) + (fallbackWhy ? ` (${fallbackWhy})` : '') : ''), engine !== chosen);
     renderAll();
   } catch (e) {
