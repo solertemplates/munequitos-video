@@ -1,5 +1,5 @@
 // Construye el guion (beats) a partir de las elecciones del usuario y le asigna tiempos.
-import { fillCta } from './content.js';
+import { fillCta, combineCtas } from './content.js';
 
 export const DURATIONS = {
   s: { min: 12, max: 25, reps: 2, after: false, reflect: 1, pace: 1.12, label: { es: '12–25 s', en: '12–25 s' } },
@@ -23,7 +23,7 @@ function pickReps(reps, n) {
   return [...idx].sort((a, b) => a - b).map(i => reps[i]);
 }
 
-export function buildBeats({ situation, lang, dur, hook, cta, settings }) {
+export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
   const D = DURATIONS[dur];
   const T = o => (typeof o === 'string' ? o : o[lang]);
   const beats = [];
@@ -47,7 +47,7 @@ export function buildBeats({ situation, lang, dur, hook, cta, settings }) {
   const refl = situation.reflect.map(T);
   if (D.reflect === 1) beats.push(mk('reflect', { t: refl.join(' '), a: 'A:hug B:hug all:idle', p: '' }));
   else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
-  beats.push(mk('cta', { t: fillCta(T(cta.text), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: cta.type }));
+  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctas.map(c => c.type) }));
   return beats;
 }
 
@@ -62,13 +62,14 @@ export function timeBeats(beats, dur) {
   const base = { hook: 0.35, setup: 0.3, rep: 0.25, twist: 0.6, after: 0.35, reflect: 0.8, cta: 0.6 };
   const lead = { hook: 0.15, setup: 0.1, rep: 0.08, twist: 0.55, after: 0.12, reflect: 0.3, cta: 0.2 };
   const minD = { hook: 2.2, setup: 2.0, rep: 1.9, twist: 2.6, after: 2.0, reflect: 3.0, cta: 3.2 };
+  const minFor = b => (b.kind === 'cta' && b.ctaTypes && b.ctaTypes.length > 1 ? 3.8 : minD[b.kind]);
   let total = 0;
   const calc = (padMul) => {
     total = 0;
     for (const b of beats) {
       const vd = b.voiceDur || estimateDur(b.text, D.pace);
       b.voiceLead = lead[b.kind];
-      b.dur = Math.max(minD[b.kind], b.voiceLead + vd + base[b.kind] * padMul);
+      b.dur = Math.max(minFor(b), b.voiceLead + vd + base[b.kind] * padMul);
       b.start = total;
       total += b.dur;
     }

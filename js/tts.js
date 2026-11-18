@@ -129,21 +129,75 @@ async function mespeakSpeak(text, lang, speed, actx) {
   return actx.decodeAudioData(buf.slice ? buf.slice(0) : buf);
 }
 
+// ---------- Voces en la nube (más naturales; requieren tu clave) ----------
+// ElevenLabs: voces premium. Las predeterminadas sirven para todos los idiomas con el modelo multilingüe.
+export const ELEVEN_DEFAULT_VOICES = [
+  { id: 'EXAVITQu4vr4xnSDxMaL', label: 'Sarah (mujer, cálida)' },
+  { id: '21m00Tcm4TlvDq8ikWAM', label: 'Rachel (mujer, narradora)' },
+  { id: 'pNInz6obpgDQGcFmaJgB', label: 'Adam (hombre, grave)' },
+  { id: 'ErXwobaYiN019PkySvjV', label: 'Antoni (hombre, cercano)' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', label: 'Josh (hombre, joven)' },
+];
+export const OPENAI_VOICES = [
+  { id: 'nova', label: 'Nova (mujer, alegre)' }, { id: 'shimmer', label: 'Shimmer (mujer, suave)' }, { id: 'coral', label: 'Coral (mujer, cálida)' },
+  { id: 'onyx', label: 'Onyx (hombre, grave)' }, { id: 'echo', label: 'Echo (hombre)' }, { id: 'ash', label: 'Ash (hombre, expresivo)' }, { id: 'sage', label: 'Sage (neutral)' },
+];
+
+async function cloudError(res, provider) {
+  let msg = ''; try { const j = await res.json(); msg = (j.detail && (j.detail.message || j.detail.status || j.detail)) || (j.error && j.error.message) || ''; } catch { /* sin json */ }
+  if (res.status === 401) return new Error(`${provider}: la clave no es válida (401). Revísala en la sección de voz.`);
+  if (res.status === 429 || /quota|credit/i.test(String(msg))) return new Error(`${provider}: se acabaron los créditos o hay demasiadas peticiones (${res.status}). ${msg}`);
+  return new Error(`${provider}: error ${res.status}. ${typeof msg === 'string' ? msg : ''}`);
+}
+
+export async function elevenVoices(apiKey) {
+  const res = await fetch('https://api.elevenlabs.io/v1/voices', { headers: { 'xi-api-key': apiKey } });
+  if (!res.ok) throw await cloudError(res, 'ElevenLabs');
+  const j = await res.json();
+  return (j.voices || []).map(v => ({ id: v.voice_id, label: v.name + (v.labels && v.labels.gender ? ` (${v.labels.gender})` : '') }));
+}
+
+async function elevenSpeak(text, voiceId, apiKey, speed) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+    method: 'POST', headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+    body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.35, use_speaker_boost: true, speed: Math.max(0.7, Math.min(1.2, speed)) } }),
+  });
+  if (!res.ok) throw await cloudError(res, 'ElevenLabs');
+  return res.arrayBuffer();
+}
+
+async function openaiSpeak(text, voice, apiKey, lang) {
+  const res = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'gpt-4o-mini-tts', voice, input: text, response_format: 'mp3',
+      instructions: lang === 'es' ? 'Habla en español latino neutro, con tono cálido, expresivo y ritmo ágil, como narrador de videos cortos.' : 'Speak in warm, expressive, upbeat American English, like a short-video narrator.' }),
+  });
+  if (!res.ok) throw await cloudError(res, 'OpenAI');
+  return res.arrayBuffer();
+}
+
 // ---------- API ----------
 const memo = new Map();
 let decodeCtx = null;
 const getCtx = () => (decodeCtx ||= new OfflineAudioContext(1, 1, 48000));
 
 // engine: 'piper' | 'mespeak' | 'none'
-export async function synth(text, { engine, voiceId, lang, speed = 1, onProgress }) {
+export async function synth(text, { engine, voiceId, lang, speed = 1, onProgress, apiKey }) {
   if (engine === 'none' || !text.trim()) return null;
-  const key = [engine, voiceId, lang, speed.toFixed(2), text].join('|');
+  const key = [engine, voiceId, lang, engine === 'openai' ? '' : speed.toFixed(2), text].join('|');
   if (memo.has(key)) return memo.get(key);
   let ab;
   if (engine === 'piper') {
     const { samples, sampleRate } = await piperSpeak(text, voiceId, speed, onProgress);
     const trimmed = trimSilence(samples, sampleRate);
     ab = getCtx().createBuffer(1, trimmed.length, sampleRate); ab.copyToChannel(trimmed, 0);
+  } else if (engine === 'eleven' || engine === 'openai') {
+    if (!apiKey) throw new Error(engine === 'eleven' ? 'Falta tu clave de ElevenLabs.' : 'Falta tu clave de OpenAI.');
+    const mp3 = engine === 'eleven' ? await elevenSpeak(text, voiceId, apiKey, speed) : await openaiSpeak(text, voiceId, apiKey, lang);
+    const dec = await getCtx().decodeAudioData(mp3);
+    const s0 = dec.getChannelData(0);
+    const s = trimSilence(s0, dec.sampleRate);
+    ab = getCtx().createBuffer(1, s.length, dec.sampleRate); ab.copyToChannel(s, 0);
   } else {
     const dec = await mespeakSpeak(text, lang, speed, getCtx());
     const s = trimSilence(dec.getChannelData(0), dec.sampleRate);

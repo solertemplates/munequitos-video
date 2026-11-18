@@ -55,7 +55,7 @@ h2 { font-size: 18px; margin: 0 0 12px; display: flex; align-items: center; gap:
 .opt span.d { color: var(--mut); font-size: 14px; }
 .ghost { border: 2px solid var(--bd); background: transparent; border-radius: 12px; padding: 6px 12px; cursor: pointer; font-weight: 500; }
 .ghost.sm { padding: 4px 10px; font-size: 13px; }
-input[type=text], input[type=url], select { width: 100%; border: 2px solid var(--bd); border-radius: 12px; padding: 10px 12px; background: var(--card); }
+input[type=text], input[type=url], input[type=password], select { width: 100%; border: 2px solid var(--bd); border-radius: 12px; padding: 10px 12px; background: var(--card); }
 input[type=range] { width: 100%; accent-color: var(--ac); }
 .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
 .check input { width: 20px; height: 20px; accent-color: var(--ac); }
@@ -90,3 +90,10 @@ details.cfg summary { cursor: pointer; font-weight: 500; color: var(--mut); }
 button.download { width: 100%; border: 0; cursor: pointer; font-size: 17px; }
 .share { background: #1c7ed6; }
 @media (max-width: 900px) { .top { padding-top: max(16px, env(safe-area-inset-top)); } }
+.cloud { margin-top: 10px; padding: 12px; border-radius: 14px; background: var(--chip); border: 2px dashed var(--bd); }
+.keyrow { display: flex; gap: 8px; align-items: center; }
+.keyrow input { flex: 1; min-width: 0; }
+.keyrow button { white-space: nowrap; flex: none; }
+.cloud a { color: #1c7ed6; font-weight: 700; }
+.ctaPreview { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ac2) 25%, var(--card)); font-weight: 700; }
+.ctaPreview:empty { display: none; }

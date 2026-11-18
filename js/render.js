@@ -2,9 +2,8 @@
 export const W = 1080, H = 1920, GY = 1390;
 const TAU = Math.PI * 2;
 const ROLES = ['A', 'B', 'C', 'D'];
-const CHAR_COLORS = { A: '#e63946', B: '#1f6fd6', C: '#2a9d8f', D: '#f08c00' };
 const LOOKS = {
-  cenar: { B: 'hair' }, detalles: { B: 'hair' }, celular: { B: 'hair' }, sueter: { B: 'hair', C: 'kid' },
+  cenar: { B: 'hair' }, orar: {}, lista: {}, detalles: { B: 'hair' }, celular: { B: 'hair' }, sueter: { B: 'hair', C: 'kid' },
   abuela: { B: 'granny' }, mama: { B: 'hair' }, jugar: { C: 'kid' }, opinan: { C: 'hair' }, grupo: {}, foto: { B: 'hair' },
 };
 export const FONT = "'Fredoka', 'Baloo 2', 'Arial Rounded MT Bold', 'Arial Black', system-ui, sans-serif";
@@ -21,8 +20,13 @@ let BW = false;
 function hexToRgb(h) { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 const cache = new Map();
 function C(hex) {
-  if (!BW) return hex;
   const k = hex; if (cache.has(k)) return cache.get(k);
+  if (!BW) {
+    // color suave (pastel) para que los muñequitos negros resalten
+    const [r, g, b] = hexToRgb(hex); const m = 0.34, W2 = [255, 250, 240];
+    const out = `rgb(${Math.round(r + (W2[0] - r) * m)},${Math.round(g + (W2[1] - g) * m)},${Math.round(b + (W2[2] - b) * m)})`;
+    cache.set(k, out); return out;
+  }
   const [r, g, b] = hexToRgb(hex); let l = 0.299 * r + 0.587 * g + 0.114 * b;
   l = 150 + (l / 255) * 105; // papel claro
   const v = Math.round(clamp(l, 0, 255)); const out = `rgb(${v},${v},${v})`; cache.set(k, out); return out;
@@ -172,6 +176,30 @@ const ENV_DRAW = {
     ctx.globalAlpha = 0.18; for (let i = 0; i < 40; i++) { const x = (hash(i) * 1400 + g * 20) % 1400 - 160, y = hash(i + 50) * 1500; circle(ctx, x, y, 8 + hash(i + 2) * 14, C('#ff8787')); } ctx.globalAlpha = 1;
     floor(ctx, '#ffe3e3', '#ffc9c9');
   },
+  iglesia(ctx, g) {
+    sky(ctx, '#f6ead8', '#efdcc2');
+    // ventanales en arco con vitrales
+    const vit = (x, y, w, h) => {
+      ctx.save(); ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath();
+      ctx.fillStyle = C('#cfe3ff'); ctx.fill(); ctx.clip();
+      const cols = ['#ffd6a5', '#bde0fe', '#caffbf', '#ffc6ff', '#fdffb6'];
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { ctx.fillStyle = C(cols[(r + c * 2) % 5]); ctx.fillRect(x + c * w / 4, y + r * h / 8, w / 4, h / 8); }
+      ctx.globalAlpha = 0.25 + Math.sin(g * 1.5) * 0.08; ctx.fillStyle = '#fffbe6'; ctx.fillRect(x, y, w, h); ctx.globalAlpha = 1;
+      ctx.restore(); ctx.strokeStyle = C('#a47148'); ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + w / 2); ctx.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.stroke();
+      line(ctx, [[x + w / 2, y], [x + w / 2, y + h]], C('#a47148'), 6); line(ctx, [[x, y + h * 0.55], [x + w, y + h * 0.55]], C('#a47148'), 6);
+    };
+    vit(70, 260, 230, 520); vit(780, 260, 230, 520);
+    // cruz y luz central
+    ctx.globalAlpha = 0.35; const gr = ctx.createRadialGradient(540, 420, 10, 540, 420, 320); gr.addColorStop(0, '#fff3c4'); gr.addColorStop(1, 'rgba(255,243,196,0)'); ctx.fillStyle = gr; ctx.fillRect(200, 100, 680, 640); ctx.globalAlpha = 1;
+    ctx.fillStyle = C('#a47148'); rr(ctx, 525, 250, 30, 300, 6); ctx.fill(); rr(ctx, 460, 320, 160, 30, 6); ctx.fill();
+    // velas
+    for (const vx of [420, 660]) { ctx.fillStyle = '#fffaf0'; rr(ctx, vx - 12, 640, 24, 90, 5); ctx.fill(); ctx.strokeStyle = C('#d6c3a5'); ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = C('#ffb703'); ctx.beginPath(); ctx.ellipse(vx + Math.sin(g * 7 + vx) * 2, 625, 8, 16, 0, 0, TAU); ctx.fill(); }
+    ctx.fillStyle = C('#e9d8c4'); ctx.fillRect(-600, GY - 360, W + 1200, 20);
+    // bancas
+    for (const [bx, bw] of [[-80, 400], [760, 420]]) { ctx.fillStyle = C('#b5835a'); rr(ctx, bx, GY - 250, bw, 40, 10); ctx.fill(); ctx.fillStyle = C('#9c6b45'); rr(ctx, bx - 10, GY - 140, bw + 20, 36, 10); ctx.fill(); ctx.fillRect(bx + 10, GY - 110, 22, 110); ctx.fillRect(bx + bw - 32, GY - 110, 22, 110); }
+    floor(ctx, '#d9c2a3', '#c4a882');
+    ctx.fillStyle = C('#c9454a'); ctx.beginPath(); ctx.moveTo(420, GY); ctx.lineTo(660, GY); ctx.lineTo(820, H + 300); ctx.lineTo(260, H + 300); ctx.fill();
+  },
   caminos(ctx, g, beat) {
     sky(ctx, '#9bd4ff', '#fff4d6');
     // lado izquierdo: nublado; lado derecho: soleado
@@ -213,137 +241,181 @@ function drawSigns(ctx, s, lang, g, side) {
 }
 
 // ---------- MUÑECO ----------
-const SK = { thigh: 96, shin: 96, torso: 165, neck: 16, head: 46, upper: 82, fore: 78 };
+// Proporciones tipo caricatura: cabeza grande, cuerpo negro sólido y grueso.
+const SK = { thigh: 98, shin: 96, torso: 150, neck: 10, head: 60, upper: 80, fore: 76 };
+const FIG = '#111111';
 
 function pose(action, t, g, seed) {
-  const P = { lean: 0, tilt: 0, y: 0, rot: 0, arms: [{ a: 0.28, e: 0.15 }, { a: 0.28, e: 0.15 }], legs: [{ a: -0.12, k: 0.05 }, { a: 0.12, k: 0.05 }], emo: 'neutral', talk: false, fx: null, hand: null, shake: 0 };
-  const bob = Math.sin(g * 3.2 + seed) * 0.03;
-  P.arms[0].a += bob; P.arms[1].a -= bob; P.y = Math.sin(g * 3.2 + seed) * 3;
+  const P = { lean: 0, tilt: 0, y: 0, rot: 0, bend: 0, sitAmt: 0, arms: [{ a: 0.3, e: 0.25 }, { a: 0.3, e: 0.25 }], legs: [{ a: -0.12, k: 0.08 }, { a: 0.12, k: 0.08 }], emo: 'neutral', talk: false, fx: null, hand: null, shake: 0 };
+  // respiración y balanceo suave del peso
+  const br = Math.sin(g * 2.2 + seed);
+  P.y = br * 3; P.arms[0].a += br * 0.03; P.arms[1].a -= br * 0.03; P.tilt = Math.sin(g * 1.1 + seed) * 0.04;
   const s = (f, a = 1, ph = 0) => Math.sin(t * f + ph + seed) * a;
   switch (action) {
-    case 'talk': P.arms[1] = { a: 0.9 + s(5, 0.3), e: 0.9 + s(6, 0.4) }; P.arms[0] = { a: 0.4 + s(4, 0.15, 1), e: 0.4 }; P.emo = 'happy'; P.talk = true; P.tilt = s(3, 0.06); break;
+    case 'talk': P.arms[1] = { a: 0.95 + s(4, 0.3), e: 1.0 + s(5, 0.45) }; P.arms[0] = { a: 0.45 + s(3, 0.15, 1), e: 0.5 + s(3.5, 0.2) }; P.emo = 'happy'; P.talk = true; P.tilt = s(2.5, 0.07); P.lean = s(2, 0.04); break;
     case 'walk': case 'run': {
-      const sp = action === 'run' ? 15 : 9, amp = action === 'run' ? 0.75 : 0.5;
-      P.legs = [{ a: s(sp, amp), k: Math.max(0, s(sp, 0.7, 1.4)) }, { a: -s(sp, amp), k: Math.max(0, -s(sp, 0.7, 1.4)) }];
-      P.arms = [{ a: 0.35 + s(sp, 0.5), e: 0.5 }, { a: 0.35 - s(sp, 0.5), e: 0.5 }];
-      P.y = -Math.abs(Math.sin(t * sp + seed)) * (action === 'run' ? 28 : 12); P.lean = action === 'run' ? 0.28 : 0.08; P.emo = 'happy';
+      const sp = action === 'run' ? 13 : 8.5, amp = action === 'run' ? 0.7 : 0.48;
+      const ph = t * sp + seed;
+      // piernas: la rodilla se dobla cuando la pierna va hacia atrás (paso natural)
+      P.legs = [0, Math.PI].map(o => { const sw = Math.sin(ph + o); return { a: sw * amp, k: Math.max(0, -Math.cos(ph + o)) * (action === 'run' ? 1.3 : 0.75) + 0.08 }; });
+      P.arms = [0, Math.PI].map(o => ({ a: 0.32 - Math.sin(ph + o) * 0.45, e: 0.45 + Math.max(0, Math.sin(ph + o)) * (action === 'run' ? 1.2 : 0.5) }));
+      P.y = -Math.abs(Math.cos(ph)) * (action === 'run' ? 22 : 9); P.lean = action === 'run' ? 0.26 : 0.07; P.bend = action === 'run' ? 0.15 : 0.05; P.emo = 'happy';
       if (action === 'run') { P.fx = 'dust'; P.emo = 'shock'; }
       break;
     }
-    case 'wave': P.arms[1] = { a: 2.6, e: 0.35 + s(11, 0.5) }; P.emo = 'happy'; break;
-    case 'hug': P.arms = [{ a: 1.45, e: 0.9 }, { a: 1.45, e: 0.9 }]; P.emo = 'love'; P.fx = 'hearts'; P.y += s(4, 4); break;
-    case 'cheer': P.arms = [{ a: 2.6 + s(9, 0.15), e: 0.1 }, { a: 2.6 - s(9, 0.15), e: 0.1 }]; P.y = -Math.abs(Math.sin(t * 7 + seed)) * 45; P.emo = 'laugh'; P.fx = 'sparkle'; break;
-    case 'jump': { const j = Math.abs(Math.sin(t * 6 + seed)); P.y = -j * 80; P.legs = [{ a: 0.3, k: j }, { a: -0.1, k: j * 1.2 }]; P.arms = [{ a: 2.4, e: 0.2 }, { a: 2.4, e: 0.2 }]; P.emo = 'laugh'; break; }
-    case 'facepalm': P.arms[1] = { a: 0.45, e: 2.55 }; P.tilt = 0.18 + s(2, 0.04); P.lean = 0.08; P.emo = 'tired'; break;
-    case 'shrug': { const u = (Math.sin(t * 4 + seed) + 1) / 2; P.arms = [{ a: 0.75, e: 1.25 + u * 0.3 }, { a: 0.75, e: 1.25 + u * 0.3 }]; P.tilt = 0.15 * Math.sin(t * 2); P.emo = 'meh'; P.y -= u * 6; break; }
-    case 'sad': P.lean = 0.14; P.tilt = 0.32; P.arms = [{ a: 0.08, e: 0.05 }, { a: 0.08, e: 0.05 }]; P.emo = 'sad'; P.fx = 'cloud'; break;
-    case 'cry': P.arms = [{ a: 0.5, e: 2.35 + s(14, 0.08) }, { a: 0.5, e: 2.35 - s(14, 0.08) }]; P.tilt = 0.12; P.emo = 'cry'; P.fx = 'tears'; P.y += s(14, 2); break;
-    case 'angry': P.arms = [{ a: 0.45, e: -0.3 }, { a: 0.45, e: -0.3 }]; P.emo = 'angry'; P.fx = 'steam'; P.shake = 4; P.lean = 0.06; break;
-    case 'laugh': P.lean = -0.12 + s(10, 0.06); P.arms = [{ a: 0.5, e: -1.3 }, { a: 0.5, e: -1.3 }]; P.emo = 'laugh'; P.fx = 'haha'; P.y += s(12, 4); break;
-    case 'think': P.arms[1] = { a: 0.38, e: 2.45 }; P.arms[0] = { a: 0.55, e: -1.2 }; P.tilt = -0.12 + s(1.5, 0.05); P.emo = 'think'; P.fx = 'question'; break;
-    case 'type': P.sit = true; P.arms = [{ a: 0.75, e: 0.55 + s(22, 0.12) }, { a: 0.75, e: 0.55 + s(22, 0.12, 2) }]; P.tilt = 0.15; P.emo = 'neutral'; P.desk = true; break;
-    case 'phone': P.arms[1] = { a: 0.3, e: 2.05 }; P.arms[0] = { a: 0.2, e: 0.1 }; P.tilt = 0.22; P.hand = 'phone'; P.emo = 'neutral'; P.fx = 'notif'; break;
-    case 'sleep': P.sit = true; P.tilt = 0.5 + s(1.6, 0.05); P.arms = [{ a: 0.2, e: 0.3 }, { a: 0.2, e: 0.3 }]; P.emo = 'sleep'; P.fx = 'zzz'; break;
-    case 'fall': { const k = easeOut(t / 0.55); P.rot = k * 1.45; P.emo = t < 0.6 ? 'shock' : 'dizzy'; P.arms = [{ a: 2.2, e: 0.5 }, { a: 2.0, e: 0.3 }]; P.fx = t > 0.6 ? 'stars' : null; break; }
-    case 'point': P.front = { a: 1.45, e: 0.05 }; P.emo = 'happy'; P.talk = true; break;
-    case 'sit': P.sit = true; P.arms = [{ a: 0.3, e: 0.6 }, { a: 0.3, e: 0.6 }]; P.emo = 'neutral'; break;
-    case 'give': P.front = { a: 1.3, e: 0.2 }; P.emo = 'happy'; P.hand = 'gift'; break;
-    case 'dance': { const d = Math.sin(t * 8 + seed); P.arms = [{ a: 1.6 + d * 0.9, e: 0.6 }, { a: 1.6 - d * 0.9, e: 0.6 }]; P.lean = d * 0.12; P.legs = [{ a: -0.2 + d * 0.15, k: Math.max(0, d) * 0.5 }, { a: 0.2 + d * 0.15, k: Math.max(0, -d) * 0.5 }]; P.y = -Math.abs(d) * 18; P.emo = 'laugh'; P.fx = 'notes'; break; }
-    case 'wait': P.arms[0] = { a: 0.95, e: 1.75 }; P.legs[1] = { a: 0.25, k: 0.25 + Math.max(0, s(10, 0.25)) }; P.emo = 'meh'; P.tilt = 0.1; P.fx = 'tap'; break;
-    case 'shock': { const p0 = easeOut(t / 0.2); P.arms = [{ a: 2.2 + s(30, 0.05), e: 0.4 }, { a: 2.2 - s(30, 0.05), e: 0.4 }]; P.y = -Math.sin(Math.min(1, t / 0.35) * Math.PI) * 50 * p0; P.emo = 'shock'; P.fx = 'bang'; P.shake = 3; P.lean = -0.08; break; }
-    case 'love': P.arms = [{ a: 0.45, e: -1.9 }, { a: 0.45, e: -1.9 }]; P.emo = 'love'; P.fx = 'hearts'; P.tilt = s(2, 0.1); break;
-    case 'tired': P.lean = 0.22; P.tilt = 0.3; P.arms = [{ a: 0.05 + s(3, 0.05), e: 0 }, { a: 0.05 - s(3, 0.05), e: 0 }]; P.legs = [{ a: -0.15, k: 0.25 }, { a: 0.15, k: 0.25 }]; P.emo = 'tired'; P.fx = 'sweat'; break;
-    case 'strong': P.arms = [{ a: 1.55, e: 1.9 + s(6, 0.12) }, { a: 1.55, e: 1.9 - s(6, 0.12) }]; P.emo = 'happy'; P.fx = 'sparkle'; P.legs = [{ a: -0.25, k: 0 }, { a: 0.25, k: 0 }]; break;
-    case 'lift': P.arms = [{ a: 2.85, e: 0.1 }, { a: 2.85, e: 0.1 }]; P.legs = [{ a: -0.25, k: 0.35 + s(6, 0.1) }, { a: 0.25, k: 0.35 + s(6, 0.1) }]; P.emo = 'tired'; P.hand = 'boxup'; P.fx = 'sweat'; P.shake = 1.5; break;
+    case 'wave': P.arms[1] = { a: 2.5, e: 0.45 + s(9, 0.55) }; P.arms[0] = { a: 0.35, e: 0.3 }; P.emo = 'happy'; P.tilt = s(4.5, 0.06); P.bend = s(4.5, 0.05); break;
+    case 'hug': P.arms = [{ a: 1.4, e: 1.05 }, { a: 1.4, e: 1.05 }]; P.emo = 'love'; P.fx = 'hearts'; P.y += s(3, 3); P.lean = 0.06; break;
+    case 'cheer': { const j = Math.abs(Math.sin(t * 6 + seed)); P.arms = [{ a: 2.55 + s(7, 0.18), e: 0.25 + s(7, 0.2) }, { a: 2.55 - s(7, 0.18), e: 0.25 - s(7, 0.2) }]; P.y = -j * 42; P.legs = [{ a: -0.15, k: 0.5 * (1 - j) + 0.1 }, { a: 0.15, k: 0.5 * (1 - j) + 0.1 }]; P.emo = 'laugh'; P.fx = 'sparkle'; break; }
+    case 'jump': { const j = Math.abs(Math.sin(t * 5.5 + seed)); P.y = -j * 75; P.legs = [{ a: 0.35, k: 0.3 + j * 0.9 }, { a: -0.1, k: 0.3 + j * 1.1 }]; P.arms = [{ a: 2.3, e: 0.4 }, { a: 2.3, e: 0.4 }]; P.emo = 'laugh'; break; }
+    case 'facepalm': P.arms[1] = { a: 0.5, e: 2.5 }; P.tilt = 0.22 + s(1.8, 0.05); P.lean = 0.1; P.bend = 0.1; P.emo = 'tired'; break;
+    case 'shrug': { const u = (Math.sin(t * 3.5 + seed) + 1) / 2; P.arms = [{ a: 0.8, e: 1.3 + u * 0.35 }, { a: 0.8, e: 1.3 + u * 0.35 }]; P.tilt = 0.16 * Math.sin(t * 1.8); P.emo = 'meh'; P.y -= u * 7; break; }
+    case 'sad': P.lean = 0.14; P.bend = 0.18; P.tilt = 0.32; P.arms = [{ a: 0.1, e: 0.15 }, { a: 0.1, e: 0.15 }]; P.emo = 'sad'; P.fx = 'cloud'; break;
+    case 'cry': P.arms = [{ a: 0.55, e: 2.3 + s(8, 0.08) }, { a: 0.55, e: 2.3 - s(8, 0.08) }]; P.tilt = 0.12; P.bend = 0.12; P.emo = 'cry'; P.fx = 'tears'; P.y += s(8, 2.5); break;
+    case 'angry': P.arms = [{ a: 0.5, e: -0.4 + s(6, 0.1) }, { a: 0.5, e: -0.4 - s(6, 0.1) }]; P.emo = 'angry'; P.fx = 'steam'; P.shake = 3; P.lean = 0.08; P.legs = [{ a: -0.25, k: 0.15 }, { a: 0.25, k: 0.15 }]; break;
+    case 'laugh': P.lean = -0.1 + s(8, 0.06); P.bend = -0.12; P.arms = [{ a: 0.55, e: -1.2 + s(8, 0.1) }, { a: 0.55, e: -1.2 - s(8, 0.1) }]; P.emo = 'laugh'; P.fx = 'haha'; P.y += s(9, 4); break;
+    case 'think': P.arms[1] = { a: 0.42, e: 2.4 }; P.arms[0] = { a: 0.6, e: -1.15 }; P.tilt = -0.14 + s(1.3, 0.05); P.emo = 'think'; P.fx = 'question'; break;
+    case 'type': P.sit = true; P.arms = [{ a: 0.75, e: 0.6 + s(14, 0.1) }, { a: 0.75, e: 0.6 + s(14, 0.1, 2) }]; P.tilt = 0.15; P.bend = 0.12; P.emo = 'neutral'; P.desk = true; break;
+    case 'phone': P.arms[1] = { a: 0.35, e: 2.0 }; P.arms[0] = { a: 0.25, e: 0.35 }; P.tilt = 0.24; P.bend = 0.08; P.hand = 'phone'; P.emo = 'neutral'; P.fx = 'notif'; break;
+    case 'sleep': P.sit = true; P.tilt = 0.5 + s(1.4, 0.05); P.bend = 0.2; P.arms = [{ a: 0.25, e: 0.5 }, { a: 0.25, e: 0.5 }]; P.emo = 'sleep'; P.fx = 'zzz'; break;
+    case 'fall': { const k = easeOut(t / 0.6); P.rot = k * 1.4; P.emo = t < 0.6 ? 'shock' : 'dizzy'; P.arms = [{ a: 2.1, e: 0.7 }, { a: 1.9, e: 0.5 }]; P.legs = [{ a: 0.3, k: 0.4 }, { a: -0.1, k: 0.2 }]; P.fx = t > 0.6 ? 'stars' : null; break; }
+    case 'point': P.front = { a: 1.45, e: 0.1 }; P.emo = 'happy'; P.talk = true; P.lean = 0.05; break;
+    case 'sit': P.sit = true; P.arms = [{ a: 0.35, e: 0.7 }, { a: 0.35, e: 0.7 }]; P.emo = 'neutral'; P.bend = 0.08; break;
+    case 'give': P.front = { a: 1.3, e: 0.3 }; P.emo = 'happy'; P.hand = 'gift'; P.lean = 0.08; break;
+    case 'dance': { const d = Math.sin(t * 6.5 + seed); P.arms = [{ a: 1.6 + d * 0.8, e: 0.8 + d * 0.3 }, { a: 1.6 - d * 0.8, e: 0.8 - d * 0.3 }]; P.lean = d * 0.12; P.bend = d * 0.12; P.legs = [{ a: -0.2 + d * 0.15, k: Math.max(0, d) * 0.6 + 0.1 }, { a: 0.2 + d * 0.15, k: Math.max(0, -d) * 0.6 + 0.1 }]; P.y = -Math.abs(d) * 16; P.emo = 'laugh'; P.fx = 'notes'; break; }
+    case 'wait': P.arms[0] = { a: 0.95, e: 1.75 }; P.legs[1] = { a: 0.25, k: 0.3 + Math.max(0, s(7, 0.3)) }; P.emo = 'meh'; P.tilt = 0.1; P.fx = 'tap'; break;
+    case 'shock': { const p0 = easeOut(t / 0.25); P.arms = [{ a: 2.2 + s(6, 0.06), e: 0.5 }, { a: 2.2 - s(6, 0.06), e: 0.5 }]; P.y = -Math.sin(Math.min(1, t / 0.4) * Math.PI) * 45 * p0; P.emo = 'shock'; P.fx = 'bang'; P.lean = -0.08; P.bend = -0.1; P.legs = [{ a: -0.2, k: 0.2 }, { a: 0.2, k: 0.2 }]; break; }
+    case 'love': P.arms = [{ a: 0.5, e: -1.85 }, { a: 0.5, e: -1.85 }]; P.emo = 'love'; P.fx = 'hearts'; P.tilt = s(1.8, 0.12); P.bend = s(1.8, 0.06); break;
+    case 'tired': P.lean = 0.22; P.bend = 0.2; P.tilt = 0.3; P.arms = [{ a: 0.08 + s(2.5, 0.06), e: 0.2 }, { a: 0.08 - s(2.5, 0.06), e: 0.2 }]; P.legs = [{ a: -0.15, k: 0.3 }, { a: 0.15, k: 0.3 }]; P.emo = 'tired'; P.fx = 'sweat'; break;
+    case 'strong': P.arms = [{ a: 1.55, e: 1.9 + s(5, 0.15) }, { a: 1.55, e: 1.9 - s(5, 0.15) }]; P.emo = 'happy'; P.fx = 'sparkle'; P.legs = [{ a: -0.25, k: 0.05 }, { a: 0.25, k: 0.05 }]; P.bend = -0.06; break;
+    case 'lift': P.arms = [{ a: 2.8, e: 0.25 }, { a: 2.8, e: 0.25 }]; P.legs = [{ a: -0.25, k: 0.4 + s(4, 0.1) }, { a: 0.25, k: 0.4 + s(4, 0.1) }]; P.emo = 'tired'; P.hand = 'boxup'; P.fx = 'sweat'; break;
+    case 'pray': P.arms = [{ a: 0.85, e: -3.0 }, { a: 0.85, e: -3.0 }]; P.tilt = 0.14 + s(1.2, 0.03); P.bend = 0.06; P.emo = 'peace'; P.fx = 'glow'; break;
     default: P.emo = 'happy';
   }
-  if (P.sit) { P.legs = [{ a: 1.5, k: 1.5 }, { a: 1.35, k: 1.5 }]; }
+  if (P.sit) { P.legs = [{ a: 1.5, k: 1.5 }, { a: 1.35, k: 1.45 }]; P.sitAmt = 1; }
+  // movimiento secundario: codos y rodillas nunca quedan rígidos
+  P.arms.forEach((A, i) => { A.e += 0.06 * Math.sin(g * 2.3 + seed + i * 1.7); A.a += 0.025 * Math.sin(g * 1.7 + seed + i); });
+  if (!P.sit) P.legs.forEach((Lg, i) => { Lg.k += 0.04 + 0.03 * Math.sin(g * 1.6 + seed + i * 2); });
   return P;
 }
 
-function drawFace(ctx, hx, hy, r, f, emo, mouthOpen, g, seed, color) {
-  const ex = f * 12, ink = BW ? '#111' : '#2b2d42';
-  const blink = ((g + seed * 1.7) % 3.6) < 0.12;
-  const eyeY = hy - 8, l = hx + ex - 15, rgt = hx + ex + 15;
-  ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  const dotEyes = (rad = 6) => { if (blink) { line(ctx, [[l - 6, eyeY], [l + 6, eyeY]], ink, 4); line(ctx, [[rgt - 6, eyeY], [rgt + 6, eyeY]], ink, 4); } else { circle(ctx, l, eyeY, rad, ink); circle(ctx, rgt, eyeY, rad, ink); } };
-  const mouth = (w, curve, y = hy + 16) => { ctx.beginPath(); ctx.moveTo(hx + ex - w, y); ctx.quadraticCurveTo(hx + ex, y + curve, hx + ex + w, y); ctx.stroke(); };
-  switch (emo) {
-    case 'happy': dotEyes(); if (mouthOpen > 0.2) { ctx.beginPath(); ctx.ellipse(hx + ex, hy + 18, 11, 4 + mouthOpen * 9, 0, 0, TAU); ctx.fill(); } else mouth(14, 12); break;
-    case 'laugh': line(ctx, [[l - 8, eyeY + 3], [l, eyeY - 5], [l + 8, eyeY + 3]], ink, 4); line(ctx, [[rgt - 8, eyeY + 3], [rgt, eyeY - 5], [rgt + 8, eyeY + 3]], ink, 4);
-      ctx.beginPath(); ctx.moveTo(hx + ex - 17, hy + 10); ctx.quadraticCurveTo(hx + ex, hy + 42, hx + ex + 17, hy + 10); ctx.closePath(); ctx.fill(); break;
-    case 'sad': case 'cry': dotEyes(5); line(ctx, [[l - 9, eyeY - 14], [l + 6, eyeY - 19]], ink, 4); line(ctx, [[rgt + 9, eyeY - 14], [rgt - 6, eyeY - 19]], ink, 4); mouth(12, -10, hy + 24); break;
-    case 'angry': dotEyes(5); line(ctx, [[l - 10, eyeY - 18], [l + 7, eyeY - 10]], ink, 5); line(ctx, [[rgt + 10, eyeY - 18], [rgt - 7, eyeY - 10]], ink, 5); mouth(13, -6, hy + 22); break;
-    case 'shock': circle(ctx, l, eyeY, 9, '#fff', ink, 4); circle(ctx, rgt, eyeY, 9, '#fff', ink, 4); circle(ctx, l, eyeY, 4, ink); circle(ctx, rgt, eyeY, 4, ink); ctx.beginPath(); ctx.ellipse(hx + ex, hy + 22, 10, 13, 0, 0, TAU); ctx.fill(); break;
-    case 'love': ctx.fillStyle = BW ? '#111' : '#e03131'; heartPath(ctx, l, eyeY, 20); ctx.fill(); heartPath(ctx, rgt, eyeY, 20); ctx.fill(); ctx.strokeStyle = ink; mouth(13, 12); break;
-    case 'tired': line(ctx, [[l - 8, eyeY], [l + 8, eyeY]], ink, 4); line(ctx, [[rgt - 8, eyeY], [rgt + 8, eyeY]], ink, 4); ctx.beginPath(); ctx.moveTo(hx + ex - 12, hy + 22); for (let i = 0; i <= 4; i++) ctx.lineTo(hx + ex - 12 + i * 6, hy + 22 + (i % 2 ? -4 : 3)); ctx.stroke(); break;
-    case 'sleep': ctx.beginPath(); ctx.arc(l, eyeY - 2, 7, 0.2, Math.PI - 0.2); ctx.stroke(); ctx.beginPath(); ctx.arc(rgt, eyeY - 2, 7, 0.2, Math.PI - 0.2); ctx.stroke(); circle(ctx, hx + ex, hy + 22, 5, null, ink, 3); break;
-    case 'think': circle(ctx, l + 3, eyeY - 4, 5, ink); circle(ctx, rgt + 3, eyeY - 4, 5, ink); line(ctx, [[hx + ex - 8, hy + 20], [hx + ex + 10, hy + 16]], ink, 4); break;
-    case 'meh': dotEyes(5); line(ctx, [[hx + ex - 11, hy + 20], [hx + ex + 11, hy + 20]], ink, 4); break;
-    case 'dizzy': ctx.font = `700 22px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('@', l, eyeY); ctx.fillText('@', rgt, eyeY); mouth(10, 6); break;
-    default: dotEyes(); if (mouthOpen > 0.2) { ctx.beginPath(); ctx.ellipse(hx + ex, hy + 18, 10, 3 + mouthOpen * 8, 0, 0, TAU); ctx.fill(); } else line(ctx, [[hx + ex - 9, hy + 18], [hx + ex + 9, hy + 18]], ink, 4);
-  }
-  if (!BW && (emo === 'happy' || emo === 'love' || emo === 'laugh')) { ctx.globalAlpha = 0.35; circle(ctx, l - 10, hy + 10, 8, '#ff8fa3'); circle(ctx, rgt + 10, hy + 10, 8, '#ff8fa3'); ctx.globalAlpha = 1; }
-  if (!BW && emo === 'angry') { ctx.globalAlpha = 0.25; circle(ctx, hx, hy, r - 4, '#ff6b6b'); ctx.globalAlpha = 1; }
+// Mezcla dos poses (transiciones suaves entre escenas)
+function blendPose(A, B, k) {
+  if (k >= 1) return B;
+  const m = (x, y) => lerp(x || 0, y || 0, k);
+  const out = { ...B };
+  for (const key of ['lean', 'tilt', 'y', 'rot', 'bend', 'sitAmt', 'shake']) out[key] = m(A[key], B[key]);
+  out.arms = B.arms.map((b, i) => ({ a: m(A.arms[i].a, b.a), e: m(A.arms[i].e, b.e) }));
+  out.legs = B.legs.map((b, i) => ({ a: m(A.legs[i].a, b.a), k: m(A.legs[i].k, b.k) }));
+  out.sit = out.sitAmt > 0.5; out.desk = k > 0.5 ? B.desk : A.desk;
+  if (k < 0.5) { out.hand = A.hand; }
+  return out;
 }
 
-function drawHandProp(ctx, type, x, y, g, color) {
-  if (type === 'phone') { ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#212529'; rr(ctx, -18, -32, 36, 62, 8); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#74c0fc'; rr(ctx, -13, -26, 26, 48, 4); ctx.fill(); ctx.restore(); }
-  if (type === 'gift') { ctx.fillStyle = C('#e64980'); rr(ctx, x - 35, y - 60, 70, 60, 6); ctx.fill(); ctx.fillStyle = C('#ffd43b'); ctx.fillRect(x - 7, y - 60, 14, 60); ctx.fillRect(x - 35, y - 37, 70, 12); }
-  if (type === 'boxup') { ctx.fillStyle = C('#d4a373'); rr(ctx, x - 90, y - 120, 180, 120, 8); ctx.fill(); ctx.strokeStyle = C('#9c6644'); ctx.lineWidth = 5; ctx.stroke(); line(ctx, [[x - 90, y - 60], [x + 90, y - 60]], C('#9c6644'), 4); }
-  if (type === 'coffee') { ctx.fillStyle = C('#ffffff'); rr(ctx, x - 20, y - 45, 40, 48, 8); ctx.fill(); ctx.strokeStyle = INK(); ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 30, 40, 10); }
+function applyFront(P, f) {
+  if (P.front) { P.arms = P.arms.slice(); P.arms[f > 0 ? 1 : 0] = { ...P.front }; P.front = null; }
+  return P;
+}
+
+// Extremidad flexible: curva suave que pasa por la articulación (codo/rodilla)
+function limb(ctx, a, b, c, lw) {
+  ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = FIG;
+  const cx = 2 * b[0] - (a[0] + c[0]) / 2, cy = 2 * b[1] - (a[1] + c[1]) / 2;
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(cx, cy, c[0], c[1]); ctx.stroke();
+}
+
+function drawFace(ctx, hx, hy, f, emo, mouthOpen, g, seed) {
+  const ink = FIG, ex = f * 9;
+  const L = hx + ex - 20, Rr = hx + ex + 20, ey = hy - 10, mx = hx + ex, my = hy + 24;
+  const blink = ((g + seed * 1.7) % 3.8) < 0.13;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const eyes = ({ rx = 13, ry = 16, pdx = f * 4, pdy = 1, pr = 7, lid = 0 } = {}) => {
+    if (blink) { for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey, rx * 0.9, 0.25, Math.PI - 0.25); ctx.stroke(); } return; }
+    for (const x of [L, Rr]) {
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 4.5; ctx.beginPath(); ctx.ellipse(x, ey, rx, ry, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(x + pdx, ey + pdy, pr, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + pdx + 2.5, ey + pdy - 2.5, pr * 0.32, 0, TAU); ctx.fill();
+      if (lid > 0) { ctx.save(); ctx.beginPath(); ctx.ellipse(x, ey, rx + 1, ry + 1, 0, 0, TAU); ctx.clip(); ctx.fillStyle = '#fff'; ctx.fillRect(x - rx - 3, ey - ry - 3, rx * 2 + 6, (ry * 2 + 6) * lid); ctx.restore(); line(ctx, [[x - rx, ey - ry + ry * 2 * lid], [x + rx, ey - ry + ry * 2 * lid]], ink, 5); }
+    }
+  };
+  const brows = (inner, outer, y = ey - 26) => { line(ctx, [[L - 14, y + outer], [L + 10, y + inner]], ink, 6); line(ctx, [[Rr + 14, y + outer], [Rr - 10, y + inner]], ink, 6); };
+  const smileOpen = (w, h) => {
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.moveTo(mx - w, my - 6); ctx.quadraticCurveTo(mx, my - 2, mx + w, my - 6); ctx.quadraticCurveTo(mx + w * 0.8, my + h, mx, my + h); ctx.quadraticCurveTo(mx - w * 0.8, my + h, mx - w, my - 6); ctx.closePath(); ctx.fill();
+    if (h > 12) { ctx.save(); ctx.clip(); ctx.fillStyle = '#ff6b81'; ctx.beginPath(); ctx.ellipse(mx, my + h, w * 0.55, h * 0.45, 0, 0, TAU); ctx.fill(); ctx.restore(); }
+  };
+  const curve = (w, c, y = my, lw = 5) => { ctx.strokeStyle = ink; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(mx - w, y); ctx.quadraticCurveTo(mx, y + c, mx + w, y); ctx.stroke(); };
+  const talk = mouthOpen > 0.15;
+  switch (emo) {
+    case 'happy': eyes(); if (talk) smileOpen(17, 6 + mouthOpen * 20); else smileOpen(18, 18); break;
+    case 'laugh': for (const x of [L, Rr]) line(ctx, [[x - 12, ey + 4], [x, ey - 8], [x + 12, ey + 4]], ink, 6); smileOpen(24, 34); break;
+    case 'sad': eyes({ pdy: 5, pdx: 0, ry: 15 }); brows(-8, 6); curve(15, -12, my + 10); break;
+    case 'cry': for (const x of [L, Rr]) line(ctx, [[x - 11, ey - 7], [x + 9, ey], [x - 11, ey + 7]].map(p => [x + (p[0] - x) * (x === L ? 1 : -1), p[1]]), ink, 6);
+      ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 8, 18, 14 + Math.sin(g * 10) * 3, 0, 0, TAU); ctx.fill(); break;
+    case 'angry': eyes({ ry: 13, pr: 6, lid: 0.3 }); brows(10, -6, ey - 22); ctx.fillStyle = '#fff'; ctx.strokeStyle = ink; ctx.lineWidth = 4; rr(ctx, mx - 18, my - 4, 36, 18, 6); ctx.fill(); ctx.stroke(); line(ctx, [[mx - 16, my + 5], [mx + 16, my + 5]], ink, 3); break;
+    case 'shock': eyes({ rx: 16, ry: 20, pr: 5, pdx: 0, pdy: 0 }); ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 8, 12, 17, 0, 0, TAU); ctx.fill(); break;
+    case 'love': ctx.fillStyle = BW ? '#111' : '#e03131'; heartPath(ctx, L, ey, 32); ctx.fill(); heartPath(ctx, Rr, ey, 32); ctx.fill(); smileOpen(16, 16); break;
+    case 'tired': eyes({ lid: 0.5, pdy: 4, pdx: 0 }); ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(mx - 15, my + 4); for (let i = 1; i <= 5; i++) ctx.lineTo(mx - 15 + i * 6, my + 4 + (i % 2 ? -5 : 3)); ctx.stroke(); break;
+    case 'sleep': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey - 2, 11, 0.3, Math.PI - 0.3); ctx.stroke(); } ctx.fillStyle = ink; ctx.beginPath(); ctx.ellipse(mx, my + 6, 6, 7 + Math.sin(g * 2) * 2, 0, 0, TAU); ctx.fill(); break;
+    case 'think': eyes({ pdx: f * 4 + 2, pdy: -7 }); brows(0, 4, ey - 26 - 4); line(ctx, [[mx - 10, my + 4], [mx + 12, my - 1]], ink, 5); break;
+    case 'meh': eyes({ lid: 0.38 }); line(ctx, [[mx - 14, my + 4], [mx + 14, my + 4]], ink, 5); break;
+    case 'peace': for (const x of [L, Rr]) { ctx.strokeStyle = ink; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x, ey - 4, 11, 0.35, Math.PI - 0.35); ctx.stroke(); } curve(13, 10, my); break;
+    case 'dizzy': ctx.fillStyle = ink; ctx.font = `700 34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('@', L, ey); ctx.fillText('@', Rr, ey); ctx.textBaseline = 'alphabetic'; curve(13, 8); break;
+    default: eyes(); if (talk) smileOpen(15, 5 + mouthOpen * 16); else curve(15, 9);
+  }
+}
+
+function drawHandProp(ctx, type, x, y) {
+  if (type === 'phone') { ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#212529'; rr(ctx, -20, -36, 40, 68, 9); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#a5d8ff'; rr(ctx, -15, -30, 30, 54, 5); ctx.fill(); ctx.restore(); }
+  if (type === 'gift') { ctx.fillStyle = C('#e64980'); rr(ctx, x - 38, y - 64, 76, 64, 6); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = C('#ffd43b'); ctx.fillRect(x - 8, y - 64, 16, 64); ctx.fillRect(x - 38, y - 40, 76, 13); }
+  if (type === 'boxup') { ctx.fillStyle = C('#d4a373'); rr(ctx, x - 95, y - 125, 190, 125, 8); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); line(ctx, [[x - 95, y - 62], [x + 95, y - 62]], FIG, 4); }
+  if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
 }
 
 function drawFigure(ctx, ch, P, g) {
-  const f = ch.f, color = BW ? '#111' : ch.color, lw = ch.kid ? 11 : 14;
+  const f = ch.f, lw = 19;
   ctx.save();
-  const sc = ch.kid ? 0.68 : 1;
-  ctx.translate(ch.x + (P.shake ? Math.sin(g * 60) * P.shake : 0), GY);
+  const sc = ch.kid ? 0.7 : 1;
+  ctx.translate(ch.x + (P.shake ? Math.sin(g * 9) * P.shake * 0.6 : 0), GY);
   if (P.rot) ctx.rotate(-f * P.rot);
   ctx.scale(sc, sc);
   // sombra
-  ctx.globalAlpha = 0.18; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 70, 14, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
-  // piernas
-  const legs = P.legs.map(L => { const kx = f * Math.sin(L.a) * SK.thigh, ky = Math.cos(L.a) * SK.thigh, sa = L.a - L.k; return [[0, 0], [kx, ky], [kx + f * Math.sin(sa) * SK.shin, ky + Math.cos(sa) * SK.shin]]; });
-  let maxY = Math.max(...legs.map(l => l[2][1]));
-  if (P.sit) maxY = 96 + 20; // sentado en silla
+  ctx.globalAlpha = 0.16; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 74, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+  // piernas (rodilla flexible)
+  const legs = P.legs.map(Lg => { const kx = f * Math.sin(Lg.a) * SK.thigh, ky = Math.cos(Lg.a) * SK.thigh, sa = Lg.a - Lg.k; return [[0, 0], [kx, ky], [kx + f * Math.sin(sa) * SK.shin, ky + Math.cos(sa) * SK.shin]]; });
+  const standY = Math.max(...legs.map(l => l[2][1])) + 8;
+  const maxY = lerp(standY, 118, P.sitAmt || 0);
   const hipY = -maxY + (P.y || 0);
   ctx.translate(0, hipY);
-  if (P.sit) { ctx.fillStyle = C('#6c757d'); rr(ctx, -f * 70 - 10, 8, 120, 18, 6); ctx.fill(); ctx.fillRect(-f * 70 - 2 + (f > 0 ? 0 : 92), 20, 12, maxY - 20); ctx.fillRect(-f * 70 + 85 - (f > 0 ? 0 : 92), 20, 12, maxY - 20); ctx.fillRect(-f * 70 - 10 + (f < 0 ? 104 : 0), -120, 14, 130); }
-  for (const l of legs) line(ctx, l, color, lw);
-  // torso
-  const lean = P.lean || 0;
+  if ((P.sitAmt || 0) > 0.5) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 4; rr(ctx, -f * 70 - 12 + (f < 0 ? 0 : 0), 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
+  for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 9, l[2][1] + 2, 18, 10, 0, 0, TAU); ctx.fill(); }
+  // torso con curva (columna flexible)
+  const lean = P.lean || 0, bend = P.bend || 0;
   const neck = [f * Math.sin(lean) * SK.torso, -Math.cos(lean) * SK.torso];
-  const sh = [f * Math.sin(lean) * (SK.torso - 20), -Math.cos(lean) * (SK.torso - 20)];
-  line(ctx, [[0, 0], neck], color, lw);
-  // cabeza
+  const sh = [f * Math.sin(lean) * (SK.torso - 18), -Math.cos(lean) * (SK.torso - 18)];
+  ctx.strokeStyle = FIG; ctx.lineWidth = lw + 1; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(neck[0] / 2 + f * bend * 55, neck[1] / 2, neck[0], neck[1]); ctx.stroke();
   const ha = lean + (P.tilt || 0);
   const hx = neck[0] + f * Math.sin(ha) * (SK.neck + SK.head), hy = neck[1] - Math.cos(ha) * (SK.neck + SK.head);
-  // brazos
   const arms = P.arms.map((A, i) => {
-    let side = i === 0 ? -1 : 1; let a = A.a, e = A.e;
-    if (P.front && ((f > 0 && i === 1) || (f < 0 && i === 0))) { a = P.front.a; e = P.front.e; }
+    const side = i === 0 ? -1 : 1; const a = A.a, e = A.e;
     const el = [sh[0] + side * Math.sin(a) * SK.upper, sh[1] + Math.cos(a) * SK.upper];
     const hd = [el[0] + side * Math.sin(a + e) * SK.fore, el[1] + Math.cos(a + e) * SK.fore];
     return [sh, el, hd];
   });
-  // pelo largo detrás
-  if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = BW ? '#333' : (ch.look === 'granny' ? '#ced4da' : '#5c3d2e'); ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 10, SK.head + 10, SK.head + 18, 0, 0, TAU); ctx.fill(); }
-  for (const a of arms) line(ctx, a, color, lw);
+  if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = ch.look === 'granny' ? '#6c6c6c' : FIG; ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 14, SK.head + 9, SK.head + 20, 0, 0, TAU); ctx.fill(); }
   // cabeza
-  circle(ctx, hx, hy, SK.head, '#ffffff', color, lw - 2);
-  if (ch.look === 'hair') { ctx.fillStyle = BW ? '#333' : '#5c3d2e'; ctx.beginPath(); ctx.arc(hx, hy - 6, SK.head + 4, Math.PI * 1.05, Math.PI * 1.95); ctx.fill(); circle(ctx, hx + f * 30, hy - 42, 12, BW ? '#666' : '#ff6b9a'); }
-  if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 10, 22, BW ? '#bbb' : '#dee2e6', BW ? '#333' : '#adb5bd', 3); circle(ctx, hx + f * 12 - 15, hy - 6, 12, null, '#495057', 3); circle(ctx, hx + f * 12 + 15, hy - 6, 12, null, '#495057', 3); }
-  if (ch.look === 'kid') { line(ctx, [[hx - 6, hy - SK.head], [hx + 4, hy - SK.head - 22], [hx + 14, hy - SK.head - 4]], color, 6); }
-  drawFace(ctx, hx, hy, SK.head, f, P.emo, P.mouth || 0, g, ch.seed, color);
-  // objetos en mano
+  circle(ctx, hx, hy, SK.head, '#ffffff', FIG, 8);
+  if (ch.look === 'hair') { ctx.fillStyle = FIG; ctx.beginPath(); ctx.arc(hx, hy - 4, SK.head + 4, Math.PI * 1.08, Math.PI * 1.92); ctx.quadraticCurveTo(hx, hy - SK.head + 18, hx - (SK.head + 2), hy - 12); ctx.fill(); }
+  if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 12, 24, '#6c6c6c', FIG, 5); for (const dx of [-20, 20]) circle(ctx, hx + f * 9 + dx, hy - 10, 18, null, FIG, 4); }
+  if (ch.look === 'kid') { line(ctx, [[hx - 10, hy - SK.head + 2], [hx - 2, hy - SK.head - 24], [hx + 8, hy - SK.head - 2], [hx + 18, hy - SK.head - 20], [hx + 24, hy - SK.head + 6]], FIG, 7); }
+  drawFace(ctx, hx, hy, f, P.emo, P.mouth || 0, g, ch.seed);
+  // brazos por delante (codo flexible) y manos
+  for (const a of arms) { limb(ctx, a[0], a[1], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); }
   const fh = arms[f > 0 ? 1 : 0][2];
-  if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 10, g);
-  if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10, g);
-  if (P.hand === 'boxup') drawHandProp(ctx, 'boxup', (arms[0][2][0] + arms[1][2][0]) / 2, Math.min(arms[0][2][1], arms[1][2][1]) + 10, g);
-  if (P.desk) { ctx.fillStyle = C('#8d6e63'); ctx.fillRect(f * 60, 0, f * 200, 16); ctx.fillRect(f * 230 - 8, 16, 16, maxY - 16); ctx.fillStyle = C('#343a40'); ctx.save(); ctx.translate(f * 150, 0); ctx.fillRect(-60, -8, 120, 8); ctx.beginPath(); ctx.moveTo(-50 * f, -8); ctx.lineTo(-62 * f, -90); ctx.lineTo(-8 * f, -90); ctx.lineTo(4 * f, -8); ctx.fill(); ctx.restore(); }
+  if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 12);
+  if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10);
+  if (P.hand === 'boxup') drawHandProp(ctx, 'boxup', (arms[0][2][0] + arms[1][2][0]) / 2, Math.min(arms[0][2][1], arms[1][2][1]) + 10);
+  if (P.desk) { ctx.fillStyle = C('#8d6e63'); ctx.fillRect(f * 60, 0, f * 200, 16); ctx.fillRect(f * 230 - 8, 16, 16, maxY - 16); ctx.fillStyle = '#343a40'; ctx.save(); ctx.translate(f * 150, 0); ctx.fillRect(-60, -8, 120, 8); ctx.beginPath(); ctx.moveTo(-50 * f, -8); ctx.lineTo(-62 * f, -90); ctx.lineTo(-8 * f, -90); ctx.lineTo(4 * f, -8); ctx.fill(); ctx.restore(); }
   ctx.restore();
-  // devolver posición de cabeza en mundo para efectos
   return { hx: ch.x + hx * sc, hy: GY + (hipY + hy) * sc };
 }
 
@@ -371,6 +443,8 @@ function drawFx(ctx, type, x, y, t, g, seed) {
       case 'stars': ctx.fillStyle = BW ? '#222' : '#fcc419'; star(ctx, x + Math.cos(g * 5 + k * 1.6) * 60, y - 30 + Math.sin(g * 5 + k * 1.6) * 18, 14, g); ctx.fill(); break;
       case 'cloud': if (k === 0) { ctx.globalAlpha = 0.9; ctx.fillStyle = BW ? '#999' : '#868e96'; ctx.beginPath(); ctx.arc(x - 40, y - 150, 34, 0, TAU); ctx.arc(x, y - 165, 42, 0, TAU); ctx.arc(x + 42, y - 150, 32, 0, TAU); ctx.fill(); } line(ctx, [[x - 40 + k * 26, y - 110 + ph * 60], [x - 44 + k * 26, y - 90 + ph * 60]], BW ? '#555' : '#4dabf7', 4); break;
       case 'tap': break;
+      case 'glow':
+        ctx.globalAlpha = 0.6 * Math.sin(ph * Math.PI); ctx.fillStyle = BW ? '#888' : '#ffd43b'; star(ctx, x + (r - 0.5) * 220, y - 90 - ph * 120, 9, g); ctx.fill(); break;
     }
   }
   ctx.globalAlpha = 1;
@@ -418,6 +492,7 @@ function drawProp(ctx, prop, t, g, lang, beat) {
     case 'plant': { const gr = easeOut(t / 1.5); ctx.fillStyle = C('#c96f4a'); ctx.beginPath(); ctx.moveTo(-90, 40); ctx.lineTo(90, 40); ctx.lineTo(70, 170); ctx.lineTo(-70, 170); ctx.fill(); line(ctx, [[0, 40], [0, 40 - gr * 220]], C('#2f9e44'), 14); for (let i = 0; i < 3; i++) { const ly = 20 - i * 70 * gr; if (gr > i * 0.3) { ctx.fillStyle = C('#51cf66'); ctx.beginPath(); ctx.ellipse((i % 2 ? 1 : -1) * 50, ly - 20, 50 * gr, 22 * gr, (i % 2 ? -0.5 : 0.5), 0, TAU); ctx.fill(); } } break; }
     case 'laptop': ctx.fillStyle = C('#343a40'); rr(ctx, -170, -130, 340, 220, 14); ctx.fill(); ctx.fillStyle = C('#74c0fc'); rr(ctx, -150, -112, 300, 184, 6); ctx.fill(); ctx.fillStyle = C('#495057'); rr(ctx, -200, 90, 400, 26, 8); ctx.fill(); for (let i = 0; i < 4; i++) { ctx.fillStyle = C(i % 2 ? '#ffffff' : '#d0ebff'); rr(ctx, -130 + (i % 2) * 140, -95 + Math.floor(i / 2) * 85, 120, 70, 8); ctx.fill(); circle(ctx, -70 + (i % 2) * 140, -60 + Math.floor(i / 2) * 85, 18, C('#ffd8a8')); } break;
     case 'phone': ctx.fillStyle = '#212529'; rr(ctx, -95, -170, 190, 330, 30); ctx.fill(); ctx.fillStyle = BW ? '#eee' : '#e7f5ff'; rr(ctx, -80, -150, 160, 290, 18); ctx.fill(); for (let i = 0; i < 3; i++) { const ap = easeOut((t - i * 0.25) / 0.3); if (ap > 0) { ctx.fillStyle = C(i % 2 ? '#ffffff' : '#d3f9d8'); rr(ctx, -66 + (i % 2) * 30, -130 + i * 80, 105 * ap, 60, 14); ctx.fill(); } } ctx.fillStyle = BW ? '#111' : '#f03e3e'; circle(ctx, 85, -160, 34, ctx.fillStyle); ctx.fillStyle = '#fff'; setFont(ctx, 34, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(1 + Math.floor(t * 5) % 99), 85, -158); ctx.textBaseline = 'alphabetic'; break;
+    case 'light': { ctx.restore(); ctx.save(); const cx0 = 540, cy0 = -120; ctx.globalAlpha = 0.5; for (let i = 0; i < 9; i++) { const a = Math.PI / 2 + (i - 4) * 0.13 + Math.sin(g * 0.6 + i) * 0.02; const gr = ctx.createLinearGradient(cx0, cy0, cx0 + Math.cos(a) * 1500, cy0 + Math.sin(a) * 1500); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.9)' : 'rgba(255,240,180,0.9)'); gr.addColorStop(1, 'rgba(255,240,180,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(cx0, cy0); ctx.lineTo(cx0 + Math.cos(a - 0.04) * 1600, cy0 + Math.sin(a - 0.04) * 1600); ctx.lineTo(cx0 + Math.cos(a + 0.04) * 1600, cy0 + Math.sin(a + 0.04) * 1600); ctx.fill(); } ctx.globalAlpha = 1; break; }
     case 'confetti': if (beat.kind !== 'after') break; ctx.restore(); ctx.save(); for (let i = 0; i < 40; i++) { const ph = (t * 0.5 + hash(i)) % 1; ctx.fillStyle = C(['#ff6b6b', '#fcc419', '#51cf66', '#4dabf7', '#cc5de8'][i % 5]); ctx.save(); ctx.translate(hash(i + 3) * 1080 + Math.sin(ph * 9 + i) * 40, ph * 1500 - 100); ctx.rotate(ph * 12 + i); ctx.fillRect(-10, -6, 20, 12); ctx.restore(); } break;
   }
   ctx.restore();
@@ -443,20 +518,19 @@ function cameraFor(beat, bi, t, chars) {
     case 'close': z = lerp(1.75, 1.95, sp); fx = focusChar.x; fy = GY - 330; break;
     case 'dutch': z = lerp(1.35, 1.5, sp); fx = 540; fy = 1060; rot = (h > 0.5 ? 1 : -1) * 0.06; break;
     case 'push': z = lerp(1.05, 1.6, easeInOut(sp)); fx = mainX; fy = GY - 300; break;
-    case 'crash': z = lerp(2.2, 1.6, easeOut(sp * 2)); fx = mainX; fy = GY - 330; rot = Math.sin(t * 40) * 0.02 * (1 - sp); break;
+    case 'crash': z = lerp(1.9, 1.55, easeOut(sp * 1.6)); fx = mainX; fy = GY - 340; break;
     case 'slow': z = lerp(1.05, 1.22, t / beat.dur); fx = 540; fy = 1000; break;
     case 'cta': z = lerp(1.0, 1.06, t / beat.dur); fx = 540; fy = 960; break;
     case 'side': z = lerp(1.15, 1.3, sp); fx = 540 + beat.side * 170; fy = 1000; break;
   }
   // golpe de zoom al cambiar de plano
-  const punch = Math.max(0, 1 - st / 0.18) * 0.07;
+  const punch = Math.pow(Math.max(0, 1 - st / 0.3), 2) * 0.045;
   z *= 1 + punch;
-  // vibración según intensidad
-  const lvl = beat.kind === 'rep' ? (beat.level || 0) : beat.kind === 'twist' ? 1.2 : 0;
-  const shake = lvl * 6;
-  const ox = Math.sin(t * 37 + bi) * shake + Math.sin(t * 0.9 + bi) * 10;
-  const oy = Math.cos(t * 41 + bi) * shake + Math.cos(t * 0.7) * 6;
-  rot += Math.sin(t * 0.6 + bi) * 0.012 + (beat.kind === 'rep' ? Math.sin(t * 3) * 0.01 * lvl : 0);
+  // movimiento de cámara suave y continuo (sin temblores bruscos)
+  const lvl = beat.kind === 'rep' ? (beat.level || 0) : beat.kind === 'twist' ? 1 : 0;
+  const ox = Math.sin(t * 0.9 + bi) * 10 + Math.sin(t * 1.6 + bi * 2) * 3 * lvl;
+  const oy = Math.cos(t * 0.7 + bi) * 6 + Math.cos(t * 1.3 + bi) * 2 * lvl;
+  rot += Math.sin(t * 0.6 + bi) * 0.01 + (beat.kind === 'rep' ? Math.sin(t * 1.2 + bi) * 0.006 * lvl : 0);
   return { z, fx: fx + ox, fy: fy + oy, rot, si, st };
 }
 
@@ -499,13 +573,13 @@ function drawCaption(ctx, beat, t, opts) {
     ctx.restore(); return;
   }
   // subtítulo normal (grande, palabra activa resaltada)
-  const yC = kind === 'cta' ? 1180 : 1530;
+  const yC = kind === 'cta' ? (beat.ctaTypes && beat.ctaTypes.length > 1 ? 1310 : 1180) : 1530;
   const { size, lines } = fitText(ctx, text, 920, 3, kind === 'twist' ? 84 : 76, 48, 700);
   const lh = size * 1.18; const total = lines.length * lh; const y0 = yC - total / 2;
   const words = lines.flat(); const cum = wordWeights(words); const { p, started } = activeWord(beat, t, words.length);
   let cur = cum.findIndex(c => c >= p); if (!started) cur = -1;
   const pin = kind === 'twist' ? backOut((t - (beat.voiceLead || 0)) / 0.3) : backOut(t / 0.25);
-  ctx.save(); ctx.translate(540, yC); ctx.scale(pin, pin); if (kind === 'twist') ctx.rotate(Math.sin(t * 30) * 0.01 * Math.max(0, 1 - t)); ctx.translate(-540, -yC);
+  ctx.save(); ctx.translate(540, yC); ctx.scale(pin, pin);  ctx.translate(-540, -yC);
   let wi = 0; ctx.lineJoin = 'round';
   lines.forEach((ln, li) => {
     const spc = ctx.measureText(' ').width * 1.35 + 4; const lw = ln.reduce((a, w) => a + ctx.measureText(w).width, 0) + spc * (ln.length - 1); let x = 540 - lw / 2; const y = y0 + (li + 0.82) * lh;
@@ -526,59 +600,90 @@ function cursor(ctx, x, y, press) {
   ctx.save(); ctx.translate(x, y); ctx.scale(press ? 0.88 : 1, press ? 0.88 : 1);
   ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 6;
   ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 95); ctx.lineTo(24, 72); ctx.lineTo(42, 112); ctx.lineTo(60, 104); ctx.lineTo(42, 66); ctx.lineTo(74, 64); ctx.closePath(); ctx.fill(); ctx.stroke();
-  if (press) { ctx.globalAlpha = 0.6; ctx.strokeStyle = BW ? '#111' : '#ffd60a'; ctx.lineWidth = 6; for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 - 0.9 + i * 0.36; line(ctx, [[Math.cos(a) * 30, Math.sin(a) * 30], [Math.cos(a) * 60, Math.sin(a) * 60]], ctx.strokeStyle, 6); } }
+  if (press) { ctx.strokeStyle = BW ? '#111' : '#ffd60a'; for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 - 0.9 + i * 0.36; line(ctx, [[Math.cos(a) * 30, Math.sin(a) * 30], [Math.cos(a) * 60, Math.sin(a) * 60]], ctx.strokeStyle, 6); } }
   ctx.restore();
 }
-function drawCTA(ctx, beat, t, g, opts) {
-  const type = beat.ctaType || 'like'; const lang = opts.lang; const es = lang === 'es';
-  const ap = backOut(t / 0.4); const clickT = 1.1; const clicked = t > clickT; const press = t > clickT - 0.12 && t < clickT + 0.12;
-  ctx.save(); ctx.translate(540, 560); ctx.scale(ap, ap);
-  const red = BW ? '#111' : '#ff0033';
-  const cx = lerp(380, 60, easeInOut((t - 0.3) / 0.8)), cy = lerp(420, 40, easeInOut((t - 0.3) / 0.8));
-  if (type === 'like' || type === 'combo') {
-    const bx = type === 'combo' ? -260 : 0; const pulse = clicked ? 1 + Math.sin((t - clickT) * 10) * 0.08 * Math.exp(-(t - clickT)) : 1;
-    ctx.save(); ctx.translate(bx, 0); ctx.scale(pulse, pulse);
-    circle(ctx, 0, 0, 150, clicked ? (BW ? '#111' : '#ff4d6d') : '#ffffff', '#111', 10);
-    ctx.fillStyle = clicked ? '#ffffff' : (BW ? '#111' : '#ff4d6d'); heartPath(ctx, 0, 10, 170); ctx.fill();
+function outlinedText(ctx, text, x, y, size) { setFont(ctx, size, 700); ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.strokeText(text, x, y); ctx.fillText(text, x, y); }
+
+// Cada widget se dibuja centrado en (0,0). Devuelve dónde toca el cursor.
+function ctaWidget(ctx, type, t, clickT, g, opts) {
+  const es = opts.lang === 'es'; const clicked = t > clickT; const red = BW ? '#111' : '#ff0033';
+  const dt = t - clickT;
+  if (type === 'like') {
+    const pulse = clicked ? 1 + Math.sin(dt * 10) * 0.08 * Math.exp(-dt * 1.5) : 1;
+    ctx.save(); ctx.scale(pulse, pulse);
+    circle(ctx, 0, 0, 140, clicked ? (BW ? '#111' : '#ff4d6d') : '#ffffff', '#111', 10);
+    ctx.fillStyle = clicked ? '#ffffff' : (BW ? '#111' : '#ff4d6d'); heartPath(ctx, 0, 10, 160); ctx.fill();
     ctx.restore();
-    if (clicked) for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, d = 170 + (t - clickT) * 220; ctx.globalAlpha = Math.max(0, 1 - (t - clickT)); ctx.fillStyle = BW ? '#111' : '#ff4d6d'; heartPath(ctx, bx + Math.cos(a) * d, Math.sin(a) * d, 50); ctx.fill(); ctx.globalAlpha = 1; }
-    setFont(ctx, 54, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.strokeText(es ? 'ME GUSTA' : 'LIKE', bx, 230); ctx.fillText(es ? 'ME GUSTA' : 'LIKE', bx, 230);
-    if (type === 'combo') {
-      const on = t > clickT + 0.6; ctx.fillStyle = on ? (BW ? '#555' : '#495057') : red; rr(ctx, 30, -70, 400, 140, 70); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
-      setFont(ctx, 56, 700); ctx.fillStyle = '#fff'; ctx.fillText(on ? (es ? 'SIGUIENDO ✓' : 'FOLLOWING ✓') : (es ? 'SEGUIR' : 'FOLLOW'), 230, 20);
-      ctx.restore(); cursor(ctx, 540 + (t < clickT + 0.3 ? cx - 260 : 230 + 20), 560 + (t < clickT + 0.3 ? cy : 30), press || (t > clickT + 0.5 && t < clickT + 0.7)); return;
-    }
-  } else if (type === 'follow') {
+    if (clicked && dt < 1) for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, d = 160 + dt * 220; ctx.globalAlpha = Math.max(0, 1 - dt); ctx.fillStyle = BW ? '#111' : '#ff4d6d'; heartPath(ctx, Math.cos(a) * d, Math.sin(a) * d, 46); ctx.fill(); ctx.globalAlpha = 1; }
+    outlinedText(ctx, es ? 'ME GUSTA' : 'LIKE', 0, 215, 54);
+    return { x: 10, y: 10 };
+  }
+  if (type === 'follow') {
     const page = (opts.page || '').trim();
-    circle(ctx, 0, -90, 120, BW ? '#fff' : '#ffd60a', '#111', 10);
-    // mini muñeco en el avatar
-    line(ctx, [[0, -100], [0, -40]], '#111', 10); circle(ctx, 0, -130, 30, '#fff', '#111', 8); line(ctx, [[-35, -80], [0, -90], [35, -80]], '#111', 8);
-    if (page) { setFont(ctx, 54, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 12; ctx.strokeText(page, 0, 90); ctx.fillText(page, 0, 90); }
-    const on = clicked; ctx.fillStyle = on ? (BW ? '#555' : '#495057') : red; rr(ctx, -220, 130, 440, 140, 70); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
-    setFont(ctx, 60, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText(on ? (es ? 'SIGUIENDO ✓' : 'FOLLOWING ✓') : (es ? 'SEGUIR' : 'FOLLOW'), 0, 222);
-    if (on) { const bt = t - clickT; ctx.save(); ctx.translate(260, 60); ctx.rotate(Math.sin(bt * 20) * 0.3 * Math.exp(-bt)); ctx.fillStyle = BW ? '#111' : '#fcc419'; ctx.beginPath(); ctx.moveTo(-40, 30); ctx.quadraticCurveTo(-40, -50, 0, -50); ctx.quadraticCurveTo(40, -50, 40, 30); ctx.closePath(); ctx.fill(); circle(ctx, 0, 40, 12, ctx.fillStyle); ctx.restore(); }
-    ctx.restore(); cursor(ctx, 540 + cx * 0.5, 560 + 200 + cy * 0.5, press); return;
-  } else if (type === 'stars') {
+    circle(ctx, 0, -95, 105, BW ? '#fff' : '#ffe8a3', '#111', 10);
+    line(ctx, [[0, -100], [0, -45]], '#111', 12); circle(ctx, 0, -128, 30, '#fff', '#111', 8); line(ctx, [[-34, -78], [0, -88], [34, -78]], '#111', 9);
+    if (page) outlinedText(ctx, page, 0, 70, 50);
+    ctx.fillStyle = clicked ? (BW ? '#555' : '#495057') : red; rr(ctx, -220, 100, 440, 130, 65); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
+    setFont(ctx, 58, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.fillText(clicked ? (es ? 'SIGUIENDO ✓' : 'FOLLOWING ✓') : (es ? 'SEGUIR' : 'FOLLOW'), 0, 186);
+    if (clicked) { ctx.save(); ctx.translate(250, 40); ctx.rotate(Math.sin(dt * 18) * 0.3 * Math.exp(-dt * 1.5)); ctx.fillStyle = BW ? '#111' : '#fcc419'; ctx.beginPath(); ctx.moveTo(-36, 28); ctx.quadraticCurveTo(-36, -46, 0, -46); ctx.quadraticCurveTo(36, -46, 36, 28); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 5; ctx.stroke(); circle(ctx, 0, 38, 11, BW ? '#111' : '#fcc419', '#111', 4); ctx.restore(); }
+    return { x: 0, y: 165 };
+  }
+  if (type === 'stars') {
+    if (!BW) { ctx.globalAlpha = 0.25 + Math.sin(g * 3) * 0.08; circle(ctx, 0, 0, 330, '#fff3bf'); ctx.globalAlpha = 1; }
     for (let i = 0; i < 5; i++) {
-      const fillT = easeOut((t - 0.4 - i * 0.18) / 0.25), x = -320 + i * 160, y = Math.sin(g * 3 + i) * 10;
-      ctx.save(); ctx.translate(x, y); ctx.scale(0.8 + fillT * 0.25, 0.8 + fillT * 0.25);
-      star(ctx, 0, 0, 70, 0); ctx.fillStyle = fillT > 0.5 ? (BW ? '#111' : '#fcc419') : '#ffffff'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 7; ctx.stroke(); ctx.restore();
+      const fillT = easeOut((t - (clickT - 0.75) - i * 0.15) / 0.25), x = -300 + i * 150, y = Math.sin(g * 2.5 + i) * 8;
+      ctx.save(); ctx.translate(x, y); ctx.scale(0.82 + fillT * 0.2, 0.82 + fillT * 0.2);
+      star(ctx, 0, 0, 66, 0); ctx.fillStyle = fillT > 0.5 ? (BW ? '#111' : '#fcc419') : '#ffffff'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 7; ctx.stroke(); ctx.restore();
     }
-    if (!BW) { ctx.globalAlpha = 0.25 + Math.sin(g * 4) * 0.1; circle(ctx, 0, 0, 380, '#fff3bf'); ctx.globalAlpha = 1; }
-    setFont(ctx, 58, 700); ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111'; ctx.lineWidth = 12; const st = es ? 'ESTRELLAS' : 'STARS'; ctx.strokeText('★ ' + st + ' ★', 0, 180); ctx.fillText('★ ' + st + ' ★', 0, 180);
-  } else if (type === 'link') {
+    outlinedText(ctx, es ? '★ APÓYANOS ★' : '★ SUPPORT US ★', 0, 160, 56);
+    return { x: 300, y: 10 };
+  }
+  if (type === 'link') {
     const label = (opts.linkLabel || opts.linkUrl || (es ? 'Enlace' : 'Link')).trim();
     setFont(ctx, 52, 700); const tw = Math.min(900, ctx.measureText(label).width + 170);
-    const sc = press ? 0.94 : 1; ctx.save(); ctx.scale(sc, sc);
-    ctx.fillStyle = BW ? '#111' : '#1c7ed6'; rr(ctx, -tw / 2, -75, tw, 150, 75); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
-    // icono de enlace
+    const press = Math.abs(dt) < 0.12; const sc = press ? 0.94 : 1; ctx.save(); ctx.scale(sc, sc);
+    ctx.fillStyle = BW ? '#111' : '#1c7ed6'; rr(ctx, -tw / 2, -72, tw, 144, 72); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 9; ctx.save(); ctx.translate(-tw / 2 + 75, 0); ctx.rotate(-0.78); rr(ctx, -34, -14, 40, 28, 14); ctx.stroke(); rr(ctx, -6, -14, 40, 28, 14); ctx.stroke(); ctx.restore();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let lbl = label; while (ctx.measureText(lbl).width > tw - 170 && lbl.length > 4) lbl = lbl.slice(0, -2); if (lbl !== label) lbl += '…'; ctx.fillText(lbl, 30, 4); ctx.restore(); ctx.textBaseline = 'alphabetic';
-    const arrowY = -150 + Math.sin(g * 8) * 15; ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.strokeStyle = '#111'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-40, arrowY - 70); ctx.lineTo(40, arrowY - 70); ctx.lineTo(40, arrowY - 20); ctx.lineTo(75, arrowY - 20); ctx.lineTo(0, arrowY + 40); ctx.lineTo(-75, arrowY - 20); ctx.lineTo(-40, arrowY - 20); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.restore(); cursor(ctx, 540 + cx * 0.6, 560 + 20 + cy * 0.5, press); return;
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; let lbl = label; while (ctx.measureText(lbl).width > tw - 170 && lbl.length > 4) lbl = lbl.slice(0, -2); if (lbl !== label) lbl += '…'; ctx.fillText(lbl, 30, 4); ctx.textBaseline = 'alphabetic'; ctx.restore();
+    const ay = -150 + Math.sin(g * 5) * 12; ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.strokeStyle = '#111'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-40, ay - 70); ctx.lineTo(40, ay - 70); ctx.lineTo(40, ay - 20); ctx.lineTo(75, ay - 20); ctx.lineTo(0, ay + 40); ctx.lineTo(-75, ay - 20); ctx.lineTo(-40, ay - 20); ctx.closePath(); ctx.fill(); ctx.stroke();
+    return { x: 20, y: 10 };
   }
-  ctx.restore();
-  if (type === 'like') cursor(ctx, 540 + cx * 0.5, 560 + cy * 0.5, press);
+  // combo: me gusta + compartir + seguir
+  const items = [['heart', es ? 'ME GUSTA' : 'LIKE'], ['share', es ? 'COMPARTIR' : 'SHARE'], ['plus', es ? 'SEGUIR' : 'FOLLOW']];
+  items.forEach(([ic, lb], i) => {
+    const x = -290 + i * 290, on = t > clickT + i * 0.35;
+    circle(ctx, x, 0, 100, on ? (BW ? '#111' : ['#ff4d6d', '#1c7ed6', '#ff0033'][i]) : '#fff', '#111', 9);
+    const col = on ? '#fff' : '#111'; ctx.fillStyle = col; ctx.strokeStyle = col;
+    if (ic === 'heart') { heartPath(ctx, x, 8, 110); ctx.fill(); }
+    if (ic === 'share') { ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x - 40, 35); ctx.quadraticCurveTo(x - 30, -25, x + 25, -25); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + 10, -55); ctx.lineTo(x + 45, -25); ctx.lineTo(x + 10, 5); ctx.stroke(); }
+    if (ic === 'plus') { line(ctx, [[x - 40, 0], [x + 40, 0]], col, 16); line(ctx, [[x, -40], [x, 40]], col, 16); }
+    outlinedText(ctx, lb, x, 165, 40);
+  });
+  return { x: -290, y: 10 };
+}
+
+function drawCTA(ctx, beat, t, g, opts) {
+  const types = beat.ctaTypes && beat.ctaTypes.length ? beat.ctaTypes : [beat.ctaType || 'like'];
+  const two = types.length > 1;
+  const slots = two ? [{ y: 370, s: 0.86, click: 1.0 }, { y: 820, s: 0.86, click: 1.9 }] : [{ y: 560, s: 1, click: 1.1 }];
+  const hits = [];
+  types.forEach((type, i) => {
+    const sl = slots[i]; const ap = backOut((t - i * 0.18) / 0.4);
+    ctx.save(); ctx.translate(540, sl.y + Math.sin(g * 2 + i) * 6); ctx.scale(sl.s * ap, sl.s * ap);
+    const hit = ctaWidget(ctx, type, t, sl.click, g, opts);
+    ctx.restore();
+    hits.push({ x: 540 + hit.x * sl.s, y: sl.y + hit.y * sl.s, click: sl.click });
+  });
+  // el cursor viaja de un botón al otro y los toca
+  let cx = 860, cy = 1500, press = false;
+  let prev = { x: 860, y: 1500, click: 0.25 };
+  for (const h of hits) {
+    if (t < h.click) { const k = easeInOut((t - prev.click - 0.05) / Math.max(0.2, h.click - prev.click - 0.2)); cx = lerp(prev.x, h.x, k); cy = lerp(prev.y, h.y, k); break; }
+    cx = h.x; cy = h.y; press = press || Math.abs(t - h.click) < 0.12; prev = h;
+  }
+  if (hits.some(h => Math.abs(t - h.click) < 0.12)) press = true;
+  cursor(ctx, cx, cy, press);
 }
 
 // ---------- ESCENA ----------
@@ -597,16 +702,16 @@ function sceneChars(beat, t, opts) {
     let act = acts[role] || acts._all || (beat.kind === 'twist' ? 'shock' : beat.kind === 'cta' ? 'wave' : beat.kind === 'reflect' ? 'idle' : 'idle');
     if (!acts[role] && !acts._all && i >= 2 && beat.kind === 'rep') act = beat.level > 0.6 ? 'laugh' : 'idle';
     let x = xs[i];
-    chars.push({ role, act, x, baseX: x, color: CHAR_COLORS[role], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', f: 1 });
+    chars.push({ role, act, x, baseX: x, seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', f: 1 });
   }
   // caminos: A camina hacia el lado del camino
-  if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 230; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle') c.act = 'walk'; c.walkDir = beat.side; }
+  if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 230; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle') { c.act = 'walk'; c.settleK = clamp((t - Math.min(1.2, beat.dur)) / 0.4, 0, 1); } c.walkDir = beat.side; }
   else if (beat.env === 'caminos' && n === 1) chars[0].x = 540;
   // movimientos
   const mid = chars.reduce((s, c) => s + c.x, 0) / Math.max(1, chars.length);
   for (const c of chars) {
-    if (c.act === 'walk' && !c.walkDir) { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 320, c.baseX, easeOut(t / Math.min(1.4, beat.dur * 0.7))); c.walkDir = -from; if (t > 1.4) c.settle = true; }
-    if (c.act === 'run') { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 700, c.baseX, easeOut(t / Math.min(0.9, beat.dur * 0.5))); c.walkDir = -from; }
+    if (c.act === 'walk' && !c.walkDir) { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 320, c.baseX, easeOut(t / Math.min(1.4, beat.dur * 0.7))); c.walkDir = -from; c.settleK = clamp((t - Math.min(1.4, beat.dur * 0.7)) / 0.4, 0, 1); }
+    if (c.act === 'run') { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 700, c.baseX, easeOut(t / Math.min(0.9, beat.dur * 0.5))); c.walkDir = -from; c.settleK = clamp((t - Math.min(0.9, beat.dur * 0.5)) / 0.35, 0, 1); }
   }
   const huggers = chars.filter(c => c.act === 'hug');
   if (huggers.length >= 2) { const hm = (huggers[0].baseX + huggers[1].baseX) / 2; const k = easeOut(t / 0.6); huggers[0].x = lerp(huggers[0].baseX, hm - 75, k); huggers[1].x = lerp(huggers[1].baseX, hm + 75, k); }
@@ -617,9 +722,14 @@ function sceneChars(beat, t, opts) {
     if (c.walkDir) c.f = c.walkDir;
     else if (chars.length > 1) { const others = chars.filter(o => o !== c); const nearest = others.sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0]; c.f = nearest.x >= c.x ? 1 : -1; }
     else c.f = Math.sin(t * 0.8 + 1) > -0.2 ? 1 : -1;
-    if (c.act === 'walk' && c.settle && !beat.side) c.act = 'idle';
   }
   return chars;
+}
+
+function charPose(c, t, g) {
+  let P = applyFront(pose(c.act, t, g, c.seed), c.f);
+  if (c.settleK > 0) P = blendPose(P, applyFront(pose('idle', t, g, c.seed), c.f), easeInOut(c.settleK));
+  return P;
 }
 
 export function prepareProject(project) {
@@ -650,15 +760,21 @@ export function drawFrame(ctx, project, time, scale = 1) {
   (ENV_DRAW[env] || ENV_DRAW.vacio)(ctx, g, beat);
   // líneas de velocidad en repeticiones intensas o giro
   const intensity = beat.kind === 'rep' ? beat.level : beat.kind === 'twist' ? 1 : 0;
-  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.18 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 10; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + Math.floor(g * 12) * 0.13; const r0 = 520 + hash(i + Math.floor(g * 12)) * 200; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
+  if (intensity > 0.55) { ctx.save(); ctx.globalAlpha = 0.12 * intensity; ctx.strokeStyle = BW ? '#000' : '#ffffff'; ctx.lineWidth = 8; for (let i = 0; i < 28; i++) { const a = i / 28 * TAU + g * 0.12; const r0 = 560 + hash(i) * 220; ctx.beginPath(); ctx.moveTo(cam.fx + Math.cos(a) * r0, cam.fy + Math.sin(a) * r0); ctx.lineTo(cam.fx + Math.cos(a) * 1500, cam.fy + Math.sin(a) * 1500); ctx.stroke(); } ctx.restore(); }
   // personajes
   const speakingRoles = new Set(); const acts = parseActs(beat.a);
   for (const c of chars) if (c.act === 'talk' || c.act === 'point') speakingRoles.add(c.role);
   if (!speakingRoles.size && (beat.kind === 'hook' || beat.kind === 'setup') && chars[0]) speakingRoles.add(chars[0].role);
   const vt = t - (beat.voiceLead || 0); const speaking = vt > 0 && vt < (beat.voiceDur || beat.dur);
+  // transición suave: mezcla la pose final de la escena anterior con la nueva
+  const BL = 0.45; let prevMap = null, pb = null;
+  if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
   for (const c of chars) {
-    const P = pose(c.act, t, g, c.seed);
+    let P = charPose(c, t, g);
+    const pc = prevMap && prevMap.get(c.role);
+    if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
     if (speaking && speakingRoles.has(c.role)) { P.mouth = (Math.sin(g * 26 + c.seed) + 1) / 2; if (P.emo === 'neutral') P.emo = 'happy'; }
+    if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
     const head = drawFigure(ctx, c, P, g);
     drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
   }

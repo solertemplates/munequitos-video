@@ -16,6 +16,7 @@ export const THEMES = [
   { id: 'dinero', emoji: '💰', name: R('Dinero', 'Money') },
   { id: 'habitos', emoji: '🏃', name: R('Hábitos', 'Habits') },
   { id: 'redes', emoji: '📱', name: R('Redes sociales', 'Social media') },
+  { id: 'fe', emoji: '🙏', name: R('Fe y religión', 'Faith') },
 ];
 
 export const ENVIRONMENTS = [
@@ -27,6 +28,7 @@ export const ENVIRONMENTS = [
   { id: 'ciudad', emoji: '🏙️', name: R('Ciudad', 'City') },
   { id: 'playa', emoji: '🏖️', name: R('Playa', 'Beach') },
   { id: 'cocina', emoji: '🍳', name: R('Cocina', 'Kitchen') },
+  { id: 'iglesia', emoji: '⛪', name: R('Iglesia', 'Church') },
   { id: 'vacio', emoji: '⬜', name: R('Fondo liso', 'Plain') },
 ];
 
@@ -441,6 +443,58 @@ export const SITUATIONS = {
       reflect: [R('No compares tu detrás de cámaras...', 'Don\'t compare your behind-the-scenes...'), R('con el mejor momento de alguien más.', 'with someone else\'s highlight reel.')],
     },
   ],
+  fe: [
+    {
+      id: 'orar', env: 'casa', mode: 'esc',
+      title: R('"Mañana oro con calma"', '"I\'ll pray properly tomorrow"'),
+      hook: R('Le pasa a casi todos los que tienen fe...', 'This happens to almost everyone who has faith...'),
+      setup: [L('Siempre digo: "Mañana oro con calma."', 'I always say: "Tomorrow I\'ll pray properly."', 'A:talk', '', 'pop')],
+      reps: [
+        L('Lunes: mucho trabajo.', 'Monday: too much work.', 'A:type', 'laptop', 'type'),
+        L('Martes: estoy muy cansado.', 'Tuesday: I\'m too tired.', 'A:tired', '', 'sad'),
+        L('Miércoles: "Solo reviso el celular."', 'Wednesday: "Just checking my phone."', 'A:phone', 'phone', 'notif'),
+        L('Jueves: "Dios me entiende."', 'Thursday: "God understands."', 'A:shrug', '', 'boing'),
+        L('Viernes: un capítulo más de la serie.', 'Friday: one more episode.', 'A:sit', 'clock:1:00', 'pop'),
+        L('Sábado: me quedé dormido.', 'Saturday: I fell asleep.', 'A:sleep', '', 'drum'),
+      ],
+      twist: L('Un día todo salió mal... oré, y sentí que Él me había esperado toda la semana.', 'One day everything went wrong... I prayed, and felt He had waited for me all week.', 'A:pray', 'light', 'scratch'),
+      after: L('Cinco minutos. Y el día cambió por completo.', 'Five minutes. And the whole day changed.', 'A:love', 'heart', 'heart'),
+      reflect: [R('Dios no se cansa de esperarte.', 'God never gets tired of waiting for you.'), R('Una oración sencilla puede cambiar tu día entero.', 'One simple prayer can change your whole day.')],
+    },
+    {
+      id: 'lista', env: 'iglesia', mode: 'esc',
+      title: R('Mi lista de oración (y el giro)', 'My prayer list (and the twist)'),
+      hook: R('Así era mi lista de oración. Mira cómo cambió.', 'This was my prayer list. Watch how it changed.'),
+      setup: [L('Mi lista de oración de cada noche:', 'My prayer list, every night:', 'A:pray', '', 'pop')],
+      reps: [
+        L('"Señor, dame un mejor trabajo."', '"Lord, give me a better job."', 'A:pray', 'bulb', 'pop'),
+        L('"Y un carro nuevo, si se puede."', '"And a new car, if possible."', 'A:pray', 'money', 'boing'),
+        L('"Que mi equipo gane el domingo."', '"Let my team win on Sunday."', 'A:cheer', 'trophy', 'boing'),
+        L('"Que no llueva el sábado."', '"Please, no rain on Saturday."', 'A:pray', '', 'boing'),
+        L('"Que mi jefe esté de buen humor."', '"Let my boss be in a good mood."', 'A:pray', '', 'boing'),
+        L('"Y que nunca se acabe el café."', '"And may the coffee never run out."', 'A:pray', 'coffee', 'drum'),
+      ],
+      twist: L('Un día probé solo dar gracias... y la lista fue más larga que la de pedidos.', 'One day I tried only giving thanks... and that list was longer than my requests.', 'A:shock', 'heart', 'scratch'),
+      after: L('Salud, familia, un techo, un nuevo día.', 'Health, family, a roof, a new day.', 'all:love', 'light', 'heart'),
+      reflect: [R('La gratitud convierte lo que tienes en suficiente.', 'Gratitude turns what you have into enough.'), R('Antes de pedir, agradece.', 'Before you ask, give thanks.')],
+    },
+    {
+      id: 'confiar', env: 'caminos', mode: 'caminos',
+      title: R('Dos caminos: preocuparte o confiar', 'Two paths: worry or trust'),
+      hook: R('Cuando llega un problema, solo hay dos caminos.', 'When trouble comes, there are only two paths.'),
+      setup: [L('Llega un problema. Dos caminos.', 'Trouble comes. Two paths.', 'A:shock', 'sign:Preocuparme|Confiar en Dios|Worry|Trust God', 'whoosh')],
+      reps: [
+        L('Camino uno: te preocupas toda la noche.', 'Path one: you worry all night.', 'A:tired', 'left', 'sad', true),
+        L('Y el problema sigue igual.', 'And the problem stays the same.', 'A:cry', 'left', 'sad', true),
+        L('Camino dos: oras y descansas.', 'Path two: you pray and rest.', 'A:pray', 'right', 'ding', true),
+        L('Y amaneces con fuerzas para enfrentarlo.', 'And you wake up with strength to face it.', 'A:strong', 'right', 'applause', true),
+        L('Mil vueltas en la cama.', 'A thousand turns in bed.', 'A:sleep', 'left', 'boing'),
+        L('Paz en medio de la tormenta.', 'Peace in the middle of the storm.', 'A:love', 'right', 'heart'),
+      ],
+      twist: L('Lo curioso: el problema era el mismo. Lo que cambió fue el corazón.', 'Funny thing: the problem was the same. What changed was the heart.', 'A:pray', 'light', 'scratch'),
+      reflect: [R('La fe no siempre quita la tormenta...', 'Faith doesn\'t always take the storm away...'), R('pero te da paz para atravesarla.', 'but it gives you peace to walk through it.')],
+    },
+  ],
 };
 
 // Ganchos genéricos por tema (se combinan con el gancho propio de la situación)
@@ -452,6 +506,7 @@ const THEME_HOOKS = {
   familia: [R('Esto lo vivimos todos en casa.', 'We all lived this at home.'), R('La familia es así. Y por eso la amamos.', 'Family is like this. And that\'s why we love it.'), R('Mira esto y luego llama a tu familia.', 'Watch this, then call your family.')],
   dinero: [R('Por esto nunca te alcanza el dinero.', 'This is why you never have enough money.'), R('El error de dinero que todos cometemos.', 'The money mistake we all make.'), R('Tu billetera necesita ver esto.', 'Your wallet needs to see this.')],
   habitos: [R('Si siempre empiezas y abandonas, mira esto.', 'If you always start and quit, watch this.'), R('El hábito que cambió mi vida en un año.', 'The habit that changed my life in one year.'), R('Tu yo del futuro te va a agradecer esto.', 'Your future self will thank you for this.')],
+  fe: [R('Si crees en Dios, mira esto hasta el final.', 'If you believe in God, watch this to the end.'), R('Este es el mensaje que necesitabas hoy.', 'This is the message you needed today.'), R('A todos los que tenemos fe nos pasa esto.', 'Everyone who has faith goes through this.')],
   redes: [R('Las redes no te muestran esto.', 'Social media won\'t show you this.'), R('Esto pasa detrás de cada pantalla.', 'This happens behind every screen.'), R('Deja de deslizar un segundo y mira esto.', 'Stop scrolling for a second and watch this.')],
 };
 const GENERIC_HOOKS = [
@@ -467,7 +522,7 @@ const CTAS = {
   like: [
     R('Si te pasó, dale me gusta.', 'If this happened to you, hit like.'),
     R('Dale like si te sacó una sonrisa.', 'Like this if it made you smile.'),
-    R('Un me gusta si te tocó el corazón.', 'Give it a like if it touched your heart.'),
+    R('Dale me gusta si te tocó el corazón.', 'Hit like if it touched your heart.'),
   ],
   follow: [
     R('Sigue {page} para más historias como esta.', 'Follow {page} for more stories like this.'),
@@ -475,9 +530,9 @@ const CTAS = {
     R('Sigue la página y no te pierdas la próxima.', 'Follow the page so you don\'t miss the next one.'),
   ],
   stars: [
-    R('Apóyanos con estrellas para seguir creando.', 'Support us with stars so we can keep creating.'),
-    R('Si te gustó, envíanos unas estrellas.', 'If you liked it, send us some stars.'),
-    R('Tus estrellas hacen posible el próximo video.', 'Your stars make the next video possible.'),
+    R('Si este video te ayudó, apóyanos con unas estrellas para seguir creando.', 'If this video helped you, support us with a few stars so we can keep creating.'),
+    R('Si te gustó, puedes regalarnos unas estrellas. ¡Gracias de corazón!', 'If you enjoyed it, you can send us a few stars. Thank you so much!'),
+    R('Con unas estrellas nos ayudas a seguir haciendo videos como este.', 'A few stars help us keep making videos like this one.'),
   ],
   link: [
     R('Toca el enlace: {link}.', 'Tap the link: {link}.'),
@@ -489,6 +544,24 @@ const CTAS = {
     R('Guárdalo, compártelo y síguenos para más.', 'Save it, share it, and follow for more.'),
   ],
 };
+
+// Segunda parte cuando se combinan dos llamados: "Dale me gusta si te tocó el corazón y sigue la página."
+const CTA_SHORT = {
+  like: R('dale me gusta', 'hit like'),
+  follow: R('sigue {page}', 'follow {page}'),
+  stars: R('apóyanos con unas estrellas', 'support us with a few stars'),
+  link: R('toca el enlace: {link}', 'tap the link: {link}'),
+  combo: R('compártelo con quien lo necesite', 'share it with someone who needs it'),
+};
+
+export function combineCtas(list, lang) {
+  if (list.length < 2) return list[0].text[lang];
+  const first = list[0].text[lang].replace(/[.!¡]+$/, '').trim();
+  const second = CTA_SHORT[list[1].type][lang];
+  // si la primera frase ya tiene "y", la segunda va como frase aparte para que suene natural
+  if (/\s(y|and)\s/i.test(first) || first.split(/\s+/).length > 9) return `${first}. ${second[0].toUpperCase()}${second.slice(1)}.`;
+  return `${first} ${lang === 'es' ? 'y' : 'and'} ${second}.`;
+}
 
 export const CTA_TYPES = ['like', 'follow', 'stars', 'link', 'combo'];
 

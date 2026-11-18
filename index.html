@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=2">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -71,7 +71,9 @@
 
     <div class="card">
       <div class="h2row"><h2><span class="n">6</span><span data-i18n="s6">Llamado a la acción</span></h2><button id="moreCtas" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
+      <p class="hint" data-i18n="ctaHint" style="margin:0 0 8px">Toca uno o dos (se combinan en una sola frase).</p>
       <div id="ctas" class="options"></div>
+      <p id="ctaPreview" class="ctaPreview"></p>
       <details class="cfg">
         <summary data-i18n="ctaCfg">Configurar página y enlace</summary>
         <label class="lbl" for="page" data-i18n="pageName">Nombre de tu página (aparece en el video)</label>
@@ -87,7 +89,12 @@
       <h2><span class="n">7</span><span data-i18n="s7">Voz, música y efectos</span></h2>
       <label class="lbl" for="voice" data-i18n="voice">Voz automática</label>
       <select id="voice"></select>
-      <p class="hint" id="voiceHint" data-i18n="voiceHint">La voz neural se descarga una sola vez (≈60 MB) y queda guardada en el navegador.</p>
+      <p class="hint" id="voiceHint"></p>
+      <div id="cloudCfg" class="cloud" hidden>
+        <label class="lbl" for="apiKey" id="apiKeyLbl">Tu clave</label>
+        <div class="keyrow"><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-..."><button id="loadVoices" class="ghost" type="button" data-i18n="loadVoices">Cargar mis voces</button></div>
+        <p class="hint" id="cloudHint"></p>
+      </div>
       <div class="row">
         <div class="field grow">
           <label class="lbl" for="music" data-i18n="music">Música</label>
@@ -134,6 +141,6 @@
   </section>
 </main>
 <footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
-<script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js?v=2"></script>
 </body>
 </html>

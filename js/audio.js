@@ -151,7 +151,11 @@ export async function renderMix(project, { voiceVol = 1, musicVol = 0.6, sfxOn =
     if (b.fx) sfx(ctx, sfxBus, nb, b.fx, b.start + (b.kind === 'twist' ? 0.02 : 0.08));
     // efectos extra en cortes de plano dentro del beat
     for (let s = 1; s < b.shots; s++) sfx(ctx, sfxBus, nb, 'pop', b.start + (b.dur / b.shots) * s);
-    if (b.kind === 'cta') { sfx(ctx, sfxBus, nb, 'click', b.start + 1.1); sfx(ctx, sfxBus, nb, b.ctaType === 'stars' ? 'sparkle' : 'ding', b.start + 1.15); }
+    if (b.kind === 'cta') {
+      const types = b.ctaTypes && b.ctaTypes.length ? b.ctaTypes : [b.ctaType];
+      const clicks = types.length > 1 ? [1.0, 1.9] : [1.1];
+      types.forEach((ty, k) => { sfx(ctx, sfxBus, nb, 'click', b.start + clicks[k]); sfx(ctx, sfxBus, nb, ty === 'stars' ? 'sparkle' : 'ding', b.start + clicks[k] + 0.05); });
+    }
     if (b.kind === 'reflect' && i > 0 && project.beats[i - 1].kind !== 'reflect') sfx(ctx, sfxBus, nb, 'sparkle', b.start + 0.1);
     if (b.voiceBuffer) { const s = ctx.createBufferSource(); s.buffer = b.voiceBuffer; s.connect(voiceBus); s.start(b.start + b.voiceLead); }
   });
