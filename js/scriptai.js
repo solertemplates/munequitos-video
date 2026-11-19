@@ -1,9 +1,9 @@
 // Guionista con IA (OpenAI): busca lo que está viral y escribe historias en el estilo de la app.
 const R = (es, en) => ({ es, en });
 
-const ACTIONS = ['idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
+const ACTIONS = ['slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
 const PROPS = ['money', 'pizza', 'heart', 'gift', 'box', 'chart_up', 'chart_down', 'trophy', 'calendar', 'coffee', 'bulb', 'rocket', 'plant', 'laptop', 'phone', 'confetti', 'light'];
-const FX = ['pop', 'boing', 'ding', 'whoosh', 'scratch', 'applause', 'cash', 'sad', 'drum', 'type', 'heart', 'alarm', 'laugh', 'notif'];
+const FX = ['punch', 'thud', 'fall', 'zip', 'gasp', 'laughs', 'sneak', 'pop', 'boing', 'ding', 'whoosh', 'scratch', 'applause', 'cash', 'sad', 'drum', 'type', 'heart', 'alarm', 'laugh', 'notif'];
 const ENVS = ['oficina', 'casa', 'parque', 'cafe', 'ciudad', 'playa', 'cocina', 'iglesia'];
 const THEME_EN = { amistad: 'friendship', matrimonio: 'marriage', trabajo: 'work and jobs', emprendimiento: 'starting a small business', familia: 'family', dinero: 'money, prices and the economy', habitos: 'habits and health', redes: 'social media', fe: 'faith and God' };
 
@@ -67,7 +67,7 @@ export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars
     : `LANGUAGE AND TONE: natural, casual American English, the way people actually talk. No textbook phrasing.`;
   const sys = `Eres un guionista top de videos virales de muñequitos de palitos (Shorts, Reels, TikTok) con millones de vistas. ${voice}
 HUMOR: chistes que den risa DE VERDAD: picardía, exageración, sarcasmo cariñoso, situaciones con las que todo el mundo se identifica. Picante pero LIMPIO: sin groserías, sin insultos, sin doble sentido sexual, sin burlarse de grupos.
-DIÁLOGO: es una conversación de ida y vuelta entre los personajes, NO un narrador hablando solo. Alterna quién habla casi en cada línea (A, B, A, B…); el narrador (A contando) solo en 1 o 2 líneas. El que escucha SIEMPRE reacciona (risa, susto, cara de 'no puede ser').\nRITMO: frases cortísimas (máx 8 palabras; el giro hasta 14). Cada línea es un golpe nuevo (sorpresa, chiste, exageración, alguien entra corriendo, algo se cae) y la situación CRECE hasta el giro final, con una mini-sorpresa a la mitad, para que nadie quiera irse antes del final. Cero relleno.
+MENOS PALABRAS, MÁS ACCIÓN: la MITAD de las líneas de "reps" son ACCIONES MUDAS (comedia física sin voz): resbalones, desmayos, tropezones, persecuciones, huidas corriendo, entrar de puntillas, arrodillarse. Una acción muda lleva "silent":true, "t":"" y una onomatopeya corta de cómic en "o" (¡PLAF!, ¡ZAS!, ¡CATAPLUM!, ¡PUM!). Las líneas habladas, máximo 6 palabras.\nDIÁLOGO: es una conversación de ida y vuelta entre los personajes, NO un narrador hablando solo. Alterna quién habla casi en cada línea (A, B, A, B…); el narrador (A contando) solo en 1 o 2 líneas. El que escucha SIEMPRE reacciona (risa, susto, cara de 'no puede ser').\nRITMO: frases cortísimas (máx 8 palabras; el giro hasta 14). Cada línea es un golpe nuevo (sorpresa, chiste, exageración, alguien entra corriendo, algo se cae) y la situación CRECE hasta el giro final, con una mini-sorpresa a la mitad, para que nadie quiera irse antes del final. Cero relleno.
 FINAL: un giro sorprendente y después una reflexión corta que emocione, sin cursilería (2 frases, máx 12 palabras cada una). NO pongas llamado a la acción (la app lo agrega).
 Responde SOLO con JSON válido.`;
   const user = `Tema: ${themeName}. Tendencia o noticia del momento para usar en la historia: ${trend ? `"${trend}"` : '(ninguna: usa algo actual de la vida diaria, precios o trabajo)'}.
@@ -80,7 +80,7 @@ Formato exacto:
  "env":"uno de: ${ENVS.join(', ')}",
  "hooks":["3 ganchos distintos para los primeros 2 segundos, máx 10 palabras, que obliguen a quedarse"],
  "setup":{"w":"A","t":"línea","a":"A:talk B:shrug","p":"","fx":"pop","r":"shock"},
- "reps":[ exactamente ${reps} objetos {"w":"quién lo dice (A, B…)","t":"línea","a":"acciones","p":"objeto","fx":"efecto","r":"reacción del que escucha: laugh, shock, facepalm, love o cry"} ],
+ "reps":[ exactamente ${reps} objetos, alternando hablados y mudos. Hablado: {"w":"quién lo dice (A, B…)","t":"línea","a":"acciones","p":"objeto","fx":"efecto","r":"reacción del que escucha: laugh, shock, facepalm, love o cry"}. Mudo: {"silent":true,"t":"","o":"¡PLAF!","a":"A:slip B:laugh","fx":"thud","r":"laugh"} ],
  "twist":{"w":"A o B","t":"giro final","a":"...","p":"...","fx":"scratch","r":"shock"},
  "after":{"t":"remate corto y gracioso después del giro","a":"...","p":"","fx":"laugh"},
  "reflect":["frase 1","frase 2"],
@@ -109,7 +109,7 @@ function toSituation(idea, k, lang, nChars) {
   const env = caminos ? 'caminos' : (ENVS.includes(idea.env) ? idea.env : 'casa');
   const setup = mk(idea.setup);
   if (caminos) { const sg = idea.signs.map(s => String(s).slice(0, 22)); setup.p = `sign:${sg[0]}|${sg[1]}|${sg[0]}|${sg[1]}`; }
-  const reps = (idea.reps || []).filter(r => r && r.t).map(r => { const o = mk(r, { core: caminos }); if (caminos) o.p = r.side === 'left' ? 'left' : 'right'; return o; });
+  const reps = (idea.reps || []).filter(r => r && (r.t || r.silent)).map(r => { const o = mk(r, { core: caminos }); if (r.silent || !r.t) { o.silent = true; o.o = String(r.o || '¡ZAS!').slice(0, 14); o.t = { es: '', en: '' }; } if (caminos) o.p = r.side === 'left' ? 'left' : 'right'; return o; });
   const hooks = (idea.hooks || []).filter(Boolean).slice(0, 3).map(both);
   return {
     id: 'ia' + k + Date.now().toString(36), ai: true, env, mode: caminos ? 'caminos' : 'esc',

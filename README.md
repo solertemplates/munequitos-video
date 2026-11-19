@@ -63,6 +63,13 @@ En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (s
 - **Planos de reacción**: después de casi cada línea, primer plano del que escucha con cara exagerada, una exclamación hablada («¡Ñooo!», «¡Uf!», «¡Jajaja!»…) y un efecto de sonido marcado.
 - **Escenas cortas**: un corte de plano cada 1–2 s (plano de los dos, plano de uno, primer plano), personajes que entran y salen corriendo, golpes, caídas, risas y sorpresas por encima de la música.
 
+## Más acción, menos diálogo (activado por defecto)
+
+En **3 · Duración**, la casilla **🎬 Más acción, menos diálogo**:
+- Se dicen menos frases y entre ellas aparecen **escenas de acción sin voz** (≈2 s): resbalones, desmayos, tropezones, persecuciones, huidas, pasos de puntillas, arrodillarse, bailes. Cada una tiene su golpe de sonido y una **onomatopeya de cómic** («¡PLAF!», «¡ZAS!», «¡CATAPLUM!»).
+- Las reacciones del que escucha son sobre todo gestos y sonidos; solo de vez en cuando dice algo.
+- Las historias con IA salen con la mitad de las escenas mudas y frases de máximo 6 palabras.
+
 ## Diseño del video
 
 - **Personajes** a tamaño de persona: cabeza blanca pura pegada a la camiseta, contorno y extremidades negras gruesas, camiseta de manga corta en colores vivos (verde, azul, amarillo, rosa).

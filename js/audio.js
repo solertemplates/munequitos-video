@@ -127,6 +127,7 @@ export function sfx(ctx, dest, nb, name, t) {
     case 'uf': noise(ctx, dest, nb, t, 0.35, 0.55, 'bandpass', 700, { to: 350, q: 2.5, a: 0.04 }); osc(ctx, dest, 'sawtooth', 160, t, 0.3, 0.12, { to: 110, glide: 0.3, lp: 800 }); break;
     case 'aww': osc(ctx, dest, 'triangle', 520, t, 0.7, 0.3, { to: 380, glide: 0.6, vib: 6, vibAmt: 12 }); osc(ctx, dest, 'sine', 1040, t, 0.6, 0.1, { to: 760, glide: 0.6 }); break;
     case 'laughs': for (let i = 0; i < 9; i++) { const f0 = 300 - i * 9 + (i % 2) * 25; osc(ctx, dest, 'sawtooth', f0, t + i * 0.11, 0.08, 0.22, { lp: 1600, q: 3 }); noise(ctx, dest, nb, t + i * 0.11, 0.06, 0.18, 'bandpass', 2400); } break;
+    case 'sneak': [0, 0.28, 0.56, 0.84, 1.12].forEach((d, i) => osc(ctx, dest, 'triangle', [392, 330, 392, 294, 262][i], t + d, 0.12, 0.35, { lp: 3000 })); break;
     case 'sparkle': for (let i = 0; i < 6; i++) osc(ctx, dest, 'sine', 1800 + i * 300, t + i * 0.05, 0.25, 0.06); break;
   }
 }
@@ -164,6 +165,8 @@ export async function renderMix(project, { voiceVol = 1, musicVol = 0.6, sfxOn =
     // reacción: efecto marcado + exclamación hablada del que escucha
     if (b.react) { sfx(ctx, sfxBus, nb, b.react.fx || 'gasp', b.start + b.reactStart - 0.04); if (b.react.act === 'shock') sfx(ctx, sfxBus, nb, 'punch', b.start + b.reactStart); }
     if (b.react && b.reactBuffer) { const s2 = ctx.createBufferSource(); s2.buffer = b.reactBuffer; s2.connect(voiceBus); s2.start(b.start + b.reactStart); }
+    // escenas de acción: golpes y efectos marcados
+    if (b.kind === 'act' && b.gag && b.gag.sfx) b.gag.sfx.forEach(([n, d]) => sfx(ctx, sfxBus, nb, n, b.start + d));
     // entradas y salidas
     if (b.enter) sfx(ctx, sfxBus, nb, b.enter.run ? 'zip' : 'whoosh', b.start + 0.02);
     if (b.exit) sfx(ctx, sfxBus, nb, 'zip', b.start + b.dur - 0.75);

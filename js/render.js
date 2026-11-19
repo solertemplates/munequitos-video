@@ -288,6 +288,13 @@ function pose(action, t, g, seed) {
     case 'tired': P.lean = 0.22; P.bend = 0.2; P.tilt = 0.3; P.arms = [{ a: 0.08 + s(2.5, 0.06), e: 0.2 }, { a: 0.08 - s(2.5, 0.06), e: 0.2 }]; P.legs = [{ a: -0.15, k: 0.3 }, { a: 0.15, k: 0.3 }]; P.emo = 'tired'; P.fx = 'sweat'; break;
     case 'strong': P.arms = [{ a: 1.55, e: 1.9 + s(5, 0.15) }, { a: 1.55, e: 1.9 - s(5, 0.15) }]; P.emo = 'happy'; P.fx = 'sparkle'; P.legs = [{ a: -0.25, k: 0.05 }, { a: 0.25, k: 0.05 }]; P.bend = -0.06; break;
     case 'lift': P.arms = [{ a: 2.8, e: 0.25 }, { a: 2.8, e: 0.25 }]; P.legs = [{ a: -0.25, k: 0.4 + s(4, 0.1) }, { a: 0.25, k: 0.4 + s(4, 0.1) }]; P.emo = 'tired'; P.hand = 'boxup'; P.fx = 'sweat'; break;
+    case 'slip': { const k = easeOut(t / 0.45); P.rot = k * 1.35; P.legs = [{ a: 0.4 + k * 1.1, k: 0.2 }, { a: 0.2 + k * 1.3, k: 0.3 }]; P.arms = [{ a: 2.5 - k * 0.6, e: 0.4 }, { a: 2.3 - k * 0.5, e: 0.6 }]; P.y = -Math.sin(Math.min(1, t / 0.45) * Math.PI) * 45; P.emo = t < 0.5 ? 'shock' : 'dizzy'; P.fx = t > 0.55 ? 'stars' : null; break; }
+    case 'faint': { const k = Math.pow(clamp(t / 0.6, 0, 1), 2); P.rot = k * 1.5; P.arms = [{ a: 0.15, e: 0 }, { a: 0.15, e: 0 }]; P.legs = [{ a: -0.05, k: 0 }, { a: 0.05, k: 0 }]; P.emo = t < 0.15 ? 'shock' : 'dizzy'; P.fx = t > 0.65 ? 'stars' : null; break; }
+    case 'trip': { const k = easeOut((t - 0.15) / 0.45); P.rot = -k * 1.3; P.arms = [{ a: 1.7, e: 0.2 }, { a: 1.5, e: 0.3 }]; P.legs = [{ a: -0.6, k: 0.4 }, { a: 0.3, k: 0.1 }]; P.emo = t < 0.6 ? 'shock' : 'dizzy'; P.fx = t > 0.65 ? 'stars' : null; break; }
+    case 'kneel': P.kneel = 1; P.legs = [{ a: -0.15, k: 1.42 }, { a: 1.5, k: 1.5 }]; P.arms = [{ a: 1.0, e: 0.5 + s(3, 0.1) }, { a: 1.1, e: 0.4 - s(3, 0.1) }]; P.lean = 0.22; P.tilt = 0.18; P.emo = 'happy'; break;
+    case 'sneak': { const st = Math.sin(t * 4 + seed); P.lean = 0.3; P.bend = 0.15; P.legs = [{ a: st * 0.35, k: 0.6 + Math.max(0, st) * 0.4 }, { a: -st * 0.35, k: 0.6 + Math.max(0, -st) * 0.4 }]; P.arms = [{ a: 0.9, e: -1.7 }, { a: 0.9, e: -1.6 }]; P.emo = 'think'; P.y = -Math.abs(st) * 6; break; }
+    case 'chase': case 'flee': { const sp = 15, ph = t * sp + seed; P.legs = [0, Math.PI].map(o => ({ a: Math.sin(ph + o) * 0.8, k: Math.max(0, -Math.cos(ph + o)) * 1.4 + 0.1 })); P.lean = 0.32; P.bend = 0.18; P.y = -Math.abs(Math.cos(ph)) * 24; P.fx = 'dust';
+      if (action === 'chase') { P.arms = [{ a: 1.5 + Math.sin(ph) * 0.2, e: 0.2 }, { a: 1.4 - Math.sin(ph) * 0.2, e: 0.3 }]; P.emo = 'angry'; } else { P.arms = [{ a: 2.6 + Math.sin(ph * 1.3) * 0.3, e: 0.4 }, { a: 2.5 - Math.sin(ph * 1.3) * 0.3, e: 0.5 }]; P.emo = 'shock'; } break; }
     case 'nod': P.tilt = 0.1 + Math.max(0, Math.sin(t * 5 + seed)) * 0.16; P.arms = [{ a: 0.45, e: -1.1 + s(2, 0.1) }, { a: 0.45, e: -1.1 - s(2, 0.1) }]; P.emo = 'happy'; P.y += Math.max(0, Math.sin(t * 5 + seed)) * 3; break;
     case 'pray': P.arms = [{ a: 0.85, e: -3.0 }, { a: 0.85, e: -3.0 }]; P.tilt = 0.14 + s(1.2, 0.03); P.bend = 0.06; P.emo = 'peace'; P.fx = 'glow'; break;
     default: P.emo = 'happy';
@@ -307,7 +314,7 @@ function blendPose(A, B, k) {
   for (const key of ['lean', 'tilt', 'y', 'rot', 'bend', 'sitAmt', 'shake']) out[key] = m(A[key], B[key]);
   out.arms = B.arms.map((b, i) => ({ a: m(A.arms[i].a, b.a), e: m(A.arms[i].e, b.e) }));
   out.legs = B.legs.map((b, i) => ({ a: m(A.legs[i].a, b.a), k: m(A.legs[i].k, b.k) }));
-  out.sit = out.sitAmt > 0.5; out.desk = k > 0.5 ? B.desk : A.desk;
+  out.sit = out.sitAmt > 0.5; out.desk = k > 0.5 ? B.desk : A.desk; out.kneel = k > 0.5 ? B.kneel : A.kneel;
   if (k < 0.5) { out.hand = A.hand; }
   return out;
 }
@@ -424,7 +431,7 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   const maxY = lerp(standY, 118, P.sitAmt || 0);
   const hipY = -maxY + (P.y || 0);
   ctx.translate(0, hipY);
-  if ((P.sitAmt || 0) > 0.5) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 5; rr(ctx, -f * 70 - 12, 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
+  if ((P.sitAmt || 0) > 0.5 && !P.kneel) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 5; rr(ctx, -f * 70 - 12, 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
   for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 10, l[2][1] + 2, 20, 11, 0, 0, TAU); ctx.fill(); }
   const lean = P.lean || 0, bend = P.bend || 0;
   const up = [f * Math.sin(lean), -Math.cos(lean)];   // dirección del torso
@@ -602,8 +609,21 @@ function activeWord(beat, t, nWords) {
   return { p: clamp(vt / vd, 0, 1), started: vt >= 0 };
 }
 
+function drawOnoma(ctx, beat, t) {
+  const t0 = beat.onomaT || 0.3; if (!beat.onoma || t < t0) return;
+  const k = backOut((t - t0) / 0.25); const fade = clamp((beat.dur - t) / 0.2, 0, 1);
+  ctx.save(); ctx.globalAlpha = fade; ctx.translate(540, 250); ctx.rotate(-0.09 + Math.sin(t * 6) * 0.02); ctx.scale(k, k);
+  ctx.beginPath(); for (let i = 0; i < 28; i++) { const a = i / 28 * TAU; const r2 = i % 2 ? 150 : 215; ctx.lineTo(Math.cos(a) * r2 * 1.55, Math.sin(a) * r2 * 0.78); } ctx.closePath();
+  ctx.fillStyle = BW ? '#ffffff' : '#ffd60a'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
+  const { size } = fitText(ctx, beat.onoma, 520, 1, 108, 50, 700); setFont(ctx, size, 700);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.strokeText(beat.onoma, 0, 6);
+  ctx.fillStyle = BW ? '#ffffff' : '#ff2d55'; ctx.fillText(beat.onoma, 0, 6); ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+
 function drawCaption(ctx, beat, t, opts, capTop = false) {
-  let text = beat.text; if (!text) return;
+  if (beat.kind === 'act') { drawOnoma(ctx, beat, t); if (!(beat.react && t >= beat.reactStart && beat.react.vocal)) return; }
+  let text = beat.text; if (!text && !(beat.react && beat.react.vocal)) return;
   const kind = beat.kind;
   ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   if (kind === 'hook') {
@@ -635,7 +655,7 @@ function drawCaption(ctx, beat, t, opts, capTop = false) {
   }
   // subtítulo normal (grande, palabra activa resaltada). En primeros planos va arriba para no tapar a nadie.
   let reacting = false, p, started;
-  if (beat.react && t >= beat.reactStart) { reacting = true; text = beat.react.vocal; const rd = beat.reactDur || 0.7; p = clamp((t - beat.reactStart) / rd, 0, 1); started = true; }
+  if (beat.react && beat.react.vocal && t >= beat.reactStart) { reacting = true; text = beat.react.vocal; const rd = beat.reactDur || 0.7; p = clamp((t - beat.reactStart) / rd, 0, 1); started = true; }
   const yC = capTop ? 250 : 1615;
   const { size, lines } = fitText(ctx, text, 940, 3, reacting ? 86 : kind === 'twist' ? 72 : 66, 42, 700);
   const lh = size * 1.18; const total = lines.length * lh; const y0 = yC - total / 2;
@@ -787,6 +807,13 @@ function sceneChars(beat, t, opts) {
   if (huggers.length >= 2) { const hm = (huggers[0].baseX + huggers[1].baseX) / 2; const k = easeOut(t / 0.6); huggers[0].x = lerp(huggers[0].baseX, hm - 105, k); huggers[1].x = lerp(huggers[1].baseX, hm + 105, k); }
   else if (huggers.length === 1) huggers[0].act = 'love';
   for (const c of chars) if (c.act === 'give') { const other = chars.filter(o => o !== c).sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0]; if (other) c.x = lerp(c.baseX, lerp(c.baseX, other.x, 0.45), easeOut(t / 0.7)); c.giveProp = beat.p === 'coffee' ? 'coffee' : 'gift'; }
+  // persecuciones, huidas y pasos de puntillas (escenas de acción)
+  const movers = chars.filter(c => c.act === 'chase' || c.act === 'flee');
+  if (movers.some(c => c.act === 'chase')) {
+    const order = [...movers.filter(c => c.act === 'flee'), ...movers.filter(c => c.act === 'chase')];
+    order.forEach((c, k) => { c.x = lerp(-350, 1450, clamp(t / (beat.dur * 0.95), 0, 1)) - k * 330; c.walkDir = 1; });
+  } else movers.forEach(c => { const dir = c.x < 540 ? -1 : 1; c.x = c.baseX + dir * 1100 * Math.pow(clamp((t - 0.25) / (beat.dur * 0.7), 0, 1), 2); c.walkDir = dir; });
+  for (const c of chars) if (c.act === 'sneak') { c.x = c.baseX - 160 + 320 * clamp(t / beat.dur, 0, 1); c.walkDir = 1; }
   // reacción exagerada del que escucha
   if (beat.react && t >= beat.reactStart) { const r = chars.find(c => c.role === beat.react.role); if (r) { r.from = r.act; r.act = beat.react.act; r.reactK = clamp((t - beat.reactStart) / 0.14, 0, 1); r.settleK = 0; } }
   for (const c of chars) {
@@ -862,7 +889,7 @@ export function drawFrame(ctx, project, time, scale = 1) {
   if (beat.kind === 'cta') { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   // quién habla: el que está hablando/señalando; si no, el protagonista narra
   const reactOn = beat.react && t >= beat.reactStart;
-  const talker = reactOn ? beat.react.role : (beat.speaker || 'A');
+  const talker = reactOn ? (beat.react.vocal ? beat.react.role : null) : beat.kind === 'act' ? null : (beat.speaker || 'A');
   const BL = 0.45; let prevMap = null, pb = null;
   if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
   for (const c of chars) {

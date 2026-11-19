@@ -37,8 +37,9 @@ export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
 
   beats.push(mk('hook', { t: hook, a: situation.mode === 'caminos' ? 'all:think' : 'all:shock', fx: 'whoosh' }));
   situation.setup.forEach(s => beats.push(mk('setup', s, situation.mode === 'caminos' ? { env: 'caminos', sign: signProp } : {})));
-  const reps = situation.ai ? situation.reps.slice() : pickReps(situation.reps, D.reps);
-  reps.forEach((r, i) => beats.push(mk('rep', r, {
+  const nSpoken = settings.action ? Math.max(2, D.reps - (dur === 's' ? 1 : 2)) : D.reps;
+  const reps = situation.ai ? situation.reps.slice() : pickReps(situation.reps, nSpoken);
+  reps.forEach((r, i) => r.silent ? beats.push({ kind: 'act', text: '', a: r.a, p: r.p && r.p !== 'left' && r.p !== 'right' ? r.p : '', fx: '', gag: { a: r.a, sfx: [[r.fx || 'boing', 0.05]], react: r.r || 'laugh' }, onoma: (typeof r.o === 'string' ? r.o : (r.o && r.o[lang])) || '¡ZAS!', onomaT: 0.35, actDur: 2.0, env: situation.mode === 'caminos' ? 'caminos' : baseEnv, sign: situation.mode === 'caminos' ? signProp : undefined, side: r.p === 'left' ? -1 : r.p === 'right' ? 1 : 0, level: (i + 1) / reps.length }) : beats.push(mk('rep', r, {
     level: (i + 1) / reps.length,
     ...(situation.mode === 'caminos' ? { env: 'caminos', sign: signProp, side: r.p === 'left' ? -1 : r.p === 'right' ? 1 : 0, p: '' } : {}),
   })));
@@ -67,12 +68,13 @@ export function timeBeats(beats, dur, allowDrop = true) {
   const calc = (padMul) => {
     total = 0;
     for (const b of beats) {
+      if (b.kind === 'act') { b.voiceLead = 0; b.voiceDur = 0; b.dur = b.actDur || 1.7; if (b.react) b.reactStart = b.dur - 0.6; b.start = total; total += b.dur; continue; }
       const vd = b.voiceDur || estimateDur(b.text, D.pace);
       b.voiceLead = lead[b.kind];
       const speechEnd = b.voiceLead + vd;
       if (b.react) {
         b.reactStart = speechEnd + 0.08;
-        b.dur = Math.max(minFor(b), b.reactStart + Math.max(0.85, (b.reactDur || 0.7) + 0.3) + base[b.kind] * (padMul - 1) * 0.5);
+        b.dur = Math.max(minFor(b), b.reactStart + (b.react.vocal ? Math.max(0.85, (b.reactDur || 0.7) + 0.3) : 0.62) + base[b.kind] * (padMul - 1) * 0.5);
       } else b.dur = Math.max(minFor(b), speechEnd + base[b.kind] * padMul + (b.exit ? 0.5 : 0));
       b.start = total;
       total += b.dur;
@@ -88,7 +90,7 @@ export function timeBeats(beats, dur, allowDrop = true) {
     withR.sort((x, y) => (y.reactDur || 0) - (x.reactDur || 0))[0].react = null;
     calc(1);
   }
-  if (total < D.min) { const extra = (D.min + 0.5 - total); calc(1 + extra / beats.reduce((s, b) => s + base[b.kind], 0)); }
+  if (total < D.min) { const extra = (D.min + 0.5 - total); calc(1 + extra / beats.reduce((s, b) => s + (base[b.kind] || 0), 0)); }
   else if (total > D.max + 0.5) calc(0.2);
   return total;
 }
@@ -107,5 +109,5 @@ export function toSRT(beats) {
     const sec = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
     return `${h}:${m}:${sec},${String(ms % 1000).padStart(3, '0')}`;
   };
-  return beats.map((b, i) => `${i + 1}\n${ts(b.start)} --> ${ts(b.start + b.dur)}\n${b.text}\n`).join('\n');
+  return beats.filter(b => b.text).map((b, i) => `${i + 1}\n${ts(b.start)} --> ${ts(b.start + b.dur)}\n${b.text}\n`).join('\n');
 }
