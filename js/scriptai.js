@@ -1,5 +1,13 @@
 // Guionista con IA (OpenAI): busca lo que está viral y escribe historias en el estilo de la app.
 const R = (es, en) => ({ es, en });
+const ANTI_RULES = `CERO ABURRIMIENTO (lo más importante):
+- El gancho abre una intriga ("espera al final", una imagen imposible o una pregunta) que solo se resuelve con el giro.
+- Cada línea cambia algo: una sorpresa, un chiste, una exageración o un problema nuevo. Si una línea solo explica, se borra.
+- No narres lo que ya se ve ni expliques el chiste. Muestra con acciones y caras.
+- Diálogo de ping-pong: réplicas rápidas y respuestas inesperadas, máx 7 palabras por línea.
+- Regla de tres: dos veces algo normal y la tercera, absurda.
+- Sube la tensión hasta el giro; el giro le da otro sentido a todo y conecta con el principio (que den ganas de verlo otra vez).
+`;
 
 const ACTIONS = ['selfie', 'scroll', 'slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
 const PROPS = ['money', 'pizza', 'heart', 'gift', 'box', 'chart_up', 'chart_down', 'trophy', 'calendar', 'coffee', 'bulb', 'rocket', 'plant', 'laptop', 'phone', 'confetti', 'light'];
@@ -70,9 +78,16 @@ export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars
     : `LANGUAGE: natural, casual American English like American teens and twenty-somethings talk today (light Gen Z slang is fine: "lowkey", "no way", "for real"). Never British, never formal.`;
   const sys = `Eres un guionista de videos virales de muñequitos de palitos (TikTok, Reels, Shorts) para ADOLESCENTES y JÓVENES que pasan reels sin parar. ${voice}
 REGLAS:
+CERO ABURRIMIENTO (lo más importante):
+- El gancho abre una intriga ("espera al final", una imagen imposible o una pregunta) que solo se resuelve con el giro.
+- Cada línea cambia algo: una sorpresa, un chiste, una exageración o un problema nuevo. Si una línea solo explica, se borra.
+- No narres lo que ya se ve ni expliques el chiste. Muestra con acciones y caras.
+- Diálogo de ping-pong: réplicas rápidas y respuestas inesperadas, máx 7 palabras por línea.
+- Regla de tres: dos veces algo normal y la tercera, absurda.
+- Sube la tensión hasta el giro; el giro le da otro sentido a todo y conecta con el principio (que den ganas de verlo otra vez).
 - Sin nombres propios ni protagonista fijo: personajes genéricos que hablan y cuentan la historia.
 - Primer segundo: algo raro o gracioso que obligue a detenerse.
-- Humor limpio, sin groserías. Frases cortas (máx 9 palabras; el giro hasta 14).
+- Humor limpio, sin groserías. Frases cortas (máx 7 palabras; el giro hasta 12).
 - Historias reales de la vida joven: el móvil, los reels, las selfies, los likes, la familia, los estudios, el primer trabajo, la amistad. Incluye escenas con el teléfono (selfies, buscando, pasando reels) usando el objeto "pov:reels", "pov:selfie" o "pov:search" para mostrar la pantalla en primera persona.
 - Además del humor, historias de RESILIENCIA y SUPERACIÓN (ej.: un hermano mayor que dejó de ser esclavo del teléfono ayuda a su hermanito).
 - La historia crece hasta un GIRO FINAL que sorprenda y den ganas de volver a verlo, y termina con una REFLEXIÓN esperanzadora que la gente quiera mandarle a un amigo.
@@ -98,6 +113,36 @@ Escribe 3 historias DISTINTAS con este formato exacto:
   const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
   const data = extractJSON(responseText(j));
   return (data.ideas || []).slice(0, 3).map((idea, k) => toSituation(idea, k, nChars)).filter(x => x.reps.length >= 2);
+}
+
+// Hace más divertido un guion existente (de la app o de la IA), manteniendo la idea y el formato
+export async function punchUp(apiKey, story, { lang, nChars, dur, genders = {} }) {
+  const T = o => (o == null ? '' : typeof o === 'string' ? o : (o[lang] || o.es || ''));
+  const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
+  const line = (o, i) => o ? `${i}) [${o.a || ''}] ${T(o.t || o.q) || (o.o ? '(sin voz) ' + T(o.o) : '(sin voz)')}` : '';
+  const body = story.mode === 'mudo'
+    ? (story.scenes || []).map((m, i) => line({ a: m.a, t: m.q, o: m.o }, i + 1)).join('\n') + `\nGIRO: ${line({ a: story.twist.a, t: story.twist.q, o: story.twist.o }, 0)}`
+    : [line((story.setup || [])[0], 0), ...(story.reps || []).map((r, i) => line(r, i + 1)), 'GIRO: ' + line(story.twist, 0), story.after ? 'REMATE: ' + line(story.after, 0) : ''].join('\n');
+  const es = lang === 'es';
+  const voice = es ? 'Español de la calle de Miami, con sabor cubano ("pa\'", "asere", "tremendo", "brother"), fácil para cualquier latino.' : 'Natural, casual American English like young Americans talk today. Never British.';
+  const sys = `Eres un "script doctor" de videos virales de muñequitos de palitos para jóvenes. Tu trabajo: hacer que este guion NO sea aburrido. ${voice}
+${ANTI_RULES}
+Mantén la idea, el tema y el mensaje, pero reescribe con más chispa, sorpresa y ritmo. Humor limpio, sin groserías, sin nombres propios. Responde SOLO con JSON válido.`;
+  const reps = dur === 's' ? 5 : dur === 'm' ? 8 : 11;
+  const user = `Título: ${T(story.title)}
+Gancho actual: ${T(story.hook)}
+Guion actual:
+${body}
+Reflexión actual: ${(story.reflect || []).map(T).join(' / ')}
+Personajes: ${roles.map(r => `${r} = ${genders[r] === 'f' ? (es ? 'muchacha' : 'girl') : (es ? 'muchacho' : 'guy')}`).join(', ')}.
+Devuelve {"ideas":[ UNA historia ]} con este formato: {"title","env":"${story.env === 'caminos' ? 'parque' : story.env || 'casa'}","hookAct","hooks":[3 ganchos],"setup":{"w","t","a","p","fx","r"},"reps":[exactamente ${reps} líneas {"w","t","a","p","fx","r"}],"twist":{...},"after":{...},"reflect":[2 frases],"question":"..."}.
+"a": acciones válidas ${ACTIONS.join(', ')} con roles ${roles.join(', ')}; "p": ${PROPS.join(', ')}, pov:reels, pov:selfie, pov:search, "clock:H:MM" o ""; "fx": ${FX.join(', ')}.`;
+  const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
+  const data = extractJSON(responseText(j));
+  const idea = (data.ideas || [data])[0];
+  const out = toSituation(idea, 9, nChars);
+  out.title = { es: '✨ ' + (out.title.es || T(story.title)), en: '✨ ' + (out.title.en || T(story.title)) };
+  return out;
 }
 
 function toSituation(idea, k, nChars) {

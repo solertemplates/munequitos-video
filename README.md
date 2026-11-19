@@ -72,6 +72,7 @@ En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (s
 - **Voces OpenAI**: en español con sabor cubano y de Miami; en inglés, como hablan los jóvenes de EE. UU.
 - **Tamaño adulto**: puertas de 2 m, sofás y coches a escala; al sentarse usan el sofá de la casa o una butaca de tamaño real; siempre dos brazos y dos piernas. Camiseta de una sola pieza. Botón «Rehacer los fondos con IA» si un fondo sale mal.
 - **Reflexión final** en todos los videos y **títulos pequeños** pegados arriba.
+- **✨ Hacer este guion más divertido (IA)**: reescribe la historia elegida (también las de la app) con más chispa, sorpresas y ritmo, sin cambiar la idea. El guionista con IA sigue reglas «cero aburrimiento»: gancho con intriga, cada línea trae algo nuevo, diálogo de ping-pong, regla de tres y giro que conecta con el principio. Menos pausas entre escenas.
 
 ## Más acción, menos diálogo (activado por defecto)
 

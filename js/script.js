@@ -88,9 +88,9 @@ export function speakable(text) {
 // Asigna tiempos: beat.start, beat.dur, voiceLead y, si hay reacción, reactStart (relativo al beat).
 export function timeBeats(beats, dur, allowDrop = true) {
   const D = DURATIONS[dur];
-  const base = { hook: 0.3, setup: 0.2, rep: 0.15, twist: 0.45, after: 0.25, reflect: 0.75, cta: 0.6, question: 0.7 };
-  const lead = { hook: 0.12, setup: 0.08, rep: 0.06, twist: 0.5, after: 0.08, reflect: 0.3, cta: 0.2, question: 0.2 };
-  const minD = { hook: 2.0, setup: 1.6, rep: 1.4, twist: 2.4, after: 1.6, reflect: 3.0, cta: 3.2, question: 2.6 };
+  const base = { hook: 0.2, setup: 0.12, rep: 0.08, twist: 0.3, after: 0.15, reflect: 0.45, cta: 0.5, question: 0.5 };
+  const lead = { hook: 0.05, setup: 0.05, rep: 0.04, twist: 0.35, after: 0.05, reflect: 0.2, cta: 0.15, question: 0.15 };
+  const minD = { hook: 1.8, setup: 1.4, rep: 1.2, twist: 2.1, after: 1.4, reflect: 2.6, cta: 3.0, question: 2.2 };
   const minFor = b => (b.kind === 'cta' && b.ctaTypes && b.ctaTypes.length > 1 ? 3.8 : minD[b.kind]);
   let total = 0;
   const calc = (padMul) => {
