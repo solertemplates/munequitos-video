@@ -11,7 +11,7 @@ const $ = s => document.querySelector(s);
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 // ---------- estado ----------
-const DEFAULTS = { theme: 'despertador', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, music: 'mudo', musicVol: 0.6, sfx: true, cta: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedTrends: false };
+const DEFAULTS = { theme: 'despertador', nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, music: 'mudo', musicVol: 0.6, sfx: true, cta: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedTrends: false, showTitle: true, reflEdits: {} };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-mudo') || '{}') }; } catch { /* sin almacenamiento */ }
 if (!THEMES.find(t => t.id === S.theme)) S.theme = DEFAULTS.theme;
@@ -24,6 +24,7 @@ let project = null, mix = null, dirty = true;
 // ---------- controles ----------
 function btn(cls, html, on, onClick) { const b = document.createElement('button'); b.type = 'button'; b.className = cls + (on ? ' on' : ''); b.innerHTML = html; b.addEventListener('click', onClick); return b; }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function reflFor(st) { const k = st && st.id; return S.reflEdits && k in S.reflEdits ? S.reflEdits[k] : (st && st.refl) || ''; }
 function currentSits() { const ai = S.aiIdeas && S.aiIdeas[S.theme]; return ai && ai.length ? ai : SITUATIONS[S.theme]; }
 
 function renderAll() {
@@ -35,6 +36,8 @@ function renderAll() {
   const sits = currentSits();
   $('#sits').replaceChildren(...sits.map((s, i) => btn('opt', `<span class="tag${s.ai ? ' ia' : ''}">${s.ai ? 'IA' : '🎬'}</span><div><b>${esc(s.title)}</b><span class="d">${esc(s.desc || '')}</span></div>`, S.sit === i, () => { S.sit = i; change(); })));
   $('#appSits').hidden = !(S.aiIdeas && S.aiIdeas[S.theme]);
+  $('#titleOn').checked = S.showTitle !== false;
+  { const st = sits[S.sit] || sits[0]; if (document.activeElement !== $('#refl')) $('#refl').value = reflFor(st); }
   $('#trend').value = document.activeElement === $('#trend') ? $('#trend').value : (S.trend || '');
   $('#trendChips').replaceChildren(...(S.trends || []).map(tr => btn('chip trend', `<b>${esc(tr.title)}</b>${tr.summary ? '<br><small>' + esc(tr.summary) + '</small>' : ''}`, S.trend === tr.title, () => { S.trend = tr.title; save(); renderAll(); })));
   $('#music').replaceChildren(...MUSIC_STYLES.map(m => new Option(m.name.es, m.id))); $('#music').value = S.music;
@@ -67,6 +70,8 @@ $('#aiKey').addEventListener('input', e => { KEYS.openai = e.target.value.trim()
 $('#aiOn').addEventListener('change', e => { S.aiOn = e.target.checked; dirty = true; save(); renderAll(); });
 $('#aiModel').addEventListener('change', e => { S.aiModel = e.target.value; dirty = true; save(); renderAll(); });
 $('#aiQuality').addEventListener('change', e => { S.aiQuality = e.target.value; dirty = true; save(); renderAll(); });
+$('#titleOn').addEventListener('change', e => { S.showTitle = e.target.checked; change(false); if (project) { project.showTitle = S.showTitle; drawAt(curTime); } });
+$('#refl').addEventListener('input', e => { const st = currentSits()[S.sit] || currentSits()[0]; S.reflEdits = { ...(S.reflEdits || {}), [st.id]: e.target.value }; dirty = true; save(); });
 $('#trend').addEventListener('input', e => { S.trend = e.target.value; save(); });
 $('#appSits').addEventListener('click', () => { delete S.aiIdeas[S.theme]; S.sit = 0; change(); });
 $('#trendBtn').addEventListener('click', async () => {
@@ -93,10 +98,10 @@ async function generate() {
   try {
     await document.fonts.load(`700 80px ${FONT}`).catch(() => {});
     const sits = currentSits(); const story = sits[S.sit] || sits[0];
-    const beats = buildComedy({ story, dur: S.dur, settings: { env: S.env, cta: S.cta !== false } });
+    const beats = buildComedy({ story, dur: S.dur, settings: { env: S.env, cta: S.cta !== false, nChars: S.nChars, reflection: reflFor(story) } });
     const total = timeBeats(beats);
     planShots(beats, S.nChars);
-    project = prepareProject({ beats, total, lang: 'es', color: S.color, nChars: S.nChars, music: S.music, sitId: story.id });
+    project = prepareProject({ beats, total, lang: 'es', color: S.color, nChars: S.nChars, music: S.music, sitId: story.id, title: story.title, showTitle: S.showTitle !== false });
     let note = '';
     if (S.aiOn) {
       if (!KEYS.openai) note = 'Para los fondos con IA falta tu clave de OpenAI (sección 6); se usaron los fondos de la app.';

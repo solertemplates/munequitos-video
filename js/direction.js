@@ -5,6 +5,7 @@ export function planShots(beats, nChars = 2) {
     const shots = []; const add = (t0, t1, type, role) => { if (t1 - t0 > 0.05) shots.push({ t0, t1, type, role }); };
     const end = b.react ? b.reactStart : b.dur;
     if (b.kind === 'cta') add(0, b.dur, 'cta', 'A');
+    else if (b.kind === 'reflect') add(0, b.dur, 'slow', 'A');
     else {
       let [type, role] = String(b.shotHint || 'two').split(':');
       role = role || 'A';

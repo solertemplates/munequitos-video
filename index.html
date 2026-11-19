@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=7">
+<link rel="stylesheet" href="css/app.css?v=8">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -24,7 +24,7 @@
     <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="14" r="10" fill="none" stroke="currentColor" stroke-width="4"/><path d="M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/></svg>
     <div>
       <h1>Muñequitos Video</h1>
-      <p class="sub">Comedia muda: solo acciones, música y efectos. Sirve para cualquier país.</p>
+      <p class="sub">Comedia muda: acciones, música y efectos, con título y reflexión final.</p>
     </div>
   </div>
 </header>
@@ -65,6 +65,9 @@
         <p class="hint">Usa tu clave de OpenAI (sección 6). La IA escribe comedia muda: tropezones, confusiones, persecuciones y planes que salen mal, sin diálogos.</p>
       </div>
       <div id="sits" class="options"></div>
+      <label class="check"><input id="titleOn" type="checkbox" checked> <span>Mostrar el título pequeño arriba</span></label>
+      <label class="lbl" for="refl">Reflexión final (sale al terminar; puedes cambiarla)</label>
+      <input id="refl" type="text" maxlength="120" placeholder="Una frase corta que deje pensando">
     </div>
 
     <div class="card">
@@ -120,6 +123,6 @@
   </section>
 </main>
 <footer class="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels, TikTok y Facebook.</footer>
-<script type="module" src="js/app.js?v=7"></script>
+<script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>

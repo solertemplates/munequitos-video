@@ -7,7 +7,7 @@ export const IMAGE_MODELS = [
 ];
 
 const STYLE = 'Flat 2D cartoon BACKGROUND illustration for a vertical animated short (stick-figure story style): detailed scenery with VIVID, bright, saturated, happy colors ' +
-  '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
+  '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. SCALE: an adult person standing on the floor would be about 25% of the image height, so doors are about 30% of the image height, sofas and tables about 11%, cars about 21%, buses about 45%; never draw giant or tiny furniture. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
   'empty and uncluttered in the center (animated characters will stand there). Keep the top 25% simple (sky, wall or ceiling). ' +
   'ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
 

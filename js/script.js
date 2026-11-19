@@ -28,7 +28,7 @@ export function buildComedy({ story, dur, settings }) {
   const D = DURATIONS[dur];
   let scenes = story.scenes.slice();
   // videos cortos: se quedan las escenas clave
-  const est = list => list.reduce((s, x) => s + (x.dur || 1.9) * D.scale, 0) + 3.2;
+  const est = list => list.reduce((s, x) => s + (x.dur || 1.9) * D.scale, 0) + 3.2 + 3.6;
   if (est(scenes) > D.max) { scenes = scenes.filter(x => x.key); }
   while (est(scenes) > D.max && scenes.length > 4) { const i = scenes.findIndex((x, k) => k > 0 && k < scenes.length - 2 && !x.twist); scenes.splice(i < 0 ? 1 : i, 1); }
   // videos largos: se meten gags extra entre escenas (antes del giro)
@@ -39,6 +39,9 @@ export function buildComedy({ story, dur, settings }) {
     bi++;
   }
   const beats = scenes.map((sc, i) => sceneBeat(sc, i, scenes.length, story, settings, D.scale));
+  const last = beats[beats.length - 1];
+  const refl = (settings.reflection != null ? settings.reflection : story.refl || '').trim();
+  if (refl) beats.push({ kind: 'reflect', text: refl, a: settings.nChars > 1 ? 'A:hug B:hug' : 'A:think', present: settings.nChars > 1 ? ['A', 'B'] : ['A'], p: '', fx: 'sparkle', env: last.env, looks: last.looks, actDur: Math.max(3.4, 1.2 + refl.split(/\s+/).length * 0.32) });
   if (settings.cta !== false) beats.push({ kind: 'cta', text: '', a: 'all:wave A:point', p: 'cta', fx: 'pop', env: beats[beats.length - 1].env, looks: beats[beats.length - 1].looks, ctaTypes: ['combo'], ctaType: 'combo', actDur: 3.2 });
   return beats;
 }

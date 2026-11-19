@@ -32,7 +32,7 @@ const G = (a, p = '', sfx = '', o = {}) => ({ a, p, sfx: sfx ? sfx.split(',').ma
 export const SITUATIONS = {
   despertador: [
     {
-      id: 'pijama', title: 'Se le pegaron las sábanas', desc: 'Sale corriendo al trabajo… y nadie le dice que va en pijama.', env: 'casa', looks: { A: 'pajama', B: 'tie' },
+      id: 'pijama', refl: 'El apuro nunca llega a tiempo. La calma, sí.', title: 'Se le pegaron las sábanas', desc: 'Sale corriendo al trabajo… y nadie le dice que va en pijama.', env: 'casa', looks: { A: 'pajama', B: 'tie' },
       scenes: [
         G('A:lie', 'alarm', 'alarm@0,alarm@0.8', { shot: 'two', key: true }),
         G('A:lie', 'alarm', 'punch@0.3', { shot: 'close:A' }),
@@ -50,7 +50,7 @@ export const SITUATIONS = {
       ],
     },
     {
-      id: 'madrugada', title: 'Cinco alarmas y ninguna sirve', desc: 'Pone mil alarmas, sale volando… y resulta que son las 3 de la madrugada.', env: 'casa',
+      id: 'madrugada', refl: 'A veces corremos tanto que olvidamos mirar el reloj de la vida.', title: 'Cinco alarmas y ninguna sirve', desc: 'Pone mil alarmas, sale volando… y resulta que son las 3 de la madrugada.', env: 'casa',
       scenes: [
         G('A:lie', 'alarm', 'alarm@0', { shot: 'two', key: true }),
         G('A:lie', 'alarm', 'punch@0.4', { shot: 'close:A' }),
@@ -70,7 +70,7 @@ export const SITUATIONS = {
   ],
   guagua: [
     {
-      id: 'guagua', title: 'Perseguir la guagua', desc: 'La guagua se le escapa, lo empapa… y al final la deja atrás caminando.', env: 'ciudad',
+      id: 'guagua', refl: 'No siempre llega el camino que esperas. A veces el tuyo es más rápido.', title: 'Perseguir la guagua', desc: 'La guagua se le escapa, lo empapa… y al final la deja atrás caminando.', env: 'ciudad',
       scenes: [
         G('A:walk', 'coffee', 'steps@0', { shot: 'two', key: true }),
         G('A:idle', 'bus:arrive', 'horn@0.3', { shot: 'wide', key: true }),
@@ -88,7 +88,7 @@ export const SITUATIONS = {
       ],
     },
     {
-      id: 'parada', title: 'El que se adelanta en la parada', desc: 'Se cuela en la fila, la guagua llega… y para justo en la otra punta.', env: 'ciudad', looks: { B: 'hair' },
+      id: 'parada', refl: 'El que se adelanta a los demás, casi siempre se queda atrás.', title: 'El que se adelanta en la parada', desc: 'Se cuela en la fila, la guagua llega… y para justo en la otra punta.', env: 'ciudad', looks: { B: 'hair' },
       scenes: [
         G('A:wait B:wait C:wait', '', 'tick@0,tick@0.6', { shot: 'wide', key: true }),
         G('A:sneak B:wait C:wait', '', 'sneak@0', { shot: 'two', key: true }),
@@ -104,7 +104,7 @@ export const SITUATIONS = {
   ],
   jefe: [
     {
-      id: 'dormido', title: 'Dormido en el trabajo', desc: 'Se duerme en la oficina y esquiva al jefe… hasta que los dos se quedan dormidos.', env: 'oficina', looks: { B: 'tie' },
+      id: 'dormido', refl: 'Todos estamos cansados. Hasta el que manda.', title: 'Dormido en el trabajo', desc: 'Se duerme en la oficina y esquiva al jefe… hasta que los dos se quedan dormidos.', env: 'oficina', looks: { B: 'tie' },
       scenes: [
         G('A:type', 'laptop', 'type@0', { shot: 'two', key: true }),
         G('A:sleep', 'laptop', 'boing@0.2', { shot: 'close:A', key: true }),
@@ -119,7 +119,7 @@ export const SITUATIONS = {
       ],
     },
     {
-      id: 'aumento', title: 'Pedirle aumento al jefe', desc: 'Se arma de valor, el jefe se ríe… y al final lo ve llegar en carro nuevo.', env: 'oficina', looks: { B: 'tie' },
+      id: 'aumento', refl: 'Tu esfuerzo vale, aunque hoy nadie lo pague.', title: 'Pedirle aumento al jefe', desc: 'Se arma de valor, el jefe se ríe… y al final lo ve llegar en carro nuevo.', env: 'oficina', looks: { B: 'tie' },
       scenes: [
         G('A:strong', '', 'ding@0', { shot: 'single:A', key: true }),
         G('A:sneak', '', 'sneak@0', { shot: 'two' }),
@@ -135,7 +135,7 @@ export const SITUATIONS = {
   ],
   dinero: [
     {
-      id: 'polilla', title: 'El sueldo que vuela', desc: 'Cobra, los billetes se le escapan uno a uno y de la cartera sale una polilla.', env: 'ciudad',
+      id: 'polilla', refl: 'El dinero se va volando. Lo que vale de verdad se queda.', title: 'El sueldo que vuela', desc: 'Cobra, los billetes se le escapan uno a uno y de la cartera sale una polilla.', env: 'ciudad',
       scenes: [
         G('A:cheer', 'money', 'cash@0,ding@0.4', { shot: 'two', key: true }),
         G('A:dance', 'money', 'cash@0', { shot: 'single:A' }),
@@ -151,7 +151,7 @@ export const SITUATIONS = {
       ],
     },
     {
-      id: 'antojo', title: 'Fin de mes y el antojo', desc: 'Huele una pizza, cuenta las monedas… y el niño se la come delante de él.', env: 'casa', looks: { C: 'kid' },
+      id: 'antojo', refl: 'Lo que más se disfruta es lo que se comparte.', title: 'Fin de mes y el antojo', desc: 'Huele una pizza, cuenta las monedas… y el niño se la come delante de él.', env: 'casa', looks: { C: 'kid' },
       scenes: [
         G('A:sit', '', 'pop@0', { shot: 'two', key: true }),
         G('A:love', 'pizza', 'heart@0', { shot: 'close:A', key: true }),
@@ -168,7 +168,7 @@ export const SITUATIONS = {
   ],
   cansancio: [
     {
-      id: 'sofa', title: 'Llegar muerto a casa', desc: 'Llega reventado, todos lo buscan… y cuando por fin se acuesta suena la alarma.', env: 'casa', looks: { B: 'hair', C: 'kid' },
+      id: 'sofa', refl: 'Descansar también es parte del trabajo.', title: 'Llegar muerto a casa', desc: 'Llega reventado, todos lo buscan… y cuando por fin se acuesta suena la alarma.', env: 'casa', looks: { B: 'hair', C: 'kid' },
       scenes: [
         G('A:tired', '', 'steps@0,uf@0.6', { shot: 'two', key: true }),
         G('A:faint', '', 'thud@0.6', { shot: 'two', key: true }),
@@ -183,7 +183,7 @@ export const SITUATIONS = {
       ],
     },
     {
-      id: 'cafe', title: 'Un cafecito más', desc: 'Cada café lo pone más acelerado… hasta que se desploma de golpe.', env: 'cafe', looks: { B: 'hair' },
+      id: 'cafe', refl: 'Ningún café reemplaza una buena noche de sueño.', title: 'Un cafecito más', desc: 'Cada café lo pone más acelerado… hasta que se desploma de golpe.', env: 'cafe', looks: { B: 'hair' },
       scenes: [
         G('A:tired', 'coffee', 'uf@0', { shot: 'two', key: true }),
         G('A:idle', 'coffee', 'ding@0.2', { shot: 'close:A' }),
@@ -199,7 +199,7 @@ export const SITUATIONS = {
   ],
   trabajo: [
     {
-      id: 'caja', title: 'La caja pesada', desc: 'Suda la gota gorda con una caja… y un niño se la lleva con una mano.', env: 'oficina', looks: { B: 'tie', C: 'kid' },
+      id: 'caja', refl: 'No siempre es la fuerza. A veces es la forma.', title: 'La caja pesada', desc: 'Suda la gota gorda con una caja… y un niño se la lleva con una mano.', env: 'oficina', looks: { B: 'tie', C: 'kid' },
       scenes: [
         G('A:strong', 'box', 'ding@0', { shot: 'single:A', key: true }),
         G('A:lift', '', 'uf@0.2,thud@0.8', { shot: 'two', key: true }),

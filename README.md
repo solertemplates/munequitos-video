@@ -2,7 +2,7 @@
 
 **Ábrela aquí:** https://solertemplates.github.io/munequitos-video/ (funciona en Safari del iPhone; toca Compartir → «Añadir a pantalla de inicio» para tenerla como app).
 
-App web que genera videos cortos verticales (1080×1920) de **humor mudo** con muñequitos de palitos, inspirados en el cine mudo clásico (sin copiar personajes): **sin voces y sin textos en pantalla**, así que sirven para cualquier país. La historia se cuenta solo con acciones, gestos, caras exageradas, música alegre y efectos de sonido fuertes.
+App web que genera videos cortos verticales (1080×1920) de **humor mudo** con muñequitos de palitos, inspirados en el cine mudo clásico (sin copiar personajes): **sin voces ni diálogos**. La historia se cuenta con acciones, gestos, caras exageradas, música alegre y efectos de sonido fuertes. Solo hay dos textos: un **título pequeño arriba** (se puede quitar) y una **reflexión corta al final**, que puedes cambiar.
 
 ## Cómo se usa
 
@@ -19,7 +19,8 @@ App web que genera videos cortos verticales (1080×1920) de **humor mudo** con m
 - Escenas de ~2 s donde siempre pasa algo: tropezones, resbalones con cáscara de plátano, desmayos, persecuciones, la guagua que se escapa, va llena o te empapa, el despertador que no para, la cartera de la que sale una polilla, planes que salen mal y un **giro final** sorprendente.
 - Cámara viva: planos generales, de dos, de uno y **primeros planos de reacción** con caras exageradas.
 - En cada escena solo salen los personajes que actúan en ella.
-- Final opcional con animación de **me gusta, compartir y seguir** (solo íconos).
+- Personajes con **estatura de adulto** frente a puertas, muebles, coches y guaguas, grandes en pantalla.
+- **Reflexión final** corta (con música más emotiva) y, opcionalmente, animación de **me gusta, compartir y seguir** (solo íconos).
 - Audio en AAC dentro del MP4 (también en iPhone).
 
 ## Estructura

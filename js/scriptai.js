@@ -68,7 +68,7 @@ const ENV2 = ['casa', 'ciudad', 'oficina', 'cafe', 'parque', 'cocina', 'playa'];
 export async function writeIdeas(apiKey, { theme, themeName, trend, nChars, dur }) {
   const n = dur === 's' ? 9 : dur === 'm' ? 13 : 17;
   const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
-  const sys = `Eres un guionista genial de comedia física muda, al estilo del cine mudo clásico y del humor de un hombre torpe que no habla (sin copiar personajes existentes). Escribes historias de muñequitos de palitos para videos verticales virales que se entienden en CUALQUIER país: NO hay diálogos, NO hay voces, NO hay textos ni carteles en pantalla. Todo se cuenta con acciones, gestos, caras exageradas, música y efectos de sonido.
+  const sys = `Eres un guionista genial de comedia física muda, al estilo del cine mudo clásico y del humor de un hombre torpe que no habla (sin copiar personajes existentes). Escribes historias de muñequitos de palitos para videos verticales virales que se entienden en CUALQUIER país: NO hay diálogos, NO hay voces, NO hay textos ni carteles en pantalla. Todo se cuenta con acciones, gestos, caras exageradas, música y efectos de sonido; solo hay un título pequeño arriba y una reflexión corta al final.
 Temas: la vida diaria de la gente trabajadora (el cansancio, el dinero que no alcanza, el trabajo, el jefe, la guagua o el autobús, el despertador).
 Estructura: arranca con algo llamativo en el primer segundo; un plan sencillo; contratiempos que van creciendo (tropezones, confusiones, persecuciones, planes que salen mal, repetición con escalada); y un GIRO FINAL sorprendente que dé risa o ternura. Cada escena dura unos 2 segundos y SIEMPRE pasa algo nuevo. Humor limpio, sin violencia real.
 Responde SOLO con JSON válido.`;
@@ -76,7 +76,8 @@ Responde SOLO con JSON válido.`;
 Personajes disponibles: ${roles.join(', ')} (A = protagonista torpe y adorable; B = su pareja o su jefe; C = un niño o un compañero).
 Escribe 3 historias DISTINTAS con este formato exacto:
 {"ideas":[{
- "title":"título corto (solo para la app, no sale en el video)",
+ "title":"título corto y llamativo (máx 6 palabras; sale pequeño arriba en el video)",
+ "reflection":"reflexión final corta que deje pensando (máx 14 palabras, sin cursilería)",
  "desc":"de qué va, en una frase",
  "env":"uno de: ${ENV2.join(', ')}",
  "looks":{"B":"tie"},
@@ -110,7 +111,7 @@ function toStory(idea, k, roles) {
   });
   if (!scenes.some(x => x.twist) && scenes.length) scenes[scenes.length - 2 >= 0 ? scenes.length - 2 : 0].twist = true;
   if (scenes.filter(x => x.key).length < 4) scenes.forEach(x => { x.key = true; });
-  return { id: 'ia' + k + Date.now().toString(36), ai: true, title: String(idea.title || 'Historia con IA').slice(0, 60), desc: String(idea.desc || '').slice(0, 140), env: ENV2.includes(idea.env) ? idea.env : 'casa', looks, scenes };
+  return { id: 'ia' + k + Date.now().toString(36), ai: true, refl: String(idea.reflection || '').slice(0, 120), title: String(idea.title || 'Historia con IA').slice(0, 60), desc: String(idea.desc || '').slice(0, 140), env: ENV2.includes(idea.env) ? idea.env : 'casa', looks, scenes };
 }
 
 export { R };
