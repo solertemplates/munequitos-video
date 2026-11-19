@@ -1,7 +1,7 @@
 // Guionista con IA (OpenAI): busca lo que está viral y escribe historias en el estilo de la app.
 const R = (es, en) => ({ es, en });
 
-const ACTIONS = ['slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
+const ACTIONS = ['selfie', 'scroll', 'slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
 const PROPS = ['money', 'pizza', 'heart', 'gift', 'box', 'chart_up', 'chart_down', 'trophy', 'calendar', 'coffee', 'bulb', 'rocket', 'plant', 'laptop', 'phone', 'confetti', 'light'];
 const FX = ['punch', 'thud', 'fall', 'zip', 'gasp', 'laughs', 'sneak', 'pop', 'boing', 'ding', 'whoosh', 'scratch', 'applause', 'cash', 'sad', 'drum', 'type', 'heart', 'alarm', 'laugh', 'notif'];
 const ENVS = ['oficina', 'casa', 'parque', 'cafe', 'ciudad', 'playa', 'cocina', 'iglesia'];
@@ -59,59 +59,63 @@ export async function searchTrends(apiKey, { lang, theme }) {
 }
 
 // 2) Escribir 3 historias nuevas en el formato de la app
-const SHOTS = ['wide', 'two', 'single:A', 'single:B', 'close:A', 'close:B', 'close:C'];
-const PROPS2 = ['alarm', 'money', 'wallet', 'coffee', 'phone', 'laptop', 'heart', 'pizza', 'box', 'banana', 'chart_down', 'chart_up', 'trophy', 'calendar', 'bulb', 'plant', 'bus:arrive', 'bus:leave', 'bus:full', 'bus:splash', 'bus:stuck', 'bus:car'];
-const SFX2 = ['steps', 'horn', 'punch', 'thud', 'fall', 'crash', 'zip', 'gasp', 'laughs', 'uf', 'boing', 'pop', 'ding', 'cash', 'alarm', 'tick', 'sneak', 'splash', 'scratch', 'drum', 'sad', 'aww', 'notif', 'type', 'whoosh'];
-const ENV2 = ['casa', 'ciudad', 'oficina', 'cafe', 'parque', 'cocina', 'playa'];
-
-// Escribe 3 historias de comedia muda (sin diálogos ni textos), al estilo del cine mudo clásico
-export async function writeIdeas(apiKey, { theme, themeName, trend, nChars, dur }) {
-  const n = dur === 's' ? 9 : dur === 'm' ? 13 : 17;
+// Escribe 3 historias habladas para jóvenes que pasan reels: gancho raro, humor limpio, giro final y mensaje que se comparte
+export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur, genders = {} }) {
+  const reps = dur === 's' ? 5 : dur === 'm' ? 8 : 11;
+  const es = lang === 'es';
   const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
-  const sys = `Eres un guionista genial de comedia física muda, al estilo del cine mudo clásico y del humor de un hombre torpe que no habla (sin copiar personajes existentes). Escribes historias de muñequitos de palitos para videos verticales virales que se entienden en CUALQUIER país: NO hay diálogos, NO hay voces, NO hay textos ni carteles en pantalla. Todo se cuenta con acciones, gestos, caras exageradas, música y efectos de sonido; solo hay un título pequeño arriba y una reflexión corta al final.
-Temas: la vida diaria de la gente trabajadora (el cansancio, el dinero que no alcanza, el trabajo, el jefe, la guagua o el autobús, el despertador).
-Estructura: arranca con algo llamativo en el primer segundo; un plan sencillo; contratiempos que van creciendo (tropezones, confusiones, persecuciones, planes que salen mal, repetición con escalada); y un GIRO FINAL sorprendente que dé risa o ternura. Cada escena dura unos 2 segundos y SIEMPRE pasa algo nuevo. Humor limpio, sin violencia real.
+  const cast = roles.map(r => `${r} = ${genders[r] === 'f' ? (es ? 'muchacha' : 'girl') : (es ? 'muchacho' : 'guy')}`).join(', ');
+  const voice = es
+    ? `IDIOMA: español como se habla en la calle en Miami, con sabor cubano ("pa'", "asere", "qué volá", "tremendo", "brother", alguna palabra en inglés natural), fácil de entender para cualquier latino. Nada de frases de libro.`
+    : `LANGUAGE: natural, casual American English like American teens and twenty-somethings talk today (light Gen Z slang is fine: "lowkey", "no way", "for real"). Never British, never formal.`;
+  const sys = `Eres un guionista de videos virales de muñequitos de palitos (TikTok, Reels, Shorts) para ADOLESCENTES y JÓVENES que pasan reels sin parar. ${voice}
+REGLAS:
+- Sin nombres propios ni protagonista fijo: personajes genéricos que hablan y cuentan la historia.
+- Primer segundo: algo raro o gracioso que obligue a detenerse.
+- Humor limpio, sin groserías. Frases cortas (máx 9 palabras; el giro hasta 14).
+- Historias reales de la vida joven: el móvil, los reels, las selfies, los likes, la familia, los estudios, el primer trabajo, la amistad. Incluye escenas con el teléfono (selfies, buscando, pasando reels) usando el objeto "pov:reels", "pov:selfie" o "pov:search" para mostrar la pantalla en primera persona.
+- Además del humor, historias de RESILIENCIA y SUPERACIÓN (ej.: un hermano mayor que dejó de ser esclavo del teléfono ayuda a su hermanito).
+- La historia crece hasta un GIRO FINAL que sorprenda y den ganas de volver a verlo, y termina con una REFLEXIÓN esperanzadora que la gente quiera mandarle a un amigo.
 Responde SOLO con JSON válido.`;
-  const user = `Tema: ${themeName}. Idea o tendencia a usar (opcional): ${trend ? `"${trend}"` : '(ninguna)'}.
-Personajes disponibles: ${roles.join(', ')} (A = protagonista torpe y adorable; B = su pareja o su jefe; C = un niño o un compañero).
+  const user = `Tema: ${themeName}. Tendencia o idea del momento: ${trend ? `"${trend}"` : '(ninguna)'}.
+Personajes: ${cast}.
 Escribe 3 historias DISTINTAS con este formato exacto:
 {"ideas":[{
- "title":"título corto y llamativo (máx 6 palabras; sale pequeño arriba en el video)",
- "reflection":"reflexión final corta que deje pensando (máx 14 palabras, sin cursilería)",
- "desc":"de qué va, en una frase",
- "env":"uno de: ${ENV2.join(', ')}",
- "looks":{"B":"tie"},
- "scenes":[ exactamente ${n} escenas {"a":"acciones","p":"objeto o vacío","sfx":"efecto@segundo,efecto@segundo","shot":"plano","react":"quién reacciona en primer plano al final (ej. B:laugh) o vacío","dur":1.9,"env":"opcional, para cambiar de lugar","night":false,"key":true,"twist":false} ]
+ "title":"título corto (máx 6 palabras)",
+ "env":"uno de: ${ENVS.join(', ')}",
+ "hookAct":"acción rara o graciosa del primer segundo, ej. 'A:slip' o 'A:scroll'",
+ "hooks":["3 ganchos distintos de máx 10 palabras"],
+ "setup":{"w":"A","t":"línea","a":"A:talk B:shrug","p":"","fx":"pop","r":"shock"},
+ "reps":[ exactamente ${reps} objetos {"w":"quién habla (${roles.join(', ')})","t":"línea","a":"acciones","p":"objeto","fx":"efecto","r":"reacción del que escucha: laugh, shock, facepalm, love o cry"} ],
+ "twist":{"w":"A","t":"giro final","a":"...","p":"...","fx":"scratch","r":"shock"},
+ "after":{"t":"remate corto","a":"...","p":"","fx":"laugh"},
+ "reflect":["frase esperanzadora corta","segunda frase corta que deje pensando"],
+ "question":"pregunta final corta para que comenten"
 }]}
-Reglas:
-- "a": "A:accion B:accion" con acciones válidas: ${ACTIONS.join(', ')}, además de "lie" (acostado en la cama). Solo roles ${roles.join(', ')}.
-- "p": ${PROPS2.join(', ')}, o "clock:H:MM" (reloj de pared con esa hora), o "".
-- "sfx": efectos FUERTES y variados: ${SFX2.join(', ')}; el segundo indica cuándo suena (0 a 2).
-- "shot": ${SHOTS.join(', ')}. Usa muchos "close:X" para las caras exageradas.
-- "looks": opcional; "tie" (corbata, para el jefe), "hair" (pelo largo), "kid" (niño), "pajama" (pijama a rayas).
-- Marca "twist":true en la escena del giro final (una de las últimas) y "key":true en las escenas imprescindibles (al menos la mitad).
-- "dur" entre 1.5 y 2.5. "night":true si es de noche.`;
+- "a": "A:accion B:accion" o "all:accion"; acciones válidas: ${ACTIONS.join(', ')}. Solo roles ${roles.join(', ')}.
+- "p": ${PROPS.join(', ')}, pov:reels, pov:selfie, pov:search, "clock:H:MM" o "".
+- "fx": efectos variados: ${FX.join(', ')}.`;
   const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
   const data = extractJSON(responseText(j));
-  return (data.ideas || []).slice(0, 3).map((idea, k) => toStory(idea, k, roles)).filter(x => x.scenes.length >= 3);
+  return (data.ideas || []).slice(0, 3).map((idea, k) => toSituation(idea, k, nChars)).filter(x => x.reps.length >= 2);
 }
 
-function toStory(idea, k, roles) {
-  const acts = [...ACTIONS, 'lie'];
-  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && acts.includes(act); }).join(' ') || 'A:idle';
-  const cleanP = p => { p = String(p || ''); return PROPS2.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
-  const cleanSfx = s => String(s || '').split(',').map(x => { const [nm, t] = x.trim().split('@'); return SFX2.includes(nm) ? [nm, Math.max(0, Math.min(2.4, +t || 0))] : null; }).filter(Boolean).slice(0, 4);
-  const LOOKS = ['tie', 'hair', 'kid', 'pajama'];
-  const looks = {}; Object.entries(idea.looks || {}).forEach(([r, l]) => { if (roles.includes(r) && LOOKS.includes(l)) looks[r] = l; });
-  const scenes = (idea.scenes || []).map(sc => {
-    sc = sc || {};
-    const shot = SHOTS.includes(sc.shot) ? sc.shot : 'two';
-    const react = /^[ABCD]:(laugh|shock|love|facepalm|cry|angry|think)$/.test(sc.react || '') && roles.includes(sc.react[0]) ? sc.react : null;
-    return { a: cleanA(sc.a), p: cleanP(sc.p), sfx: cleanSfx(sc.sfx), shot, react, dur: Math.max(1.4, Math.min(2.6, +sc.dur || 1.9)), env: ENV2.includes(sc.env) ? sc.env : undefined, night: !!sc.night, key: !!sc.key, twist: !!sc.twist };
-  });
-  if (!scenes.some(x => x.twist) && scenes.length) scenes[scenes.length - 2 >= 0 ? scenes.length - 2 : 0].twist = true;
-  if (scenes.filter(x => x.key).length < 4) scenes.forEach(x => { x.key = true; });
-  return { id: 'ia' + k + Date.now().toString(36), ai: true, refl: String(idea.reflection || '').slice(0, 120), title: String(idea.title || 'Historia con IA').slice(0, 60), desc: String(idea.desc || '').slice(0, 140), env: ENV2.includes(idea.env) ? idea.env : 'casa', looks, scenes };
+function toSituation(idea, k, nChars) {
+  const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
+  const REACTS = ['laugh', 'shock', 'facepalm', 'love', 'cry'];
+  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && ACTIONS.includes(act); }).join(' ') || 'A:talk';
+  const cleanP = p => { p = String(p || ''); return PROPS.includes(p) || /^pov:(reels|selfie|search)$/.test(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
+  const both = t => ({ es: String(t || '').trim(), en: String(t || '').trim() });
+  const mk = o => ({ t: both(o && o.t), a: cleanA(o && o.a), p: cleanP(o && o.p), fx: FX.includes(o && o.fx) ? o.fx : 'pop', w: o && roles.includes(o.w) ? o.w : undefined, r: o && REACTS.includes(o.r) ? o.r : undefined, core: false });
+  const hooks = (idea.hooks || []).filter(Boolean).slice(0, 3).map(both);
+  const hookAct = cleanA(idea.hookAct);
+  return {
+    id: 'ia' + k + Date.now().toString(36), ai: true, mode: 'esc', env: ENVS.includes(idea.env) ? idea.env : 'casa', hookAct,
+    title: both(idea.title), hook: hooks[0] || both(idea.title), hooks,
+    setup: [mk(idea.setup)], reps: (idea.reps || []).filter(r => r && r.t).map(mk), twist: mk(idea.twist),
+    after: idea.after && idea.after.t ? mk(idea.after) : undefined,
+    reflect: (idea.reflect || []).slice(0, 2).map(both).concat([both('')]).slice(0, 2), question: idea.question ? both(idea.question) : null,
+  };
 }
 
 export { R };

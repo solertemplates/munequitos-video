@@ -2,7 +2,6 @@
 export const SR = 48000;
 
 export const MUSIC_STYLES = [
-  { id: 'mudo', name: { es: 'Cine mudo (piano alegre)', en: 'Silent movie (ragtime piano)' }, bpm: 138 },
   { id: 'alegre', name: { es: 'Alegre (ukelele)', en: 'Happy (ukulele)' }, bpm: 118 },
   { id: 'energica', name: { es: 'Enérgica', en: 'Energetic' }, bpm: 126 },
   { id: 'lofi', name: { es: 'Lo-fi relajada', en: 'Chill lo-fi' }, bpm: 86 },
@@ -10,7 +9,6 @@ export const MUSIC_STYLES = [
 ];
 
 const midi = n => 440 * Math.pow(2, (n - 69) / 12);
-const hashN = n => { const x = Math.sin(n * 78.233 + 1.3) * 43758.5453; return x - Math.floor(x); };
 // progresión I–V–vi–IV en Do mayor / emotiva vi–IV–I–V
 const PROG = [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]];
 const EMO = [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]];
@@ -56,7 +54,7 @@ function scheduleMusic(ctx, dest, nb, style, total, sections) {
   const S = MUSIC_STYLES.find(s => s.id === style) || MUSIC_STYLES[0];
   const spb = 60 / S.bpm; const bar = spb * 4;
   const isIn = (t, kind) => sections.some(s => s.kind === kind && t >= s.start && t < s.start + s.dur);
-  const twist = sections.find(s => s.kind === 'twist' || s.twistLike);
+  const twist = sections.find(s => s.kind === 'twist');
   const refl = sections.find(s => s.kind === 'reflect');
   for (let t = 0, step = 0; t < total + 0.5; t += spb / 2, step++) {
     const beatN = step / 2; const barI = Math.floor(beatN / 4);
@@ -73,15 +71,7 @@ function scheduleMusic(ctx, dest, nb, style, total, sections) {
       continue;
     }
     const intensity = sections.reduce((m, s) => (t >= s.start && t < s.start + s.dur && s.kind === 'rep') ? Math.max(m, s.level || 0) : m, 0);
-    if (style === 'mudo') {
-      // "oom-pah": bajo en 1 y 3, acorde en 2 y 4; melodía saltarina de piano
-      if (!off) { if (q === 0 || q === 2) piano(ctx, dest, midi(chord[0] - 12 - (q === 2 ? 5 : 0)), t, 0.2); else for (const n of chord) piano(ctx, dest, midi(n), t, 0.07); }
-      const scale = [0, 2, 4, 7, 9, 12, 14, 16];
-      const nIdx = Math.floor(hashN(step * 1.7 + barI) * scale.length);
-      if (hashN(step * 3.1) > 0.25) piano(ctx, dest, midi(chord[0] + 12 + scale[nIdx]), t + (off ? spb * 0.04 : 0), 0.09);
-      if (intensity > 0.6 && off) piano(ctx, dest, midi(chord[0] + 24 + scale[(nIdx + 2) % scale.length]), t, 0.05);
-      if (!off && q % 2 === 1) noise(ctx, dest, nb, t, 0.05, 0.05, 'highpass', 6000);
-    } else if (style === 'alegre') {
+    if (style === 'alegre') {
       if (!off && (q === 0 || q === 2)) kick(ctx, dest, t, 0.7);
       if (!off && (q === 1 || q === 3)) clap(ctx, dest, nb, t, 0.22);
       hat(ctx, dest, nb, t, off ? 0.06 : 0.035);
@@ -137,10 +127,6 @@ export function sfx(ctx, dest, nb, name, t) {
     case 'uf': noise(ctx, dest, nb, t, 0.35, 0.55, 'bandpass', 700, { to: 350, q: 2.5, a: 0.04 }); osc(ctx, dest, 'sawtooth', 160, t, 0.3, 0.12, { to: 110, glide: 0.3, lp: 800 }); break;
     case 'aww': osc(ctx, dest, 'triangle', 520, t, 0.7, 0.3, { to: 380, glide: 0.6, vib: 6, vibAmt: 12 }); osc(ctx, dest, 'sine', 1040, t, 0.6, 0.1, { to: 760, glide: 0.6 }); break;
     case 'laughs': for (let i = 0; i < 9; i++) { const f0 = 300 - i * 9 + (i % 2) * 25; osc(ctx, dest, 'sawtooth', f0, t + i * 0.11, 0.08, 0.22, { lp: 1600, q: 3 }); noise(ctx, dest, nb, t + i * 0.11, 0.06, 0.18, 'bandpass', 2400); } break;
-    case 'steps': for (let i = 0; i < 6; i++) { const tt = t + i * 0.16; osc(ctx, dest, 'sine', i % 2 ? 140 : 120, tt, 0.07, 0.55, { to: 70, glide: 0.05 }); noise(ctx, dest, nb, tt, 0.03, 0.25, 'bandpass', 1500, { q: 1 }); } break;
-    case 'horn': for (const [f0, d] of [[392, 0], [494, 0], [392, 0.32], [494, 0.32]]) osc(ctx, dest, 'sawtooth', f0, t + d, 0.26, 0.22, { lp: 1800, sus: 0.18 }); break;
-    case 'splash': noise(ctx, dest, nb, t, 0.6, 0.8, 'lowpass', 2500, { to: 400, a: 0.01 }); for (let i = 0; i < 6; i++) osc(ctx, dest, 'sine', 600 + i * 220, t + 0.05 + i * 0.05, 0.08, 0.15, { to: 1400 + i * 200, glide: 0.06 }); break;
-    case 'crash': noise(ctx, dest, nb, t, 0.9, 0.9, 'highpass', 1200, { a: 0.002 }); sfx(ctx, dest, nb, 'thud', t); for (let i = 0; i < 5; i++) osc(ctx, dest, 'triangle', 1800 + i * 370, t + i * 0.06, 0.25, 0.12); break;
     case 'tick': [0, 0.12].forEach((d, i) => { osc(ctx, dest, 'square', i ? 1500 : 1900, t + d, 0.03, 0.35, { lp: 5000 }); noise(ctx, dest, nb, t + d, 0.02, 0.3, 'highpass', 5000); }); break;
     case 'sneak': [0, 0.28, 0.56, 0.84, 1.12].forEach((d, i) => osc(ctx, dest, 'triangle', [392, 330, 392, 294, 262][i], t + d, 0.12, 0.35, { lp: 3000 })); break;
     case 'sparkle': for (let i = 0; i < 6; i++) osc(ctx, dest, 'sine', 1800 + i * 300, t + i * 0.05, 0.25, 0.06); break;

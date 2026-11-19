@@ -7,9 +7,9 @@ export const IMAGE_MODELS = [
 ];
 
 const STYLE = 'Flat 2D cartoon BACKGROUND illustration for a vertical animated short (stick-figure story style): detailed scenery with VIVID, bright, saturated, happy colors ' +
-  '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. SCALE: an adult person standing on the floor would be about 25% of the image height, so doors are about 30% of the image height, sofas and tables about 11%, cars about 21%, buses about 45%; never draw giant or tiny furniture. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
+  '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
   'empty and uncluttered in the center (animated characters will stand there). Keep the top 25% simple (sky, wall or ceiling). ' +
-  'ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
+  'SCALE: an adult person standing on the floor would be about 25% of the image height, so doors are about 30% of the image height, sofas and tables about 11%, cars about 21%; never giant or tiny furniture. ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
 
 const ENV_DESC = {
   oficina: 'a modern office: desks with computers, big windows with a city view, plants, a wall clock',
@@ -55,14 +55,15 @@ async function generateOne({ apiKey, model, quality, prompt, reference }) {
 
 // Asigna a cada escena una "clave de fondo": entorno + variante (A/B alternadas para que cambie el escenario, y una cálida para la reflexión)
 export function planBackgrounds(project) {
-  const keys = new Set(); const alt = {};
-  project.beats.forEach((b, i) => {
-    const env = b.env || 'casa';
-    if (b.kind === 'cta') { const prev = project.beats[i - 1]; b.bgKey = prev ? prev.bgKey : `${env}|a`; }
-    else { alt[env] = (alt[env] || 0) + 1; b.bgKey = `${env}|${alt[env] % 3 === 0 ? 'b' : 'a'}`; }
-    keys.add(b.bgKey);
+  const keys = new Map(); let alt = 0; let lastEnv = null;
+  project.beats.forEach(b => {
+    const env = b.env || 'parque';
+    if (b.kind === 'reflect' || b.kind === 'cta') { const base = project.beats.find(x => x.kind === 'hook').env; b.bgKey = `${base}|warm`; }
+    else if (env === 'caminos') b.bgKey = 'caminos|a';
+    else { if (env !== lastEnv) alt = 0; b.bgKey = `${env}|${b.kind === 'rep' ? (alt++ % 2 ? 'b' : 'a') : 'a'}`; lastEnv = env; }
+    if (!keys.has(b.bgKey)) keys.set(b.bgKey, b.bgKey);
   });
-  return [...keys];
+  return [...keys.keys()];
 }
 
 function bgPrompt(key, story) {
@@ -70,16 +71,17 @@ function bgPrompt(key, story) {
   const place = ENV_DESC[env] || ENV_DESC.parque;
   const variant = v === 'b' ? ' Show a DIFFERENT part/angle of the same place (other furniture or objects), same style and colors.'
     : v === 'warm' ? ' Same place at golden hour / sunset, warm emotional light, a bit dreamy and touching.' : '';
-  return `${STYLE}\nPlace: ${place}.${variant}\nMood: funny silent slapstick comedy about "${story}".`;
+  return `${STYLE}\nPlace: ${place}.${variant}\nStory mood: "${story}".`;
 }
 
 const memo = new Map();
+export function clearBgCache() { memo.clear(); }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 export async function generateBackgrounds(project, situation, { apiKey, model, quality, onProgress }) {
   if (!apiKey) throw new Error('Falta tu clave de OpenAI.');
   const keys = planBackgrounds(project);
-  const story = (situation.title && (situation.title.es || situation.title)) || '';
+  const story = situation.title[project.lang] || '';
   const out = new Map(); const errors = []; let done = 0; const refs = new Map();
   onProgress && onProgress(0, keys.length);
   const run = async key => {

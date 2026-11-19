@@ -1,48 +1,130 @@
-# Muñequitos Video — comedia muda
+# Muñequitos Video
 
 **Ábrela aquí:** https://solertemplates.github.io/munequitos-video/ (funciona en Safari del iPhone; toca Compartir → «Añadir a pantalla de inicio» para tenerla como app).
 
-App web que genera videos cortos verticales (1080×1920) de **humor mudo** con muñequitos de palitos, inspirados en el cine mudo clásico (sin copiar personajes): **sin voces ni diálogos**. La historia se cuenta con acciones, gestos, caras exageradas, música alegre y efectos de sonido fuertes. Solo hay dos textos: un **título pequeño arriba** (se puede quitar) y una **reflexión corta al final**, que puedes cambiar.
+Aplicación web que genera videos cortos verticales (1080×1920) de muñequitos de palitos sobre reflexiones y situaciones cotidianas: amistad, matrimonio, trabajo, emprendimiento, familia, dinero, hábitos, redes sociales y fe. Sirve para Shorts, Reels y Facebook.
 
-## Cómo se usa
+Todo se genera en el navegador: no hay servidor, ni claves de API, ni costos.
 
-1. **Tema**: el despertador, la guagua, el jefe, el dinero no alcanza, el cansancio o el trabajo.
-2. **Personajes, entorno y estilo** (color o blanco y negro).
-3. **Duración**: 12–25 s, 25–45 s o 45–60 s. En los cortos quedan las escenas clave; en los largos se agregan gags extra.
-4. **Historia**: elige una de la app o toca **✨ Escribir 3 historias con IA** (opcionalmente con una idea o tendencia; **🔎 Buscar lo viral ahora** la busca en internet).
-5. **Música y efectos**: «Cine mudo (piano alegre)» por defecto; efectos de golpes, caídas, sorpresas, risas, pasos, bocinas, salpicones.
-6. **IA (opcional)**: tu clave de OpenAI para escribir historias y dibujar fondos detallados. Antes de generar se muestra el costo aproximado (≈0,05–0,10 USD por video).
-7. **Generar vista previa** → **Exportar MP4** → en el iPhone, «Guardar en Fotos / Compartir».
+## Cómo usarla
 
-## Qué hay en cada video
+1. Abre la carpeta con un servidor web local (los módulos de JavaScript no funcionan con `file://`):
+   ```bash
+   python3 -m http.server 8000
+   # o:  npx serve .
+   ```
+   Luego entra a <http://localhost:8000> con **Chrome o Edge** (recomendado) o con Safari.
+2. Elige el **tema**, la **cantidad de personajes** (1–4), el **entorno**, el **estilo** (color o blanco y negro) y el **idioma** (botón ES/EN arriba a la derecha).
+3. Elige la **duración**: 12–25 s, 25–45 s o 45–60 s. La app ajusta el número de escenas, el ritmo de la voz y las pausas para quedar dentro del rango.
+4. Elige una de las **3 situaciones cotidianas** sugeridas (o pide 3 nuevas a la IA), uno de los **3 ganchos iniciales** y **uno o dos llamados a la acción** (si eliges dos, se combinan en una frase, por ejemplo «Dale me gusta si te tocó el corazón y sigue la página»). «Otras opciones» propone más ganchos y llamados.
+   - En «Configurar página y enlace» puedes poner el nombre de tu página (sale en el video) y tu enlace. Con un enlace configurado aparecen los llamados de tipo «Enlace».
+5. Elige la voz, la música y si quieres efectos de sonido.
+6. Pulsa **Generar vista previa**, mírala con ▶ y, si quieres, edita el guion y pulsa «Aplicar cambios».
+7. Pulsa **Exportar MP4**. También puedes descargar los subtítulos en `.srt`.
 
-- Escenas de ~2 s donde siempre pasa algo: tropezones, resbalones con cáscara de plátano, desmayos, persecuciones, la guagua que se escapa, va llena o te empapa, el despertador que no para, la cartera de la que sale una polilla, planes que salen mal y un **giro final** sorprendente.
-- Cámara viva: planos generales, de dos, de uno y **primeros planos de reacción** con caras exageradas.
-- En cada escena solo salen los personajes que actúan en ella.
-- Personajes con **estatura de adulto** frente a puertas, muebles, coches y guaguas, grandes en pantalla.
-- **Reflexión final** corta (con música más emotiva) y, opcionalmente, animación de **me gusta, compartir y seguir** (solo íconos).
-- Audio en AAC dentro del MP4 (también en iPhone).
+## Qué incluye cada video
+
+- **Gancho** grande en pantalla al inicio (visible desde el primer fotograma, sirve de miniatura).
+- **Estructura narrativa**: repetición que va subiendo de intensidad y giro final sorprendente, o alegoría de **dos caminos con letreros**.
+- **Ritmo movido**: corte de plano cada 2–3 s, zooms, barridos entre escenas, cámara que siempre se mueve, vibración que sube con la intensidad y destello en el giro.
+- **Frase de reflexión** al final, con un cambio de música a piano emotivo.
+- **Llamado a la acción** animado: me gusta, seguir la página, apoyar con estrellas, enlace o combinado.
+- **Subtítulos grandes**, con la palabra que se está diciendo resaltada.
+- **Voz automática** en español o inglés, **música** generada (alegre, enérgica, lo-fi) que baja sola cuando habla la voz, y **efectos de sonido** (whoosh, pop, boing, scratch de disco en el giro, aplausos, caja registradora, etc.).
+
+## Voz
+
+| Voz | Precio | Calidad | Cómo se usa |
+|---|---|---|---|
+| **Voz neural (Piper)** | Gratis | Buena | Viene en la app. La primera vez descarga ≈60 MB (usa Wi‑Fi) y queda guardada. |
+| **ElevenLabs** | Gratis ≈10 min/mes (sin uso comercial); Starter ≈5 USD/mes para monetizar | Excelente, la más natural | Crea tu clave en elevenlabs.io → API Keys y pégala en la app. «Cargar mis voces» trae las voces de tu cuenta. |
+| **OpenAI** | De pago por uso (centavos por video), requiere saldo | Muy buena | Crea tu clave en platform.openai.com → API keys y pégala en la app. |
+| **Voz básica sin conexión** | Gratis | Robótica | Solo como respaldo cuando no hay internet. |
+
+Las claves se guardan solo en el navegador del teléfono. Si una voz de la nube falla (clave mala o sin créditos), la app usa la voz neural gratuita y explica el motivo.
+
+## Historias con IA y tendencias (opcional, usa tu clave de OpenAI)
+
+En **4 · Situación cotidiana**:
+- **🔎 Buscar lo viral ahora**: la IA busca en internet lo que está dando de qué hablar esta semana (precios, renta, trabajo, economía, memes) y te muestra 6 tendencias. Toca una para usarla, o escribe la tuya en «Tendencia del momento».
+- **✨ Escribir 3 historias con IA**: escribe 3 guiones nuevos sobre el tema, usando la tendencia, en español de la calle (Miami, sabor cubano y latino de EE. UU., con su toque de inglés) o en inglés coloquial. Humor con picardía pero limpio, un golpe nuevo cada pocos segundos y giro final. Aparecen marcados «IA». «Historias de la app» vuelve a las historias incluidas.
+
+## Fondos con IA (opcional)
+
+En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (sin personas). Encima, la app anima a los personajes como marionetas: la boca se mueve según la voz real (con lengua y dientes), los ojos parpadean y miran, las cejas cambian con la emoción y el cuerpo camina y gesticula.
+
+- Costo aproximado por video: **0,05 USD** (económico, calidad media) a **0,20 USD** (mejor calidad).
+- Antes de generar, la app muestra el **costo aproximado total** (tendencias, guion, fondos y voz).
+- La primera vez OpenAI puede pedir **verificar tu organización** (platform.openai.com → Settings → Organization → General).
+
+## Dirección automática (ritmo y diálogo)
+
+- **Diálogo de ida y vuelta**: cada personaje tiene su propia voz; habla el que dice la línea y el otro escucha asintiendo y gesticulando.
+- **Planos de reacción**: después de casi cada línea, primer plano del que escucha con cara exagerada, una exclamación hablada («¡Ñooo!», «¡Uf!», «¡Jajaja!»…) y un efecto de sonido marcado.
+- **Escenas cortas**: un corte de plano cada 1–2 s (plano de los dos, plano de uno, primer plano), personajes que entran y salen corriendo, golpes, caídas, risas y sorpresas por encima de la música.
+
+## Novedades
+
+- **Muñequitas**: mismo estilo (cabeza blanca, palitos negros) con moñito o florecita al lado de la cabeza y saya en triangulito. En «2 · Personajes» eliges si la protagonista es varón o hembra y cuántas muñequitas salen; las voces de OpenAI se asignan según el género.
+- **Escenas con el móvil**: selfies, buscar en el teléfono y pasar reels, con **planos POV** (la pantalla vista desde los ojos del personaje, con sus manos sujetando el teléfono).
+- **🌱 Superación** (primer tema): el hermano mayor que soltó el teléfono y ayuda a su hermanito, 200 selfies para subir una, «me dijeron que no 47 veces». Humor limpio, gancho raro en el primer segundo, giro final y mensaje esperanzador para compartir.
+- **Sin nombres ni protagonista fijo**: personajes genéricos que hablan y cuentan la historia.
+- **Voces OpenAI**: en español con sabor cubano y de Miami; en inglés, como hablan los jóvenes de EE. UU.
+- **Tamaño adulto**: puertas de 2 m, sofás y coches a escala; al sentarse usan el sofá de la casa o una butaca de tamaño real; siempre dos brazos y dos piernas. Camiseta de una sola pieza. Botón «Rehacer los fondos con IA» si un fondo sale mal.
+- **Reflexión final** en todos los videos y **títulos pequeños** pegados arriba.
+
+## Más acción, menos diálogo (activado por defecto)
+
+En **3 · Duración**, la casilla **🎬 Más acción, menos diálogo**:
+- Se dicen menos frases y entre ellas aparecen **escenas de acción sin voz** (≈2 s): resbalones, desmayos, tropezones, persecuciones, huidas, pasos de puntillas, arrodillarse, bailes. Cada una tiene su golpe de sonido y una **onomatopeya de cómic** («¡PLAF!», «¡ZAS!», «¡CATAPLUM!»).
+- Las reacciones del que escucha son sobre todo gestos y sonidos; solo de vez en cuando dice algo.
+- Las historias con IA salen con la mitad de las escenas mudas y frases de máximo 6 palabras.
+
+## Diseño del video
+
+- **Personajes** a tamaño de persona: cabeza blanca pura pegada a la camiseta, contorno y extremidades negras gruesas, camiseta de manga corta en colores vivos (verde, azul, amarillo, rosa).
+- **Textos que nunca tapan a nadie**: el gancho, la reflexión y los botones van en la franja de arriba; los subtítulos en la de abajo; la cámara mantiene a los personajes en la franja del medio.
+
+## Exportación
+
+- El video se renderiza fotograma a fotograma a **MP4 H.264 1080×1920 a 30 fps**.
+- El audio (voz, música y efectos) se codifica **siempre en AAC** con un codificador WebAssembly incluido en la app, así que no depende de Safari: el MP4 guardado en Fotos del iPhone y subido a redes conserva el sonido.
+- En el iPhone, usa el botón **«Guardar en Fotos / Compartir»** y elige **Guardar video**.
 
 ## Estructura
 
 ```
-index.html, css/app.css     interfaz
-js/app.js                   pantalla, vista previa y exportación
-js/content.js               temas, historias mudas y gags extra
-js/script.js                arma el video según la duración
-js/direction.js             planos de cámara y reacciones
-js/render.js                muñecos, poses, escenarios, guagua, cama, cámara
-js/audio.js                 música (cine mudo, alegre, enérgica, lo-fi) y efectos
-js/scriptai.js              tendencias y guionista de comedia muda (OpenAI)
-js/aiimages.js              fondos con IA (OpenAI)
-js/export.js                MP4 (H.264 + AAC) con Mediabunny
+munequitos-video/
+├── index.html          interfaz
+├── css/app.css         estilos (claro/oscuro, móvil)
+├── js/app.js           lógica de la interfaz, vista previa y exportación
+├── js/content.js       temas, 24 situaciones, ganchos y llamados (ES/EN)
+├── js/script.js        arma el guion y ajusta los tiempos a la duración
+├── js/render.js        dibujo: muñecos, poses, entornos, cámara, subtítulos, CTA
+├── js/audio.js         música procedural, efectos y mezcla
+├── js/tts.js           voz (Piper neural + meSpeak sin conexión)
+├── js/export.js        MP4 (H.264 + AAC) con Mediabunny
+└── vendor/             Mediabunny + codificador AAC, piper-phonemize y meSpeak
 ```
 
-### Agregar historias
+### Agregar tus propias situaciones
 
-En `js/content.js`, cada escena es `G('acciones', 'objeto', 'efecto@segundo,...', { dur, shot, react, env, night, key, twist })`, por ejemplo `G('A:slip', 'banana', 'boing@0.05,thud@0.5', { shot: 'two', react: 'B:laugh' })`.
+En `js/content.js`, añade una entrada al tema que quieras. Cada línea es
+`L(textoES, textoEN, acciones, objeto, efecto)`:
+
+- **acciones**: `"A:talk B:shrug"` o `"all:laugh"`. Disponibles: `idle talk walk run wave hug cheer jump facepalm shrug sad cry angry laugh think type phone sleep fall point sit give dance wait shock love tired strong lift pray`.
+- **objeto** (aparece grande y animado): `clock:9:30 money pizza heart gift box chart_up chart_down trophy calendar coffee bulb rocket plant laptop phone confetti light`.
+- **efecto**: `pop boing ding whoosh scratch applause cash sad drum type heart alarm laugh notif`.
+
+Para «dos caminos» usa `mode: 'caminos'`, pon en el inicio el objeto `sign:IzqES|DerES|IzqEN|DerEN` y marca cada repetición con `'left'` o `'right'`.
+
+## Publicarla en internet
+
+Como es una página estática, puedes subir la carpeta a GitHub Pages, Netlify o cualquier hosting. Este repositorio se publica con GitHub Pages desde la rama `main` (carpeta raíz).
 
 ## Créditos
 
+- [Piper](https://github.com/rhasspy/piper) (voces neuronales) mediante `@diffusionstudio/piper-wasm` y `onnxruntime-web`.
+- [meSpeak / eSpeak](https://www.masswerk.at/mespeak/) (GPL) para la voz sin conexión.
 - [Mediabunny](https://mediabunny.dev) y su codificador AAC (MPL-2.0; el codificador usa FFmpeg, LGPL).
-- Tipografía Fredoka (Google Fonts) para la interfaz.
+- Tipografía Fredoka (Google Fonts).

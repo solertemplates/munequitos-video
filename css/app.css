@@ -75,7 +75,6 @@ details.cfg summary { cursor: pointer; font-weight: 500; color: var(--mut); }
 .round { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--sel); color: var(--onsel); cursor: pointer; font-size: 18px; flex: none; }
 .time { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--mut); min-width: 92px; text-align: right; white-space: nowrap; }
 .meta { text-align: center; color: var(--mut); font-size: 13px; margin: 8px 0; }
-.exportRow.one { grid-template-columns: 1fr; }
 .exportRow { display: grid; grid-template-columns: 1fr auto; gap: 8px; max-width: 360px; margin: 0 auto; }
 .exportRow .ghost { white-space: nowrap; }
 .prog { max-width: 360px; margin: 10px auto 0; position: relative; height: 34px; border-radius: 12px; background: var(--chip); overflow: hidden; display: flex; align-items: center; }

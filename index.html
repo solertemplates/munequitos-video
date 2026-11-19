@@ -11,11 +11,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="description" content="Videos cortos de comedia muda con muñequitos de palitos: solo acciones, música y efectos de sonido. Sirven para cualquier país.">
+<meta name="description" content="Genera videos cortos verticales de muñequitos de palitos con voz, música, subtítulos y exportación MP4.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=9">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -23,80 +23,131 @@
   <div class="brand">
     <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="14" r="10" fill="none" stroke="currentColor" stroke-width="4"/><path d="M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/></svg>
     <div>
-      <h1>Muñequitos Video</h1>
-      <p class="sub">Comedia muda: acciones, música y efectos, con título y reflexión final.</p>
+      <h1 data-i18n="title">Muñequitos Video</h1>
+      <p class="sub" data-i18n="subtitle">Videos cortos de reflexión con muñequitos de palitos</p>
     </div>
   </div>
+  <button id="langBtn" class="lang" type="button" aria-label="Cambiar idioma"><span class="on">ES</span><span>EN</span></button>
 </header>
 
 <main class="layout">
   <section class="controls">
     <div class="card">
-      <h2><span class="n">1</span><span>Tema</span></h2>
+      <h2><span class="n">1</span><span data-i18n="s1">Tema</span></h2>
       <div id="themes" class="chips"></div>
     </div>
 
     <div class="card">
-      <h2><span class="n">2</span><span>Personajes, entorno y estilo</span></h2>
+      <h2><span class="n">2</span><span data-i18n="s2">Personajes, entorno y estilo</span></h2>
       <div class="row">
-        <div class="field"><label>Personajes</label><div id="nchars" class="seg"></div></div>
-        <div class="field"><label>Estilo</label><div id="colorSeg" class="seg"></div></div>
+        <div class="field">
+          <label data-i18n="chars">Personajes</label>
+          <div id="nchars" class="seg"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="mainLbl">Protagonista</label>
+          <div id="mainSeg" class="seg"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="girlsLbl">¿Cuántas muñequitas?</label>
+          <div id="girlsSeg" class="seg"></div>
+        </div>
+        <div class="field">
+          <label data-i18n="style">Estilo</label>
+          <div id="colorSeg" class="seg"></div>
+        </div>
       </div>
-      <label class="lbl">Entorno</label>
+      <label class="lbl" data-i18n="env">Entorno</label>
       <div id="envs" class="chips small"></div>
     </div>
 
     <div class="card">
-      <h2><span class="n">3</span><span>Duración</span></h2>
+      <h2><span class="n">3</span><span data-i18n="s3">Duración</span></h2>
       <div id="durs" class="seg big"></div>
-      <p class="hint">En los videos cortos quedan las escenas clave; en los largos se agregan gags extra.</p>
+      <p class="hint" data-i18n="durHint">La app ajusta el ritmo y la cantidad de escenas al rango elegido.</p>
+      <label class="check"><input id="actionOn" type="checkbox" checked> <span data-i18n="actionOn">🎬 Más acción, menos diálogo</span></label>
+      <p class="hint" data-i18n="actionHint">Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido y letras de cómic.</p>
     </div>
 
     <div class="card">
-      <div class="h2row"><h2><span class="n">4</span><span>Historia</span></h2><button id="appSits" class="ghost" type="button" hidden>Historias de la app</button></div>
+      <div class="h2row"><h2><span class="n">4</span><span data-i18n="s4">Situación cotidiana</span></h2><button id="appSits" class="ghost" type="button" data-i18n="appSits" hidden>Historias de la app</button></div>
       <div class="aiwriter">
-        <label class="lbl" for="trend">Idea o tendencia del momento (opcional)</label>
-        <input id="trend" type="text" maxlength="160" placeholder="Ej.: la gasolina carísima, el jefe que manda mensajes de noche">
+        <label class="lbl" for="trend" data-i18n="trendLbl">Tendencia del momento (opcional)</label>
+        <input id="trend" type="text" maxlength="160" data-i18n-ph="trendPh" placeholder="Ej.: el precio de los huevos, la renta en Miami, las propinas">
         <div id="trendChips" class="chips small" style="margin-top:8px"></div>
         <div class="airow">
-          <button id="trendBtn" class="ghost" type="button">🔎 Buscar lo viral ahora</button>
-          <button id="writeBtn" class="ghost strong" type="button">✨ Escribir 3 historias con IA</button>
+          <button id="trendBtn" class="ghost" type="button" data-i18n="trendBtn">🔎 Buscar lo viral ahora</button>
+          <button id="writeBtn" class="ghost strong" type="button" data-i18n="writeBtn">✨ Escribir 3 historias con IA</button>
         </div>
-        <p class="hint">Usa tu clave de OpenAI (sección 6). La IA escribe comedia muda: tropezones, confusiones, persecuciones y planes que salen mal, sin diálogos.</p>
+        <p class="hint" id="writerHint"></p>
       </div>
       <div id="sits" class="options"></div>
-      <label class="check"><input id="titleOn" type="checkbox" checked> <span>Mostrar el título pequeño arriba</span></label>
-      <label class="lbl" for="refl">Reflexión final (sale al terminar; puedes cambiarla)</label>
-      <input id="refl" type="text" maxlength="120" placeholder="Una frase corta que deje pensando">
     </div>
 
     <div class="card">
-      <h2><span class="n">5</span><span>Música y efectos</span></h2>
-      <div class="row">
-        <div class="field grow"><label class="lbl" for="music">Música</label><select id="music"></select></div>
-        <div class="field grow"><label class="lbl" for="musicVol">Volumen música</label><input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.6"></div>
+      <div class="h2row"><h2><span class="n">5</span><span data-i18n="s5">Gancho inicial</span></h2><button id="moreHooks" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
+      <div id="hooks" class="options"></div>
+    </div>
+
+    <div class="card">
+      <div class="h2row"><h2><span class="n">6</span><span data-i18n="s6">Llamado a la acción</span></h2><button id="moreCtas" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
+      <p class="hint" data-i18n="ctaHint" style="margin:0 0 8px">Toca uno o dos (se combinan en una sola frase).</p>
+      <div id="ctas" class="options"></div>
+      <p id="ctaPreview" class="ctaPreview"></p>
+      <label class="lbl" data-i18n="qLbl" style="margin-top:14px">Pregunta final en pantalla (para que comenten)</label>
+      <div id="questions" class="options"></div>
+      <details class="cfg">
+        <summary data-i18n="ctaCfg">Configurar página y enlace</summary>
+        <label class="lbl" for="page" data-i18n="pageName">Nombre de tu página (aparece en el video)</label>
+        <input id="page" type="text" placeholder="@mipagina" maxlength="40">
+        <label class="lbl" for="linkUrl" data-i18n="linkUrl">Enlace (URL)</label>
+        <input id="linkUrl" type="url" placeholder="https://..." maxlength="200">
+        <label class="lbl" for="linkLabel" data-i18n="linkLabel">Texto del botón del enlace</label>
+        <input id="linkLabel" type="text" placeholder="miweb.com/curso" maxlength="40">
+      </details>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">7</span><span data-i18n="s7">Voz, música y efectos</span></h2>
+      <label class="lbl" for="voice" data-i18n="voice">Voz automática</label>
+      <select id="voice"></select>
+      <p class="hint" id="voiceHint"></p>
+      <div id="cloudCfg" class="cloud" hidden>
+        <label class="lbl" for="apiKey" id="apiKeyLbl">Tu clave</label>
+        <div class="keyrow"><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-..."><button id="loadVoices" class="ghost" type="button" data-i18n="loadVoices">Cargar mis voces</button></div>
+        <p class="hint" id="cloudHint"></p>
       </div>
-      <label class="check"><input id="sfx" type="checkbox" checked> <span>Efectos de sonido (golpes, caídas, risas, pasos, bocinas)</span></label>
-      <label class="check"><input id="ctaOn" type="checkbox" checked> <span>Terminar con animación de «me gusta, compartir y seguir» (solo íconos)</span></label>
+      <div class="row">
+        <div class="field grow">
+          <label class="lbl" for="music" data-i18n="music">Música</label>
+          <select id="music"></select>
+        </div>
+        <div class="field grow">
+          <label class="lbl" for="musicVol" data-i18n="musicVol">Volumen música</label>
+          <input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.6">
+        </div>
+      </div>
+      <label class="check"><input id="sfx" type="checkbox" checked> <span data-i18n="sfx">Efectos de sonido</span></label>
     </div>
 
     <div class="card ai">
-      <h2><span class="n">6</span><span>Inteligencia artificial (opcional)</span></h2>
-      <p class="hint" style="margin:0 0 8px">Tu clave de OpenAI sirve para escribir historias y para dibujar fondos detallados.</p>
-      <label class="lbl" for="aiKey">Tu clave de OpenAI (API key)</label>
+      <h2><span class="n">8</span><span data-i18n="s8">Fondos con IA</span></h2>
+      <p class="hint" data-i18n="keyNote" style="margin:0 0 8px">Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.</p>
+      <label class="check"><input id="aiOn" type="checkbox"> <span data-i18n="aiOn">Usar fondos dibujados con IA (OpenAI)</span></label>
+      <p class="hint" data-i18n="aiIntro">La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.</p>
+      <label class="lbl" for="aiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
       <input id="aiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-...">
-      <label class="check"><input id="aiOn" type="checkbox"> <span>Usar fondos dibujados con IA</span></label>
       <div id="aiCfg" hidden>
         <div class="row">
-          <div class="field grow"><label class="lbl" for="aiModel">Modelo</label><select id="aiModel"></select></div>
-          <div class="field grow"><label class="lbl" for="aiQuality">Calidad</label><select id="aiQuality"></select></div>
+          <div class="field grow"><label class="lbl" for="aiModel" data-i18n="aiModel">Modelo</label><select id="aiModel"></select></div>
+          <div class="field grow"><label class="lbl" for="aiQuality" data-i18n="aiQuality">Calidad</label><select id="aiQuality"></select></div>
         </div>
         <p class="hint" id="aiHint"></p>
       </div>
     </div>
 
     <div id="costBox" class="cost" hidden></div>
-    <button id="genBtn" class="primary" type="button">Generar vista previa</button>
+    <button id="genBtn" class="primary" type="button" data-i18n="generate">Generar vista previa</button>
     <p id="status" class="status" role="status" aria-live="polite"></p>
   </section>
 
@@ -104,7 +155,7 @@
     <div class="card sticky">
       <div class="phone">
         <canvas id="preview" width="540" height="960" aria-label="Vista previa del video"></canvas>
-        <div id="emptyMsg" class="empty">Elige un tema y una historia, y pulsa «Generar vista previa».</div>
+        <div id="emptyMsg" class="empty" data-i18n="empty">Elige tus opciones y pulsa «Generar vista previa».</div>
         <button id="bigPlay" class="bigPlay" type="button" aria-label="Reproducir" hidden>▶</button>
       </div>
       <div class="player" id="player" hidden>
@@ -113,16 +164,23 @@
         <span id="timeLbl" class="time">0.0 s</span>
       </div>
       <div id="meta" class="meta"></div>
-      <div class="exportRow one" id="exportRow" hidden>
-        <button id="exportBtn" class="primary" type="button">Exportar MP4</button>
+      <div class="exportRow" id="exportRow" hidden>
+        <button id="exportBtn" class="primary" type="button" data-i18n="export">Exportar MP4</button>
+        <button id="srtBtn" class="ghost" type="button" data-i18n="srt">Subtítulos .srt</button>
       </div>
-      <div id="exportProg" class="prog" hidden><div></div><span></span><button id="cancelBtn" type="button" class="ghost sm">Cancelar</button></div>
-      <button id="shareBtn" class="download share" type="button" hidden>Guardar en Fotos / Compartir</button>
+      <div id="exportProg" class="prog" hidden><div></div><span></span><button id="cancelBtn" type="button" class="ghost sm" data-i18n="cancel">Cancelar</button></div>
+      <button id="shareBtn" class="download share" type="button" data-i18n="share" hidden>Guardar en Fotos / Compartir</button>
       <a id="dl" class="download" hidden></a>
+      <button id="redoBg" class="ghost" type="button" style="display:block;margin:10px auto 0" hidden>🔄 Rehacer los fondos con IA</button>
+    </div>
+
+    <div class="card" id="scriptCard" hidden>
+      <div class="h2row"><h2 data-i18n="script">Guion (puedes editarlo)</h2><button id="applyBtn" class="ghost" type="button" data-i18n="apply">Aplicar cambios</button></div>
+      <ol id="scriptList" class="script"></ol>
     </div>
   </section>
 </main>
-<footer class="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels, TikTok y Facebook.</footer>
-<script type="module" src="js/app.js?v=8"></script>
+<footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
+<script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
