@@ -70,7 +70,7 @@ export async function searchTrends(apiKey, { lang, theme }) {
 
 // 2) Escribir 3 historias nuevas en el formato de la app
 // Escribe 3 historias habladas para jóvenes que pasan reels: gancho raro, humor limpio, giro final y mensaje que se comparte
-export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur, genders = {} }) {
+export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur, genders = {}, vision = '' }) {
   const reps = dur === 's' ? 5 : dur === 'm' ? 8 : 11;
   const es = lang === 'es';
   const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
@@ -94,6 +94,7 @@ CERO ABURRIMIENTO (lo más importante):
 - Además del humor, historias de RESILIENCIA y SUPERACIÓN (ej.: un hermano mayor que dejó de ser esclavo del teléfono ayuda a su hermanito).
 - La historia crece hasta un GIRO FINAL que sorprenda y den ganas de volver a verlo, y termina con una REFLEXIÓN esperanzadora que la gente quiera mandarle a un amigo.
 - PUNTUACIÓN COMPLETA (para que la voz respire y se emocione): usa comas, puntos, punto y coma, puntos suspensivos (…) y, en español, SIEMPRE los signos de apertura y cierre: ¿…? y ¡…!. Cada línea termina en punto, «…», ? o !. Pon pausas donde una persona real respiraría.
+${vision}La tendencia del momento es solo el ESCENARIO o el pretexto; el mensaje y la reflexión son los del autor.
 Responde SOLO con JSON válido.`;
   const user = `Tema: ${themeName}. Tendencia o idea del momento: ${trend ? `"${trend}"` : '(ninguna)'}.
 Personajes: ${cast}.
@@ -119,7 +120,7 @@ Escribe 3 historias DISTINTAS con este formato exacto:
 }
 
 // Hace más divertido un guion existente (de la app o de la IA), manteniendo la idea y el formato
-export async function punchUp(apiKey, story, { lang, nChars, dur, genders = {} }) {
+export async function punchUp(apiKey, story, { lang, nChars, dur, genders = {}, vision = '' }) {
   const T = o => (o == null ? '' : typeof o === 'string' ? o : (o[lang] || o.es || ''));
   const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
   const line = (o, i) => o ? `${i}) [${o.a || ''}] ${T(o.t || o.q) || (o.o ? '(sin voz) ' + T(o.o) : '(sin voz)')}` : '';
@@ -130,7 +131,7 @@ export async function punchUp(apiKey, story, { lang, nChars, dur, genders = {} }
   const voice = es ? 'Español de la calle de Miami, con sabor cubano ("pa\'", "asere", "tremendo", "brother"), fácil para cualquier latino.' : 'Natural, casual American English like young Americans talk today. Never British.';
   const sys = `Eres un "script doctor" de videos virales de muñequitos de palitos para jóvenes. Tu trabajo: hacer que este guion NO sea aburrido. ${voice}
 ${ANTI_RULES}
-Mantén la idea, el tema y el mensaje, pero reescribe con más chispa, sorpresa y ritmo. Humor limpio, sin groserías, sin nombres propios. Responde SOLO con JSON válido.`;
+${vision}Mantén la idea, el tema y el mensaje (siempre con la visión del autor), pero reescribe con más chispa, sorpresa y ritmo. Humor limpio, sin groserías, sin nombres propios. Responde SOLO con JSON válido.`;
   const reps = dur === 's' ? 5 : dur === 'm' ? 8 : 11;
   const user = `Título: ${T(story.title)}
 Gancho actual: ${T(story.hook)}
@@ -201,10 +202,11 @@ function toMime(o, k) {
     reflectMood: MOODS.includes(o.reflectMood) ? o.reflectMood : 'emotiva', endCast: last ? last.cast : undefined, endRain: !!(last && last.rain),
   };
 }
-export async function writeMime(apiKey, { lang, avoid = [], genders = {} }) {
+export async function writeMime(apiKey, { lang, avoid = [], genders = {}, vision = '' }) {
   const sys = `Eres guionista de cortos virales de PANTOMIMA con muñequitos de palitos (sin voces, solo música). Los personajes cuentan la historia SOLO con gestos, mímica, caras y movimientos muy expresivos; jamás hablan ni hay carteles. Historias para jóvenes, limpias, que emocionen y den ganas de compartir.
 Estructura: arranque raro o llamativo en el primer segundo; conflicto claro con gestos (pelea, celos, orgullo, prisa, el teléfono, un malentendido…); escalada en 3–5 pasos; GIRO FINAL que emocione (un gesto inesperado de cariño, perdón, ayuda o valentía); final con una frase de reflexión corta y fuerte (máx. 9 palabras cada frase), con puntuación completa (¿? ¡! , … .).
-Escena: escenario con el suelo libre. Nunca sillas sueltas, bancas sueltas, banquetas ni mesas: solo pueden sentarse en el banco del parque (si "bench": true, x entre 340 y 760) o en el sofá de la casa (env "casa", x entre 120 y 720). Responde SOLO con JSON válido.`;
+Escena: escenario con el suelo libre. Nunca sillas sueltas, bancas sueltas, banquetas ni mesas: solo pueden sentarse en el banco del parque (si "bench": true, x entre 340 y 760) o en el sofá de la casa (env "casa", x entre 120 y 720).
+${vision}El mensaje de la historia y la frase final salen de la visión del autor. Responde SOLO con JSON válido.`;
   const user = `Inventa 3 historias de pantomima NUEVAS y distintas entre sí. No repitas ni copies estas ideas: ${avoid.map(t => `"${t}"`).join(', ') || '(ninguna)'}.
 Ejemplo del estilo (NO lo repitas): un muchacho y una muchacha llegan discutiendo con gestos, se sientan en las puntas de un banco, se miran y se dan la espalda por turnos, ella intenta acercarse y él se aleja, empieza a llover, él abre una sombrilla y la tapa, ella lo abraza; frase final.
 Formato exacto: {"ideas":[{

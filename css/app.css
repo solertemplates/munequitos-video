@@ -127,3 +127,9 @@ button.download { width: 100%; border: 0; cursor: pointer; font-size: 17px; }
 .track select { flex: 1 1 150px; min-width: 0; font-size: 14px; padding: 6px; }
 .track small { width: 100%; opacity: .7; }
 .track .x { flex: none; }
+
+#phIn { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; border-radius: 12px; border: 2px solid var(--bd); background: var(--card, #fff); color: inherit; resize: vertical; }
+.phrase { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--chip); }
+.phrase q { flex: 1 1 100%; font-size: 15px; line-height: 1.35; quotes: '«' '»'; cursor: pointer; }
+.phrase select { flex: 1 1 140px; min-width: 0; font-size: 13px; padding: 5px; }
+.phrase small { opacity: .7; }

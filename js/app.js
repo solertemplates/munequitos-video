@@ -9,6 +9,7 @@ import { moodSections, planMusic, catName } from './musicplan.js';
 import { synth, OPENAI_VOICES, voiceForRole } from './tts.js';
 import { ALL_MESSAGE_STORIES, buildMessage } from './message.js';
 import { tagVisuals } from './visuals.js';
+import { loadPhrases, addPhrases, updatePhrase, deletePhrase, pickFinalPhrase, visionPrompt, AUTHOR } from './phrases.js';
 import { planDirection, planShots, insertActions } from './direction.js';
 import { exportMP4 } from './export.js';
 
@@ -30,6 +31,7 @@ const I18N = {
     vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', qLbl: 'Pregunta final en pantalla (para que comenten)', punchBtn: '✨ Hacer este guion más divertido (IA)', punching: 'Reescribiendo el guion con más chispa…', punched: 'Listo: guion mejorado (marcado ✨). Genera la vista previa.', mainLbl: 'Protagonista', girlsLbl: '¿Cuántas muñequitas?', boy: '👦 Varón', girl: '👧 Hembra', actionOn: '🎬 Más acción, menos diálogo', actionHint: 'Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido reales.', s8: 'Fondos con IA', aiOn: 'Usar fondos dibujados con IA (OpenAI)', aiIntro: 'La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.', appSits: 'Historias de la app', trendLbl: 'Tendencia del momento (opcional)', trendPh: 'Ej.: el precio de los huevos, la renta en Miami, las propinas', trendBtn: '🔎 Buscar lo viral ahora', writeBtn: '✨ Escribir 3 historias con IA', writerHint: 'Usa tu clave de OpenAI (pégala en la sección 8). La IA busca en internet lo que está viral y escribe historias con humor, a lo Miami.', searching: 'Buscando lo que está viral ahora…', writing: 'Escribiendo 3 historias nuevas…', trendsFound: n => `Encontré ${n} tendencias. Toca una para usarla.`, written: 'Listo: 3 historias nuevas escritas con IA (marcadas «IA»). Elige una.', noTrends: 'No encontré tendencias ahora; escribe una tú arriba.', needKeyAI: 'Primero pega tu clave de OpenAI en la sección 8.', costTitle: 'Costo aproximado de este video:', cTrends: 'búsqueda de tendencias', cWrite: 'guion con IA', cBg: n => `${n} fondos con IA`, cVoice: 'voz OpenAI', cEleven: 'voz ElevenLabs (créditos de tu plan)', costFree: 'Este video no tiene costo (todo se genera en tu teléfono).', keyNote: 'Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.', iaTag: 'IA', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Cada video usa 2–3 fondos (≈ ${c} USD con esta calidad), cobrados de tu saldo de OpenAI. Tarda 1–2 minutos; deja la pantalla encendida. Esta misma clave sirve para la voz de OpenAI y para escribir historias con IA. Si OpenAI pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Dibujando fondos con IA ${i}/${n}… (1–2 minutos)`, imgFail: 'No se pudieron crear los fondos con IA; se usaron los fondos de la app. Motivo: ', imgSome: n => `${n} fondo(s) no se pudieron crear y se usaron los de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
     s0: 'Tipo de video', vVoz: '🎙️ Con voces', vVozD: 'Los personajes hablan', vMus: '🎵 Solo música con mensaje', vMusD: 'Sin voces, frases en pantalla',
     vtypeVoz: 'Los muñequitos hablan en español o inglés, con voces naturales de OpenAI, subtítulos y música que baja sola cuando hablan.', vtypeMus: 'Sin voces: un muñequito hace algo con significado (subir una montaña, caerse y levantarse, caminar bajo la lluvia…) con música emotiva. El mensaje aparece en pocas frases, grandes y cortas, y termina con una reflexión fuerte. No necesita clave.',
+    phTitle: `Banco de frases de ${AUTHOR}`, phIntro: 'Pega tus frases, reflexiones e ideas: una por línea, o muchas de golpe. Se guardan solo en este teléfono. La IA escribe cada historia con tu forma de pensar y tu visión (tus frases mandan), inspirándose además en las ideas de grandes oradores, pero con palabras nuevas.', phPh: 'Ej.:\nEl que no se rinde ya va ganando.\nLa familia es el primer negocio que tienes que sacar adelante.', phAdd: '💾 Guardar frases', phAuto: '✨ Tema: que la app lo adivine', phUseLbl: 'Usar una de mis frases, tal cual, como reflexión final', phSome: 'A veces', phAlways: 'Siempre', phNever: 'Nunca', phSum: n => `📖 Ver, editar y borrar mis frases (${n})`, phAll: 'Todos los temas', phAdded: n => `Se guardaron ${n} frase(s) nueva(s). La app adivinó el tema de las que no tenían; puedes cambiarlo abajo.`, phNone: 'Pega al menos una frase.', phEdit: 'Edita tu frase:', phDel: 'Borrar esta frase?', phGuessed: '✨ tema adivinado', phMine: '✋ tema elegido por ti', phUsedN: n => `usada ${n} vez/veces como reflexión final`, phFinal: '✍️ Reflexión final: tu frase', phEmpty: 'Todavía no hay frases en este tema.',
     s4msg: 'Historia con mensaje', mimeTag: 'Pantomima', soloTag: 'Mensaje', mimeBtn: '✨ Inventar 3 historias de pantomima nuevas (IA)', writingMime: 'Inventando historias de pantomima nuevas…', wroteMime: n => `Listo: ${n} historias nuevas de pantomima (marcadas «IA»). Elige una y genera el video.`, needKeyMime: 'Para inventar historias con IA, pega tu clave de OpenAI en la sección 8.', noMime: 'La IA no devolvió historias. Prueba otra vez.',
     autoMusic: '🤖 Automática: la app escoge según la historia', bankTitle: '🎵 Mi banco de música', bankHint: n => `Tienes ${n} canción(es) en tu banco. En «Automática», la app lee el guion y escoge la que pega con cada parte de la historia, sin repetir siempre la misma; si la emoción cambia, la música cambia con una transición suave.`, listening: (i, n, name) => `Escuchando y clasificando ${i}/${n}: «${name}»…`, addedN: (n, list) => `Se guardaron ${n} canción(es) en tu teléfono: ${list}. Puedes cambiar la categoría si quieres.`, listen: 'Escuchar', rename: 'Renombrar', renameAsk: 'Nuevo nombre de la canción:', catLbl: 'Categoría', delAsk: n => `¿Borrar «${n}» de tu banco?`, catAuto: c => `✨ La app la escuchó: ${c}`, catByYou: '✋ Categoría elegida por ti', musicUsed: '🎵 Música:', upload: '📂 Subir canciones (varias a la vez)', pixTitle: '📱 Cómo bajar música gratis de Pixabay en tu iPhone', mine: 'Mi música', builtIn: 'Incluida en la app (instrumentos reales)', tagFor: 'Estilo de la canción que subes:',
     musicHintTxt: 'Sube tus canciones (MP3 o M4A, varias a la vez, por ejemplo de Pixabay Music). Se guardan solo en este teléfono, no en internet. La app escucha cada una y le pone sola la categoría. Mientras tu banco esté vacío, usa piano y guitarra reales grabados.', uploaded: n => `Listo: «${n}» quedó guardada en tu teléfono y ya está elegida.`, upFail: 'No se pudo leer ese audio. Prueba con un .mp3 o .m4a.', delTrack: 'Borrar', sfx: 'Efectos de sonido reales',
@@ -57,6 +59,7 @@ const I18N = {
     vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', qLbl: 'On-screen final question (to drive comments)', punchBtn: '✨ Make this script funnier (AI)', punching: 'Punching up the script…', punched: 'Done: improved script (marked ✨). Generate the preview.', mainLbl: 'Main character', girlsLbl: 'How many girls?', boy: '👦 Boy', girl: '👧 Girl', actionOn: '🎬 More action, less talking', actionHint: 'Fewer spoken lines and more physical comedy: slips, faints, chases and escapes, with punchy real sound effects.', s8: 'AI backgrounds', aiOn: 'Use AI-drawn backgrounds (OpenAI)', aiIntro: 'The AI draws detailed scenery (houses, streets, office, church…) and the app animates the stick figures on top: they talk, blink, gesture and walk.', appSits: 'App stories', trendLbl: 'Current trend (optional)', trendPh: 'E.g.: egg prices, rent, tipping culture', trendBtn: '🔎 Find what\'s viral now', writeBtn: '✨ Write 3 stories with AI', writerHint: 'Uses your OpenAI key (paste it in section 8). The AI searches the web for what\'s viral and writes funny stories.', searching: 'Searching what\'s viral right now…', writing: 'Writing 3 new stories…', trendsFound: n => `Found ${n} trends. Tap one to use it.`, written: 'Done: 3 new AI stories (tagged "AI"). Pick one.', noTrends: 'No trends found right now; type one above.', needKeyAI: 'Paste your OpenAI key in section 8 first.', costTitle: 'Approximate cost of this video:', cTrends: 'trend search', cWrite: 'AI script', cBg: n => `${n} AI backgrounds`, cVoice: 'OpenAI voice', cEleven: 'ElevenLabs voice (your plan credits)', costFree: 'This video is free (everything runs on your phone).', keyNote: 'Your OpenAI key is used for backgrounds, the OpenAI voice and AI stories.', iaTag: 'AI', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `Each video uses 2–3 backgrounds (≈ ${c} USD at this quality), charged to your OpenAI balance. Takes 1–2 minutes; keep the screen on. The same key works for the OpenAI voice and AI story writing. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Drawing AI backgrounds ${i}/${n}… (1–2 minutes)`, imgFail: 'Could not create the AI backgrounds; the app backgrounds were used. Reason: ', imgSome: n => `${n} background(s) failed and the app ones were used.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
     s0: 'Video type', vVoz: '🎙️ With voices', vVozD: 'Characters talk', vMus: '🎵 Music + message only', vMusD: 'No voices, on-screen phrases',
     vtypeVoz: 'The stick figures talk in Spanish or English with natural OpenAI voices, subtitles and music that ducks when they speak.', vtypeMus: 'No voices: one stick figure does something meaningful (climbing a mountain, falling and getting up, walking in the rain…) with emotional music. The message appears in a few big, short phrases and ends with a strong reflection. No key needed.',
+    phTitle: `${AUTHOR}'s quote bank`, phIntro: 'Paste your quotes, reflections and ideas: one per line, or many at once. They are saved only on this phone. The AI writes every story with your way of thinking and your vision (your quotes come first), also inspired by the ideas of great speakers, in new words.', phPh: 'E.g.:\nWhoever never quits is already winning.', phAdd: '💾 Save quotes', phAuto: '✨ Topic: let the app guess', phUseLbl: 'Use one of my quotes, word for word, as the final reflection', phSome: 'Sometimes', phAlways: 'Always', phNever: 'Never', phSum: n => `📖 See, edit and delete my quotes (${n})`, phAll: 'All topics', phAdded: n => `Saved ${n} new quote(s). The app guessed the topic for those without one; you can change it below.`, phNone: 'Paste at least one quote.', phEdit: 'Edit your quote:', phDel: 'Delete this quote?', phGuessed: '✨ topic guessed', phMine: '✋ topic chosen by you', phUsedN: n => `used ${n} time(s) as final reflection`, phFinal: '✍️ Final reflection: your quote', phEmpty: 'No quotes in this topic yet.',
     s4msg: 'Story with a message', mimeTag: 'Pantomime', soloTag: 'Message', mimeBtn: '✨ Invent 3 new pantomime stories (AI)', writingMime: 'Inventing new pantomime stories…', wroteMime: n => `Done: ${n} new pantomime stories (tagged "AI"). Pick one and generate.`, needKeyMime: 'To invent stories with AI, paste your OpenAI key in section 8.', noMime: 'The AI returned no stories. Try again.',
     autoMusic: '🤖 Automatic: the app picks based on the story', bankTitle: '🎵 My music bank', bankHint: n => `You have ${n} song(s) in your bank. On "Automatic" the app reads the script and picks the one that fits each part of the story, without always repeating the same; if the emotion changes, the music changes with a smooth crossfade.`, listening: (i, n, name) => `Listening and sorting ${i}/${n}: "${name}"…`, addedN: (n, list) => `Saved ${n} song(s) on your phone: ${list}. You can change the category if you want.`, listen: 'Listen', rename: 'Rename', renameAsk: 'New song name:', catLbl: 'Category', delAsk: n => `Delete "${n}" from your bank?`, catAuto: c => `✨ The app listened: ${c}`, catByYou: '✋ Category chosen by you', musicUsed: '🎵 Music:', upload: '📂 Upload songs (several at once)', pixTitle: '📱 How to get free music from Pixabay on your iPhone', mine: 'My music', builtIn: 'Built-in (real instruments)', tagFor: 'Style of the song you upload:',
     musicHintTxt: 'Upload your songs (MP3 or M4A, several at once, e.g. from Pixabay Music). They are saved only on this phone, never online. The app listens to each one and sorts it automatically. While your bank is empty it uses real recorded piano and guitar.', uploaded: n => `Done: "${n}" is saved on your phone and selected.`, upFail: 'Could not read that audio. Try an .mp3 or .m4a.', delTrack: 'Delete', sfx: 'Real sound effects',
@@ -72,7 +75,7 @@ const I18N = {
 
 // ---------- estado ----------
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const DEFAULTS = { vtype: 'voz', msgSel: 0, voice: 'ash', musicHist: [], aiMime: [], mimeTitles: [], mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, page: '', linkUrl: '', linkLabel: '', music: 'auto', musicVol: 0.6, sfx: true };
+const DEFAULTS = { phUse: 'aveces', phFilter: 'all', vtype: 'voz', msgSel: 0, voice: 'ash', musicHist: [], aiMime: [], mimeTitles: [], mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, page: '', linkUrl: '', linkLabel: '', music: 'auto', musicVol: 0.6, sfx: true };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-state') || '{}') }; } catch { /* sin almacenamiento */ }
 const save = () => { try { localStorage.setItem('munequitos-state', JSON.stringify(S)); } catch { /* ignorar */ } };
@@ -107,7 +110,7 @@ function renderAll() {
   // tipo de video
   $('#vtypeSeg').replaceChildren(btn('', `${L.vVoz}<small>${L.vVozD}</small>`, !MSG(), () => { S.vtype = 'voz'; change(); }), btn('', `${L.vMus}<small>${L.vMusD}</small>`, MSG(), () => { S.vtype = 'musica'; change(); }));
   $('#vtypeHint').textContent = MSG() ? L.vtypeMus : L.vtypeVoz;
-  for (const id of ['#themeCard', '#fNchars', '#envBox', '#actionBox', '#aiWriter', '#punchBtn', '#hookCard', '#qBox', '#voiceLbl', '#voice', '#voiceHint', '#aiCard']) $(id).hidden = MSG();
+  for (const id of ['#fNchars', '#envBox', '#actionBox', '#aiWriter', '#punchBtn', '#hookCard', '#qBox', '#voiceLbl', '#voice', '#voiceHint', '#aiCard']) $(id).hidden = MSG();
   $('#s4lbl').textContent = MSG() ? L.s4msg : L.s4;
   $('#mimeBtn').hidden = !MSG(); $('#mimeBtn').textContent = L.mimeBtn;
   const th = $('#themes'); th.replaceChildren(...THEMES.map(t => btn('chip', `${t.emoji} ${esc(t.name[S.lang])}`, S.theme === t.id, () => { S.theme = t.id; S.sit = 0; S.hook = 0; S.hookSeed = 1; S.qSel = 0; change(); })));
@@ -147,7 +150,7 @@ function renderAll() {
   $('#trendChips').replaceChildren(...(S.trends || []).map(tr2 => btn('chip trend', `<b>${esc(tr2.title)}</b>${tr2.summary ? '<br><small>' + esc(tr2.summary) + '</small>' : ''}`, S.trend === tr2.title, () => { S.trend = tr2.title; save(); renderAll(); })));
   $('#writerHint').textContent = L.writerHint;
   $('#appSits').hidden = !(S.aiIdeas && S.aiIdeas[S.theme + '|' + S.lang]);
-  renderCost();
+  renderCost(); renderPhrases(L);
   { const qs = questionOptions(S.theme, sit, S.qSeed || 1); $('#questions').replaceChildren(...qs.map((q, i) => btn('opt', `<span class="tag">?</span><div><b>${esc(q[S.lang])}</b></div>`, (S.qSel || 0) === i, () => { S.qSel = i; change(); }))); }
   { const group = (label, opts) => { const g = document.createElement('optgroup'); g.label = label; g.append(...opts); return g; };
     const groups = [new Option(L.autoMusic, 'auto')]; if (TRACKS.length) groups.push(group('🎵 ' + L.mine, TRACKS.map(t => new Option(`${t.name} · ${catName(t.cat, S.lang)}`, 'mine:' + t.id))));
@@ -161,6 +164,34 @@ function renderAll() {
   if (project) $('#meta').textContent = L.meta(project.total, project.beats.length, project.beats.reduce((s, b) => s + b.shots, 0));
 }
 // Género de cada personaje: A según la protagonista; el resto de muñequitas, desde B en adelante
+function renderPhrases(L) {
+  const opts = (withAuto) => [...(withAuto ? [new Option(L.phAuto, 'auto')] : []), ...THEMES.map(t => new Option(`${t.emoji} ${t.name[S.lang]}`, t.id))];
+  $('#phIn').placeholder = L.phPh; const keep = $('#phTheme').value; $('#phTheme').replaceChildren(...opts(true)); $('#phTheme').value = keep || 'auto'; if ($('#phTheme').selectedIndex < 0) $('#phTheme').value = 'auto';
+  $('#phUseSeg').replaceChildren(...[['aveces', L.phSome], ['siempre', L.phAlways], ['nunca', L.phNever]].map(([k, lb]) => btn('', lb, S.phUse === k, () => { S.phUse = k; dirty = true; save(); renderAll(); })));
+  const all = loadPhrases(); $('#phSum').textContent = L.phSum(all.length);
+  $('#phFilter').replaceChildren(new Option(L.phAll, 'all'), ...opts(false)); $('#phFilter').value = S.phFilter || 'all'; if ($('#phFilter').selectedIndex < 0) $('#phFilter').value = 'all';
+  const list = all.filter(p => (S.phFilter || 'all') === 'all' || p.theme === S.phFilter).reverse();
+  if (!list.length) { const e = document.createElement('p'); e.className = 'hint'; e.textContent = L.phEmpty; $('#phList').replaceChildren(e); return; }
+  $('#phList').replaceChildren(...list.map(p => {
+    const d = document.createElement('div'); d.className = 'phrase';
+    const q = document.createElement('q'); q.textContent = p.text; q.title = L.phEdit;
+    q.addEventListener('click', () => { const v = prompt(L.phEdit, p.text); if (v != null && v.trim()) { updatePhrase(p.id, { text: v }); dirty = true; renderAll(); } });
+    const sel = document.createElement('select'); sel.append(...opts(false)); sel.value = p.theme;
+    sel.addEventListener('change', () => { updatePhrase(p.id, { theme: sel.value }); dirty = true; renderAll(); });
+    const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'x'; ed.textContent = '✏️'; ed.addEventListener('click', () => q.click());
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'x'; del.textContent = '🗑'; del.addEventListener('click', () => { if (confirm(L.phDel)) { deletePhrase(p.id); dirty = true; renderAll(); } });
+    const info = document.createElement('small'); info.textContent = (p.auto ? L.phGuessed : L.phMine) + (p.used ? ' · ' + L.phUsedN(p.used) : '');
+    d.append(q, sel, ed, del, info); return d;
+  }));
+}
+$('#phAdd').addEventListener('click', () => {
+  const L = tr(); const raw = $('#phIn').value; if (!raw.trim()) { setStatus(L.phNone, true); return; }
+  const added = addPhrases(raw, $('#phTheme').value || 'auto'); $('#phIn').value = ''; dirty = true;
+  $('#phDet').open = true; renderAll(); setStatus(L.phAdded(added.length));
+});
+$('#phFilter').addEventListener('change', e => { S.phFilter = e.target.value; save(); renderAll(); });
+// ¿usa una frase del autor, tal cual, como reflexión final en este video?
+const wantMyPhrase = () => S.phUse === 'siempre' || (S.phUse !== 'nunca' && Math.random() < 0.5);
 function castGenders() {
   const g = { A: S.mainGender === 'f' ? 'f' : 'm' }; let left = (S.nGirls ?? 0) - (g.A === 'f' ? 1 : 0);
   for (const r of ['B', 'C', 'D'].slice(0, S.nChars - 1)) { g[r] = left > 0 ? 'f' : 'm'; if (left > 0) left--; }
@@ -217,7 +248,7 @@ $('#mimeBtn').addEventListener('click', async () => {
   const b = $('#mimeBtn'); b.disabled = true; setStatus(L.writingMime);
   try {
     const avoid = [...ALL_MESSAGE_STORIES().map(m => m.title.es), ...(S.mimeTitles || [])].slice(-60);
-    const ideas = await writeMime(KEYS.openai, { lang: S.lang, avoid, genders: castGenders() });
+    const ideas = await writeMime(KEYS.openai, { lang: S.lang, avoid, genders: castGenders(), vision: visionPrompt(S.theme, S.lang) });
     if (!ideas.length) throw new Error(L.noMime);
     S.aiMime = [...ideas, ...(S.aiMime || [])].slice(0, 9);
     S.mimeTitles = [...(S.mimeTitles || []), ...ideas.map(x => x.title.es)].slice(-80);
@@ -239,7 +270,7 @@ $('#punchBtn').addEventListener('click', async () => {
   const b = $('#punchBtn'); b.disabled = true; setStatus(L.punching);
   try {
     const sits = currentSits(); const story = sits[S.sit] || sits[0];
-    const better = await punchUp(KEYS.openai, story, { lang: S.lang, nChars: S.nChars, dur: S.dur, genders: castGenders() });
+    const better = await punchUp(KEYS.openai, story, { lang: S.lang, nChars: S.nChars, dur: S.dur, genders: castGenders(), vision: visionPrompt(S.theme, S.lang) });
     const k = S.theme + '|' + S.lang;
     S.aiIdeas = { ...S.aiIdeas, [k]: [better, ...sits.filter(x => x !== story)].slice(0, 6) }; S.sit = 0; S.hook = 0; S.hookSeed = 1; dirty = true; save(); renderAll(); setStatus(L.punched);
   } catch (e) { console.warn(e); setStatus(String(e.message || e), true); } finally { b.disabled = false; }
@@ -249,7 +280,7 @@ $('#writeBtn').addEventListener('click', async () => {
   const b = $('#writeBtn'); b.disabled = true; setStatus(L.writing);
   try {
     const th = THEMES.find(t => t.id === S.theme);
-    const ideas = await writeIdeas(KEYS.openai, { lang: S.lang, theme: S.theme, themeName: th.name[S.lang], trend: (S.trend || '').trim(), nChars: S.nChars, dur: S.dur, genders: castGenders() });
+    const ideas = await writeIdeas(KEYS.openai, { lang: S.lang, theme: S.theme, themeName: th.name[S.lang], trend: (S.trend || '').trim(), nChars: S.nChars, dur: S.dur, genders: castGenders(), vision: visionPrompt(S.theme, S.lang) });
     if (!ideas.length) throw new Error('La IA no devolvió historias.');
     S.aiIdeas = { ...S.aiIdeas, [S.theme + '|' + S.lang]: ideas }; S.sit = 0; S.hook = 0; S.hookSeed = 1; dirty = true; save(); renderAll(); setStatus(L.written);
     document.querySelector('#sits').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -297,7 +328,9 @@ async function prepareMusic(theme) {
 const musicSummary = (L) => !project || !project.musicPlan ? '' : L.musicUsed + ' ' + project.musicPlan.map(x => x.style === 'none' ? '—' : `${catName(x.cat, S.lang)}${x.kind === 'bank' ? ` («${x.name}»)` : ''}`).join(' → ');
 
 async function generateMessage(L, customTexts) {
-  const all = msgStories(); const story = all[S.msgSel || 0] || all[0];
+  const all = msgStories(); let story = all[S.msgSel || 0] || all[0];
+  const mine = wantMyPhrase() ? pickFinalPhrase(S.theme, S.lang, 16) : null;
+  if (mine) story = { ...story, reflect: [{ es: mine, en: mine }] };
   const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
   const chosen = S.ctaSel.map(i => ctas[i]).filter(Boolean);
   const settings = { page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel };
@@ -307,7 +340,7 @@ async function generateMessage(L, customTexts) {
   setStatus(L.stMix);
   const own = await prepareMusic('msg');
   mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx, own });
-  return musicSummary(L);
+  return [mine ? L.phFinal : '', musicSummary(L)].filter(Boolean).join(' · ');
 }
 
 async function generate(customTexts = null) {
@@ -318,7 +351,9 @@ async function generate(customTexts = null) {
     let note = '', warn = false;
     if (MSG()) { note = await generateMessage(L, customTexts); }
     else {
-      const sits = currentSits(); const sit = sits[S.sit] || sits[0];
+      const sits = currentSits(); let sit = sits[S.sit] || sits[0];
+      const myFinal = wantMyPhrase() ? pickFinalPhrase(S.theme, S.lang, 22) : null;
+      if (myFinal) sit = { ...sit, reflect: [{ es: myFinal, en: myFinal }] };
       const hooks = hookOptions(S.theme, sit, S.hookSeed); const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
       const settings = { env: S.env, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, action: S.action !== false };
       const question = questionOptions(S.theme, sit, S.qSeed || 1)[S.qSel || 0];
@@ -367,7 +402,7 @@ async function generate(customTexts = null) {
       setStatus(L.stMix);
       const own = await prepareMusic(S.theme);
       mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx, own });
-      note = [note, musicSummary(L)].filter(Boolean).join(' · ');
+      note = [note, myFinal ? L.phFinal : '', musicSummary(L)].filter(Boolean).join(' · ');
     }
     dirty = false;
     renderScript();

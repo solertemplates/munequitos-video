@@ -53,6 +53,14 @@ La clave se guarda solo en el teléfono. Sin clave, el video sale con subtítulo
 - La música **baja sola** cuando alguien habla. Hay una guía para bajar música gratis de **Pixabay Music** en el iPhone.
 - **Efectos reales grabados** (pasos, golpes, whoosh, risas, cámara de fotos, pesas, monedas, lluvia…).
 
+## Banco de frases de René Soler Rasua
+
+- En «✍️ Banco de frases» pegas tus frases, reflexiones e ideas: una por línea o muchas de golpe. Se guardan **solo en el teléfono** (no en el repositorio).
+- Puedes ponerles tema (fe, familia, superación, trabajo, dinero…); si no, la app lo **adivina sola** por las palabras. Puedes ver, editar (tocando la frase o ✏️), cambiar el tema y borrar (🗑) cada frase.
+- Cuando la IA escribe o mejora una historia (con voces o de pantomima), recibe **tus frases del tema elegido** como **visión principal**: la historia, el giro y la reflexión salen de tu forma de pensar, por encima de la tendencia del momento.
+- **«Usar una de mis frases como reflexión final»**: A veces (la mitad de los videos), Siempre o Nunca. Usa la menos usada del tema, tal cual, para no repetir.
+- La IA también se **inspira en las ideas** de grandes oradores de superación, finanzas, familia y liderazgo (Brian Tracy, Robert Kiyosaki, Margarita Pasos, Yokoi Kenji, John C. Maxwell, Jim Rohn y otros), **sin copiar sus frases**: toma la idea y la dice con palabras nuevas, a tu estilo. Si chocan con tu visión, manda la tuya.
+
 ## Pantomima (modo «Solo música con mensaje»)
 
 Además de las historias de un muñequito con frases (montaña, caer y levantarse, lluvia, semilla), hay **historias de pantomima**: varios personajes cuentan todo solo con gestos y mímica (discuten con la boca moviéndose sin sonido, se cruzan de brazos, se dan la espalda, se abrazan) y terminan con una frase corta de reflexión. Incluidas: **La sombrilla** (pareja peleada en un banco del parque; llueve y él la tapa), **El último pedazo de pizza** y **La abuela y el teléfono**. El botón **«✨ Inventar 3 historias de pantomima nuevas (IA)»** crea historias nuevas de este estilo, sin repetir las anteriores, con un giro final que emociona (usa tu clave de OpenAI).
@@ -128,6 +136,7 @@ munequitos-video/
 ├── js/tts.js           voces de OpenAI (Onyx, Ash, Coral, Nova)
 ├── js/message.js       historias «solo música con mensaje»
 ├── js/visuals.js       palabras → escena (lo que se dice, se ve)
+├── js/phrases.js      banco de frases del autor y su visión para la IA
 ├── js/musicplan.js     emoción de cada escena → música del banco (con cambios suaves)
 ├── audio/              efectos y muestras de piano/guitarra (ver créditos)
 ├── js/export.js        MP4 (H.264 + AAC) con Mediabunny
