@@ -5,7 +5,7 @@
 //  · Efectos: «Oculus Audio Pack 1» de Meta (CC BY 4.0, requiere crédito) y «Impact Sounds» de Kenney (CC0).
 //  · Música incluida: piano y guitarra de cuerdas de nailon grabados por Meta (CC0), tocados por la app.
 //  · Tu música: la que subas desde el iPhone (por ejemplo, de Pixabay Music), guardada solo en tu teléfono.
-import { facesAt } from './render.js';
+import { facesAt } from './render.js?v=15';
 export const SR = 48000;
 const BASE = new URL('../audio/', import.meta.url).href;
 
@@ -179,10 +179,13 @@ export function fixEmotionSfx(project, ev) {
     const [name, t] = e; const need = SFX_EMO[name];
     if (!need) { kept.push(e); continue; }
     const faces = [0.1, 0.35, 0.7].map(d => Math.min(total - 0.01, t + d)).flatMap(tt => facesAt(project, tt));
-    const match = faces.find(f => need.includes(f.emo));
+    // y que no haya en pantalla una cara contraria (risa con alguien triste, o triste con alguien riéndose)
+    const OPP = { laugh: ['sad', 'cry'], sad: ['laugh'], cry: ['laugh'], shock: [], angry: ['laugh', 'love'], love: ['angry', 'sad', 'cry'] };
+    const clash = faces.some(f => need.every(n => (OPP[n] || []).includes(f.emo)));
+    const match = !clash && faces.find(f => need.includes(f.emo));
     let out = null;
     if (match) out = name;
-    else { const alt = FACE_SFX.find(([emo]) => faces.some(f => f.emo === emo)); out = alt ? alt[1] : null; }
+    else { const alt = FACE_SFX.find(([emo]) => faces.some(f => f.emo === emo) && !faces.some(f => (OPP[emo] || []).includes(f.emo))); out = alt ? alt[1] : null; }
     log.push([name, out, +t.toFixed(2), [...new Set(faces.map(f => f.emo))].join('/')]);
     if (!out) continue; // nadie tiene esa cara: sin sonido
     // la risa suena con la voz de quien se ríe (muchacha o muchacho)

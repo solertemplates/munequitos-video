@@ -1,17 +1,17 @@
-import { THEMES, ENVIRONMENTS, SITUATIONS, hookOptions, ctaOptions, combineCtas, fillCta, questionOptions } from './content.js';
-import { DURATIONS, buildBeats, timeBeats, speakable, toSRT } from './script.js';
-import { drawFrame, prepareProject, FONT, LOOKS } from './render.js';
-import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice, clearBgCache } from './aiimages.js';
-import { searchTrends, writeIdeas, punchUp, writeMime, PRICE } from './scriptai.js';
-import { computeLip } from './lipsync.js';
-import { renderMix, MUSIC_STYLES, MUSIC_CATS, listTracks, addTracks, deleteTrack, loadTrack, renameTrack, setTrackCat, getTrackBlob, normCat } from './audio.js';
-import { moodSections, planMusic, catName } from './musicplan.js';
-import { synth, OPENAI_VOICES, voiceForRole } from './tts.js';
-import { ALL_MESSAGE_STORIES, buildMessage } from './message.js';
-import { tagVisuals } from './visuals.js';
-import { loadPhrases, addPhrases, updatePhrase, deletePhrase, pickFinalPhrase, visionPrompt, AUTHOR } from './phrases.js';
-import { planDirection, planShots, insertActions } from './direction.js';
-import { exportMP4 } from './export.js';
+import { THEMES, ENVIRONMENTS, SITUATIONS, hookOptions, ctaOptions, combineCtas, fillCta, questionOptions } from './content.js?v=15';
+import { DURATIONS, buildBeats, timeBeats, speakable, toSRT } from './script.js?v=15';
+import { drawFrame, prepareProject, FONT, LOOKS } from './render.js?v=15';
+import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice, clearBgCache } from './aiimages.js?v=15';
+import { searchTrends, writeIdeas, punchUp, writeMime, PRICE } from './scriptai.js?v=15';
+import { computeLip } from './lipsync.js?v=15';
+import { renderMix, MUSIC_STYLES, MUSIC_CATS, listTracks, addTracks, deleteTrack, loadTrack, renameTrack, setTrackCat, getTrackBlob, normCat } from './audio.js?v=15';
+import { moodSections, planMusic, catName } from './musicplan.js?v=15';
+import { synth, OPENAI_VOICES, voiceForRole } from './tts.js?v=15';
+import { ALL_MESSAGE_STORIES, buildMessage } from './message.js?v=15';
+import { tagVisuals } from './visuals.js?v=15';
+import { loadPhrases, addPhrases, updatePhrase, deletePhrase, pickFinalPhrase, visionPrompt, AUTHOR } from './phrases.js?v=15';
+import { planDirection, planShots, insertActions } from './direction.js?v=15';
+import { exportMP4 } from './export.js?v=15';
 
 const $ = s => document.querySelector(s);
 const I18N = {

@@ -1,5 +1,5 @@
 // Construye el guion (beats) a partir de las elecciones del usuario y le asigna tiempos.
-import { fillCta, combineCtas, ctaTypesFor } from './content.js';
+import { fillCta, combineCtas, ctaTypesFor } from './content.js?v=15';
 
 export const DURATIONS = {
   s: { min: 12, max: 25, reps: 3, after: false, reflect: 1, pace: 1.12, label: { es: '12–25 s', en: '12–25 s' } },

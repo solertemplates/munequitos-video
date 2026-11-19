@@ -1,8 +1,8 @@
 // «Solo música con mensaje»: sin voces. Un muñequito hace algo con significado (subir una montaña, caerse y
 // levantarse, caminar bajo la lluvia, sembrar una semilla) mientras aparecen pocas frases, grandes y cortas.
 // Siempre termina con una frase de reflexión fuerte.
-import { fillCta, combineCtas, ctaTypesFor } from './content.js';
-import { DURATIONS } from './script.js';
+import { fillCta, combineCtas, ctaTypesFor } from './content.js?v=15';
+import { DURATIONS } from './script.js?v=15';
 
 const R = (es, en) => ({ es, en });
 // Paso de la historia: frase + qué hace el muñequito + recorrido (x inicial → x final) + efectos

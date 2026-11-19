@@ -1,7 +1,7 @@
 // Director musical: lee el guion, detecta la emoción de cada escena y escoge la música del banco
 // (o la incluida) que pega con la historia. Si la emoción cambia (pelea → reconciliación), la música cambia
 // con una transición suave. Evita repetir siempre las mismas canciones.
-import { MUSIC_CATS, CAT_FALLBACK, normCat } from './audio.js';
+import { MUSIC_CATS, CAT_FALLBACK, normCat } from './audio.js?v=15';
 
 const W = src => new RegExp('(?<![\\p{L}\\p{N}])(?:' + src + ')', 'iu');
 const WORDS = {

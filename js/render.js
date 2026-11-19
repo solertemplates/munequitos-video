@@ -1,5 +1,5 @@
 // Motor de dibujo: cada fotograma es una función pura del tiempo t (sirve para vista previa y exportación).
-import { visWindow } from './visuals.js';
+import { visWindow } from './visuals.js?v=15';
 export const W = 1080, H = 1920, GY = 1390;
 const TAU = Math.PI * 2;
 const ROLES = ['A', 'B', 'C', 'D'];
@@ -1218,9 +1218,13 @@ export function facesAt(project, time) {
     if (t >= w0 && t < w1 && w1 - w0 > 0.8) { const role = beat.speaker || 'A'; return [{ role, girl: gen[role] === 'f', emo: pose(v.act, t - w0, g, 0.7).emo, act: v.act }]; }
   }
   const chars = sceneChars(beat, t, project);
+  const cam = cameraFor(beat, bi, t, chars, null);
+  if (cam.type === 'pov') return []; // se ve la pantalla del móvil, no caras
   const reactOn = beat.react && t >= beat.reactStart;
   const talker = reactOn ? (beat.react.vocal ? beat.react.role : null) : beat.kind === 'act' ? null : (beat.speaker || 'A');
-  return chars.map(c => { const P = charPose(c, t, g); let emo = P.emo; if (c.role === talker && emo === 'neutral') emo = 'happy'; return { role: c.role, girl: c.girl, emo, act: c.act }; });
+  // solo las caras que la cámara enseña (en primer plano, solo una)
+  const shown = ['close', 'single', 'crash'].includes(cam.type) ? chars.filter(c => c.role === cam.role) : chars.filter(c => Math.abs(c.x - cam.fx) < 560 / cam.z + 60);
+  return shown.map(c => { const P = charPose(c, t, g); let emo = P.emo; if (c.role === talker && emo === 'neutral') emo = 'happy'; return { role: c.role, girl: c.girl, emo, act: c.act }; });
 }
 
 export function drawFrame(ctx, project, time, scale = 1) {

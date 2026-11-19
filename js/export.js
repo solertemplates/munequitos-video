@@ -3,7 +3,7 @@
 // así el video guardado en la galería del iPhone y subido a redes conserva la voz, la música y los efectos.
 import { Output, Mp4OutputFormat, BufferTarget, CanvasSource, AudioBufferSource, canEncodeVideo } from '../vendor/mediabunny.min.mjs';
 import { registerAacEncoder } from '../vendor/mediabunny-aac-encoder.min.mjs';
-import { W, H, drawFrame } from './render.js';
+import { W, H, drawFrame } from './render.js?v=15';
 
 const FPS = 30;
 let aacReady = false;
