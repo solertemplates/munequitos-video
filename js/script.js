@@ -31,7 +31,7 @@ export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
   const signProp = (situation.setup.find(s => s.p.startsWith('sign:')) || {}).p || '';
   const baseEnv = settings.env && settings.env !== 'auto' ? settings.env : (env === 'caminos' ? 'parque' : env);
   const mk = (kind, line, extra = {}) => ({
-    kind, text: T(line.t || line), a: line.a || '', p: line.p || '', fx: line.fx || '',
+    kind, text: T(line.t || line), a: line.a || '', p: line.p || '', fx: line.fx || '', who: line.w || null, r: line.r || null,
     env: extra.env || baseEnv, ...extra,
   });
 
@@ -56,12 +56,12 @@ export function speakable(text) {
   return text.replace(/["“”«»]/g, '').replace(/\s+/g, ' ').replace(/\.\.\./g, ',').trim();
 }
 
-// Asigna tiempos: beat.start, beat.dur, beat.voiceStart. voiceDur viene del TTS (o estimación).
-export function timeBeats(beats, dur) {
+// Asigna tiempos: beat.start, beat.dur, voiceLead y, si hay reacción, reactStart (relativo al beat).
+export function timeBeats(beats, dur, allowDrop = true) {
   const D = DURATIONS[dur];
-  const base = { hook: 0.35, setup: 0.3, rep: 0.25, twist: 0.6, after: 0.35, reflect: 0.8, cta: 0.6 };
-  const lead = { hook: 0.15, setup: 0.1, rep: 0.08, twist: 0.55, after: 0.12, reflect: 0.3, cta: 0.2 };
-  const minD = { hook: 2.2, setup: 2.0, rep: 1.9, twist: 2.6, after: 2.0, reflect: 3.0, cta: 3.2 };
+  const base = { hook: 0.3, setup: 0.2, rep: 0.15, twist: 0.45, after: 0.25, reflect: 0.75, cta: 0.6 };
+  const lead = { hook: 0.12, setup: 0.08, rep: 0.06, twist: 0.5, after: 0.08, reflect: 0.3, cta: 0.2 };
+  const minD = { hook: 2.0, setup: 1.6, rep: 1.4, twist: 2.4, after: 1.6, reflect: 3.0, cta: 3.2 };
   const minFor = b => (b.kind === 'cta' && b.ctaTypes && b.ctaTypes.length > 1 ? 3.8 : minD[b.kind]);
   let total = 0;
   const calc = (padMul) => {
@@ -69,24 +69,27 @@ export function timeBeats(beats, dur) {
     for (const b of beats) {
       const vd = b.voiceDur || estimateDur(b.text, D.pace);
       b.voiceLead = lead[b.kind];
-      b.dur = Math.max(minFor(b), b.voiceLead + vd + base[b.kind] * padMul);
+      const speechEnd = b.voiceLead + vd;
+      if (b.react) {
+        b.reactStart = speechEnd + 0.08;
+        b.dur = Math.max(minFor(b), b.reactStart + Math.max(0.85, (b.reactDur || 0.7) + 0.3) + base[b.kind] * (padMul - 1) * 0.5);
+      } else b.dur = Math.max(minFor(b), speechEnd + base[b.kind] * padMul + (b.exit ? 0.5 : 0));
       b.start = total;
       total += b.dur;
     }
     return total;
   };
   calc(1);
-  if (total < D.min) {
-    const extra = (D.min + 0.5 - total);
-    calc(1 + extra / beats.reduce((s, b) => s + base[b.kind], 0));
-  } else if (total > D.max) {
-    calc(0.2);
+  // si se pasa del máximo, quita reacciones alternas (las más largas primero) hasta que quepa
+  let guard = 0;
+  while (allowDrop && total > D.max + 0.5 && guard++ < 20) {
+    const withR = beats.filter(b => b.react && b.kind !== 'twist');
+    if (!withR.length) break;
+    withR.sort((x, y) => (y.reactDur || 0) - (x.reactDur || 0))[0].react = null;
+    calc(1);
   }
-  // cortes de cámara: un plano cada ~2–3 s dentro de cada beat
-  for (const b of beats) {
-    const n = Math.max(1, Math.round(b.dur / 2.5));
-    b.shots = n;
-  }
+  if (total < D.min) { const extra = (D.min + 0.5 - total); calc(1 + extra / beats.reduce((s, b) => s + base[b.kind], 0)); }
+  else if (total > D.max + 0.5) calc(0.2);
   return total;
 }
 

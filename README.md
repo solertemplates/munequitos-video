@@ -57,9 +57,15 @@ En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (s
 - Antes de generar, la app muestra el **costo aproximado total** (tendencias, guion, fondos y voz).
 - La primera vez OpenAI puede pedir **verificar tu organización** (platform.openai.com → Settings → Organization → General).
 
+## Dirección automática (ritmo y diálogo)
+
+- **Diálogo de ida y vuelta**: cada personaje tiene su propia voz; habla el que dice la línea y el otro escucha asintiendo y gesticulando.
+- **Planos de reacción**: después de casi cada línea, primer plano del que escucha con cara exagerada, una exclamación hablada («¡Ñooo!», «¡Uf!», «¡Jajaja!»…) y un efecto de sonido marcado.
+- **Escenas cortas**: un corte de plano cada 1–2 s (plano de los dos, plano de uno, primer plano), personajes que entran y salen corriendo, golpes, caídas, risas y sorpresas por encima de la música.
+
 ## Diseño del video
 
-- **Personajes**: cabeza blanca pura, contorno y extremidades negras gruesas, camiseta de color por personaje (verde, naranja, amarillo, azul).
+- **Personajes** a tamaño de persona: cabeza blanca pura pegada a la camiseta, contorno y extremidades negras gruesas, camiseta de manga corta en colores vivos (verde, azul, amarillo, rosa).
 - **Textos que nunca tapan a nadie**: el gancho, la reflexión y los botones van en la franja de arriba; los subtítulos en la de abajo; la cámara mantiene a los personajes en la franja del medio.
 
 ## Exportación

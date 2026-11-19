@@ -23,7 +23,7 @@ function C(hex) {
   const k = hex; if (cache.has(k)) return cache.get(k);
   if (!BW) {
     // color suave (pastel) para que los muñequitos negros resalten
-    const [r, g, b] = hexToRgb(hex); const m = 0.34, W2 = [255, 250, 240];
+    const [r, g, b] = hexToRgb(hex); const m = 0.06, W2 = [255, 250, 240];
     const out = `rgb(${Math.round(r + (W2[0] - r) * m)},${Math.round(g + (W2[1] - g) * m)},${Math.round(b + (W2[2] - b) * m)})`;
     cache.set(k, out); return out;
   }
@@ -288,6 +288,7 @@ function pose(action, t, g, seed) {
     case 'tired': P.lean = 0.22; P.bend = 0.2; P.tilt = 0.3; P.arms = [{ a: 0.08 + s(2.5, 0.06), e: 0.2 }, { a: 0.08 - s(2.5, 0.06), e: 0.2 }]; P.legs = [{ a: -0.15, k: 0.3 }, { a: 0.15, k: 0.3 }]; P.emo = 'tired'; P.fx = 'sweat'; break;
     case 'strong': P.arms = [{ a: 1.55, e: 1.9 + s(5, 0.15) }, { a: 1.55, e: 1.9 - s(5, 0.15) }]; P.emo = 'happy'; P.fx = 'sparkle'; P.legs = [{ a: -0.25, k: 0.05 }, { a: 0.25, k: 0.05 }]; P.bend = -0.06; break;
     case 'lift': P.arms = [{ a: 2.8, e: 0.25 }, { a: 2.8, e: 0.25 }]; P.legs = [{ a: -0.25, k: 0.4 + s(4, 0.1) }, { a: 0.25, k: 0.4 + s(4, 0.1) }]; P.emo = 'tired'; P.hand = 'boxup'; P.fx = 'sweat'; break;
+    case 'nod': P.tilt = 0.1 + Math.max(0, Math.sin(t * 5 + seed)) * 0.16; P.arms = [{ a: 0.45, e: -1.1 + s(2, 0.1) }, { a: 0.45, e: -1.1 - s(2, 0.1) }]; P.emo = 'happy'; P.y += Math.max(0, Math.sin(t * 5 + seed)) * 3; break;
     case 'pray': P.arms = [{ a: 0.85, e: -3.0 }, { a: 0.85, e: -3.0 }]; P.tilt = 0.14 + s(1.2, 0.03); P.bend = 0.06; P.emo = 'peace'; P.fx = 'glow'; break;
     default: P.emo = 'happy';
   }
@@ -324,7 +325,7 @@ function limb(ctx, a, b, c, lw) {
 }
 
 // Colores de camiseta por personaje (estilo caricatura). En blanco y negro: gris claro.
-const SHIRT = { A: '#43b649', B: '#ff8a1e', C: '#ffcc29', D: '#3fa1ef' };
+const SHIRT = { A: '#1ec94c', B: '#1f7bff', C: '#ffd400', D: '#ff3d6e' };
 const MOUTH_IN = '#7a1414', TONGUE = '#ff7d93';
 
 // Boca según la forma (visema) y la emoción. Contorno negro grueso, interior rojo oscuro y lengua rosada.
@@ -353,13 +354,15 @@ function drawMouth(ctx, mx, my, shape, open, emo) {
 }
 
 // Cara viva: ojos que parpadean y miran, cejas según emoción, boca sincronizada con la voz.
-function drawFace(ctx, hx, hy, f, emo, speech, g, seed) {
+function drawFace(ctx, hx, hy, f, emo, speech, g, seed, gaze) {
   const ink = FIG, ex = f * 9;
   const L = hx + ex - 23, Rr = hx + ex + 23, ey = hy - 8, mx = hx + ex, my = hy + 30;
   const blink = ((g + seed * 1.7) % 3.4) < 0.12;
   // mirada: pequeños saltos de los ojos cada ~1 s
   const gi = Math.floor(g * 0.9 + seed * 3);
-  const lookX = f * 3 + (hash(gi * 7 + seed) - 0.5) * 8, lookY = (hash(gi * 13 + seed) - 0.5) * 5;
+  // mira al otro personaje (o a la cámara), con pequeños movimientos naturales
+  const gz = gaze || { dx: f * 6, dy: 3 };
+  const lookX = gz.dx + (hash(gi * 7 + seed) - 0.5) * 2.5, lookY = gz.dy + (hash(gi * 13 + seed) - 0.5) * 1.5;
   const amp = speech ? speech.amp : 0;
   const lift = amp * 7; // las cejas suben al enfatizar
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -406,15 +409,16 @@ function drawHandProp(ctx, type, x, y) {
   if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
 }
 
-// Marioneta: piernas, camiseta (torso), brazos con mangas y cabeza, cada parte con su propio movimiento.
-function drawFigure(ctx, ch, P, g, speech) {
+// Marioneta a tamaño de persona: cabeza pegada a la camiseta, camiseta de manga corta, brazos de palito saliendo de la manga.
+const RS = 1.45; // escala del personaje respecto al escenario (tamaño de persona real)
+function drawFigure(ctx, ch, P, g, speech, gaze) {
   const f = ch.f, lw = 15;
   ctx.save();
-  const sc = ch.kid ? 0.7 : 1;
+  const sc = (ch.kid ? 0.7 : 1) * RS;
   ctx.translate(ch.x + (P.shake ? Math.sin(g * 9) * P.shake * 0.6 : 0), GY);
   if (P.rot) ctx.rotate(-f * P.rot);
   ctx.scale(sc, sc);
-  ctx.globalAlpha = 0.18; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 76, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.globalAlpha = 0.2; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 78, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
   const legs = P.legs.map(Lg => { const kx = f * Math.sin(Lg.a) * SK.thigh, ky = Math.cos(Lg.a) * SK.thigh, sa = Lg.a - Lg.k; return [[0, 0], [kx, ky], [kx + f * Math.sin(sa) * SK.shin, ky + Math.cos(sa) * SK.shin]]; });
   const standY = Math.max(...legs.map(l => l[2][1])) + 8;
   const maxY = lerp(standY, 118, P.sitAmt || 0);
@@ -423,53 +427,61 @@ function drawFigure(ctx, ch, P, g, speech) {
   if ((P.sitAmt || 0) > 0.5) { ctx.fillStyle = C('#8d99ae'); ctx.strokeStyle = FIG; ctx.lineWidth = 5; rr(ctx, -f * 70 - 12, 10, 124, 18, 6); ctx.fill(); ctx.stroke(); ctx.fillStyle = C('#6c757d'); ctx.fillRect(-f * 70 - 4 + (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 + 86 - (f > 0 ? 0 : 96), 26, 12, maxY - 26); ctx.fillRect(-f * 70 - 12 + (f < 0 ? 110 : 0), -120, 14, 132); }
   for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 10, l[2][1] + 2, 20, 11, 0, 0, TAU); ctx.fill(); }
   const lean = P.lean || 0, bend = P.bend || 0;
-  const neck = [f * Math.sin(lean) * SK.torso, -Math.cos(lean) * SK.torso];
-  const sh = [f * Math.sin(lean) * (SK.torso - 22), -Math.cos(lean) * (SK.torso - 22)];
-  // camiseta: cuerpo con forma, ligeramente curvo según la postura
+  const up = [f * Math.sin(lean), -Math.cos(lean)];   // dirección del torso
+  const px = Math.cos(lean), py = Math.sin(lean) * f;  // perpendicular
+  const TOR = 132;                                      // altura de la camiseta (cadera → hombros)
+  const sh = [up[0] * TOR, up[1] * TOR];
   const shirt = BW ? '#d9d9d9' : (SHIRT[ch.role] || SHIRT.A);
-  const px = Math.cos(lean), py = Math.sin(lean) * f; // perpendicular al torso
-  const mid = [neck[0] / 2 + f * bend * 50, neck[1] / 2];
-  const wS = 44, wH = 38;
-  ctx.beginPath();
-  ctx.moveTo(sh[0] - px * wS, sh[1] - py * wS);
-  ctx.quadraticCurveTo(mid[0] - px * (wS + 4), mid[1] - py * (wS + 4), -px * wH, 14 - py * wH);
-  ctx.lineTo(px * wH, 14 + py * wH);
-  ctx.quadraticCurveTo(mid[0] + px * (wS + 4), mid[1] + py * (wS + 4), sh[0] + px * wS, sh[1] + py * wS);
-  ctx.quadraticCurveTo(neck[0], neck[1] + 6, sh[0] - px * wS, sh[1] - py * wS);
-  ctx.closePath(); ctx.fillStyle = shirt; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
-  const ha = lean + (P.tilt || 0) + (speech && speech.talking ? speech.amp * 0.07 * Math.sin(g * 5) : 0);
-  const hx = neck[0] + f * Math.sin(ha) * (SK.neck + SK.head), hy = neck[1] - Math.cos(ha) * (SK.neck + SK.head);
-  const shoulders = [[sh[0] - px * (wS - 6), sh[1] - py * (wS - 6)], [sh[0] + px * (wS - 6), sh[1] + py * (wS - 6)]];
+  const wS = 50, wH = 44;
+  const shoulders = [[sh[0] - px * (wS - 8), sh[1] - py * (wS - 8) + 8], [sh[0] + px * (wS - 8), sh[1] + py * (wS - 8) + 8]];
   const arms = P.arms.map((A, i) => {
     const side = i === 0 ? -1 : 1; const s0 = shoulders[i]; const a = A.a, e = A.e;
     const el = [s0[0] + side * Math.sin(a) * SK.upper, s0[1] + Math.cos(a) * SK.upper];
     const hd = [el[0] + side * Math.sin(a + e) * SK.fore, el[1] + Math.cos(a + e) * SK.fore];
     return [s0, el, hd];
   });
+  // mangas cortas (trapecio a lo largo del brazo, sin bolitas)
+  ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+  const cuffs = arms.map(a => {
+    const dx = a[1][0] - a[0][0], dy = a[1][1] - a[0][1], L0 = Math.hypot(dx, dy) || 1; const u = [dx / L0, dy / L0], n = [-u[1], u[0]];
+    const len = 50, w0 = 22, w1 = 18;
+    const p0 = [a[0][0] - u[0] * 6, a[0][1] - u[1] * 6], p1 = [a[0][0] + u[0] * len, a[0][1] + u[1] * len];
+    ctx.beginPath(); ctx.moveTo(p0[0] + n[0] * w0, p0[1] + n[1] * w0); ctx.lineTo(p1[0] + n[0] * w1, p1[1] + n[1] * w1); ctx.lineTo(p1[0] - n[0] * w1, p1[1] - n[1] * w1); ctx.lineTo(p0[0] - n[0] * w0, p0[1] - n[1] * w0); ctx.closePath();
+    ctx.fillStyle = shirt; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5.5; ctx.stroke();
+    return p1;
+  });
+  // cuerpo de la camiseta
+  const mid = [sh[0] / 2 + f * bend * 50, sh[1] / 2];
+  ctx.beginPath();
+  ctx.moveTo(sh[0] - px * wS, sh[1] - py * wS + 10);
+  ctx.quadraticCurveTo(mid[0] - px * (wS + 2), mid[1] - py * (wS + 2), -px * wH, 18 - py * wH);
+  ctx.lineTo(px * wH, 18 + py * wH);
+  ctx.quadraticCurveTo(mid[0] + px * (wS + 2), mid[1] + py * (wS + 2), sh[0] + px * wS, sh[1] + py * wS + 10);
+  ctx.quadraticCurveTo(sh[0] + up[0] * 12, sh[1] + up[1] * 12 - 4, sh[0] - px * wS, sh[1] - py * wS + 10);
+  ctx.closePath(); ctx.fillStyle = shirt; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
+  // cabeza pegada sobre la camiseta (sin cuello)
+  const ha = lean + (P.tilt || 0) + (speech && speech.talking ? speech.amp * 0.07 * Math.sin(g * 5) : 0);
+  const HD = SK.head - 10;
+  const hx = sh[0] + f * Math.sin(ha) * HD, hy = sh[1] - Math.cos(ha) * HD;
   if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = ch.look === 'granny' ? '#8a8a8a' : FIG; ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 16, SK.head + 9, SK.head + 20, 0, 0, TAU); ctx.fill(); }
-  // cabeza: blanco puro, contorno negro grueso; se estira un poco al sorprenderse
   const stretch = P.emo === 'shock' ? 1.06 : 1;
   ctx.save(); ctx.translate(hx, hy); ctx.scale(1 / Math.sqrt(stretch), stretch); circle(ctx, 0, 0, SK.head, '#ffffff', FIG, 8); ctx.restore();
   if (ch.look === 'hair') { ctx.fillStyle = FIG; ctx.beginPath(); ctx.arc(hx, hy - 4, SK.head + 4, Math.PI * 1.08, Math.PI * 1.92); ctx.quadraticCurveTo(hx, hy - SK.head + 18, hx - (SK.head + 2), hy - 12); ctx.fill(); }
   if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 12, 24, '#8a8a8a', FIG, 5); for (const dx of [-22, 22]) circle(ctx, hx + f * 9 + dx, hy - 12, 20, null, FIG, 4); }
   if (ch.look === 'kid') { line(ctx, [[hx - 10, hy - SK.head + 2], [hx - 2, hy - SK.head - 24], [hx + 8, hy - SK.head - 2], [hx + 18, hy - SK.head - 20], [hx + 24, hy - SK.head + 6]], FIG, 7); }
-  drawFace(ctx, hx, hy, f, P.emo, speech, g, ch.seed);
-  // brazos: manga de color + brazo negro flexible + mano
-  for (const a of arms) {
-    const sl = [lerp(a[0][0], a[1][0], 0.45), lerp(a[0][1], a[1][1], 0.45)];
-    ctx.lineCap = 'round'; ctx.strokeStyle = FIG; ctx.lineWidth = 34; ctx.beginPath(); ctx.moveTo(a[0][0], a[0][1]); ctx.lineTo(sl[0], sl[1]); ctx.stroke();
-    ctx.strokeStyle = shirt; ctx.lineWidth = 23; ctx.beginPath(); ctx.moveTo(a[0][0], a[0][1]); ctx.lineTo(sl[0], sl[1]); ctx.stroke();
-    limb(ctx, sl, [lerp(a[0][0], a[1][0], 0.9), lerp(a[0][1], a[1][1], 0.9)], a[2], lw);
-    circle(ctx, a[2][0], a[2][1], 12, FIG);
-  }
+  drawFace(ctx, hx, hy, f, P.emo, speech, g, ch.seed, gaze);
+  // brazos de palito saliendo de la manga, con codo flexible
+  arms.forEach((a, i) => { limb(ctx, cuffs[i], [lerp(a[0][0], a[1][0], 0.95), lerp(a[0][1], a[1][1], 0.95)], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); });
   const fh = arms[f > 0 ? 1 : 0][2];
   if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 12);
   if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10);
   if (P.hand === 'boxup') drawHandProp(ctx, 'boxup', (arms[0][2][0] + arms[1][2][0]) / 2, Math.min(arms[0][2][1], arms[1][2][1]) + 10);
   if (P.desk) { ctx.fillStyle = C('#8d6e63'); ctx.fillRect(f * 60, 0, f * 200, 16); ctx.fillRect(f * 230 - 8, 16, 16, maxY - 16); ctx.fillStyle = '#343a40'; ctx.save(); ctx.translate(f * 150, 0); ctx.fillRect(-60, -8, 120, 8); ctx.beginPath(); ctx.moveTo(-50 * f, -8); ctx.lineTo(-62 * f, -90); ctx.lineTo(-8 * f, -90); ctx.lineTo(4 * f, -8); ctx.fill(); ctx.restore(); }
   ctx.restore();
-  return { hx: ch.x + hx * sc, hy: GY + (hipY + hy) * sc };
+  return { hx: ch.x + hx * sc, hy: GY + (hipY + hy) * sc, r: SK.head * sc };
 }
+// altura de la cabeza (en el mundo) para encuadrar planos
+const headY = ch => GY - (202 + 132 + SK.head - 10) * RS * (ch && ch.kid ? 0.7 : 1);
 
 // ---------- PARTÍCULAS / EFECTOS ----------
 function drawFx(ctx, type, x, y, t, g, seed) {
@@ -552,44 +564,35 @@ function drawProp(ctx, prop, t, g, lang, beat) {
 
 // ---------- CÁMARA ----------
 function cameraFor(beat, bi, t, chars, bgBox) {
-  const n = beat.shots, sd = beat.dur / n; const si = Math.min(n - 1, Math.floor(t / sd)); const st = t - si * sd; const sp = st / sd;
-  const h = hash(bi * 31 + si * 7 + 3);
-  const mainX = chars.length ? chars[0].x : 540;
-  let types = ['wide', 'medium', 'close', 'dutch', 'push'];
-  let type = types[Math.floor(h * types.length)];
-  if (beat.kind === 'hook') type = si === 0 ? 'push' : 'medium';
-  if (beat.kind === 'twist') type = si === 0 ? 'crash' : 'close';
-  if (beat.kind === 'reflect') type = 'slow';
-  if (beat.kind === 'cta') type = 'cta';
-  if (beat.env === 'caminos' && beat.kind !== 'reflect' && beat.kind !== 'cta') type = beat.side ? 'side' : 'wide';
-  const focusChar = chars[Math.floor(hash(bi * 13 + si) * chars.length)] || { x: 540 };
-  let z, fx, fy, rot = 0;
-  switch (type) {
-    case 'wide': z = lerp(1.0, 1.1, sp); fx = 540; fy = 1080; break;
-    case 'medium': z = lerp(1.25, 1.4, sp); fx = lerp(540, chars.reduce((s, c) => s + c.x, 0) / Math.max(1, chars.length), 0.7); fy = 1080; break;
-    case 'close': z = lerp(1.75, 1.95, sp); fx = focusChar.x; fy = GY - 330; break;
-    case 'dutch': z = lerp(1.35, 1.5, sp); fx = 540; fy = 1060; rot = (h > 0.5 ? 1 : -1) * 0.06; break;
-    case 'push': z = lerp(1.05, 1.6, easeInOut(sp)); fx = mainX; fy = GY - 300; break;
-    case 'crash': z = lerp(1.9, 1.55, easeOut(sp * 1.6)); fx = mainX; fy = GY - 340; break;
-    case 'slow': z = lerp(1.05, 1.22, t / beat.dur); fx = 540; fy = 1000; break;
-    case 'cta': z = lerp(1.0, 1.06, t / beat.dur); fx = 540; fy = 960; break;
-    case 'side': z = lerp(1.15, 1.3, sp); fx = 540 + beat.side * 170; fy = 1000; break;
+  const plan = beat.shotPlan && beat.shotPlan.length ? beat.shotPlan : [{ t0: 0, t1: beat.dur, type: 'two', role: 'A' }];
+  let si = plan.findIndex(sh => t < sh.t1); if (si < 0) si = plan.length - 1;
+  const shot = plan[si]; const st = t - shot.t0; const sp = clamp(st / Math.max(0.1, shot.t1 - shot.t0), 0, 1);
+  const who = chars.find(c => c.role === shot.role) || chars[0] || { x: 540 };
+  const other = chars.find(c => c.role !== who.role);
+  const group = chars.length ? chars.reduce((s2, c) => s2 + c.x, 0) / chars.length : 540;
+  const feet = z => 1390 - 490 / z; // pies justo encima de los subtítulos
+  let z, fx, fy, rot = 0, capTop = false;
+  switch (shot.type) {
+    case 'wide': z = lerp(1.0, 1.08, sp); fx = group; fy = feet(z); break;
+    case 'push': z = lerp(1.0, 1.4, easeInOut(sp)); fx = lerp(group, who.x, sp * 0.5); fy = feet(z); break;
+    case 'two': z = lerp(1.3, 1.42, sp); fx = other ? (who.x + other.x) / 2 : who.x; fy = feet(z); break;
+    case 'single': z = lerp(1.95, 2.1, sp); fx = who.x + (other ? Math.sign(other.x - who.x) * 60 : 0); fy = headY(who) + 190 / z; capTop = true; break;
+    case 'close': z = lerp(2.85, 3.1, easeOut(sp)); fx = who.x; fy = headY(who) + 30 / z; capTop = true; break;
+    case 'crash': z = lerp(3.3, 2.6, easeOut(sp * 1.4)); fx = who.x; fy = headY(who) + 60 / z; capTop = true; break;
+    case 'side': z = lerp(1.18, 1.3, sp); fx = 540 + (beat.side || 0) * 180; fy = feet(z); break;
+    case 'slow': z = lerp(1.22, 1.36, t / beat.dur); fx = group; fy = feet(z); break;
+    case 'cta': z = lerp(1.12, 1.18, t / beat.dur); fx = group; fy = feet(z); break;
+    default: z = 1.3; fx = group; fy = feet(z);
   }
-  // golpe de zoom al cambiar de plano
-  const punch = Math.pow(Math.max(0, 1 - st / 0.3), 2) * 0.045;
+  // golpe de zoom al cortar de plano (más marcado en los primeros planos)
+  const punch = Math.pow(Math.max(0, 1 - st / 0.28), 2) * (shot.type === 'close' ? 0.1 : 0.05);
   z *= 1 + punch;
-  // movimiento de cámara suave y continuo (sin temblores bruscos)
   const lvl = beat.kind === 'rep' ? (beat.level || 0) : beat.kind === 'twist' ? 1 : 0;
-  const ox = Math.sin(t * 0.9 + bi) * 10 + Math.sin(t * 1.6 + bi * 2) * 3 * lvl;
-  const oy = Math.cos(t * 0.7 + bi) * 6 + Math.cos(t * 1.3 + bi) * 2 * lvl;
-  rot += Math.sin(t * 0.6 + bi) * 0.01 + (beat.kind === 'rep' ? Math.sin(t * 1.2 + bi) * 0.006 * lvl : 0);
-  fx += ox; fy += oy;
-  // franjas: los personajes siempre entre y=560 y y=1430 de la pantalla (arriba textos, abajo subtítulos)
-  z = Math.min(z, 1.6);
-  const lo = 1390 - 470 / z, hi = 860 + 400 / z;
-  fy = lo <= hi ? clamp(fy, lo, hi) : (lo + hi) / 2;
-  if (bgBox) { fx = clamp(fx, bgBox.l + 540 / z + 20, bgBox.r - 540 / z - 20); fy = Math.min(fy, bgBox.b - 960 / z - 20); }
-  return { z, fx, fy, rot, si, st };
+  fx += Math.sin(t * 0.9 + bi) * 8 + Math.sin(t * 1.6 + bi * 2) * 3 * lvl;
+  fy += Math.cos(t * 0.7 + bi) * 5;
+  rot += Math.sin(t * 0.6 + bi) * 0.008;
+  if (bgBox) { fx = clamp(fx, bgBox.l + 540 / z + 10, bgBox.r - 540 / z - 10); fy = Math.min(fy, bgBox.b - 960 / z - 10); }
+  return { z, fx, fy, rot, si, st, type: shot.type, role: shot.role, capTop };
 }
 
 // ---------- TEXTOS ----------
@@ -599,18 +602,18 @@ function activeWord(beat, t, nWords) {
   return { p: clamp(vt / vd, 0, 1), started: vt >= 0 };
 }
 
-function drawCaption(ctx, beat, t, opts) {
-  const text = beat.text; if (!text) return;
+function drawCaption(ctx, beat, t, opts, capTop = false) {
+  let text = beat.text; if (!text) return;
   const kind = beat.kind;
   ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   if (kind === 'hook') {
-    const { size, lines } = fitText(ctx, text.toUpperCase(), 920, 3, 84, 50, 700);
-    const lh = size * 1.12; const total = lines.length * lh; const y0 = 310 - total / 2;
+    const { size, lines } = fitText(ctx, text.toUpperCase(), 860, 3, 62, 40, 700);
+    const lh = size * 1.12; const total = lines.length * lh; const y0 = 70 + 26;
     const words = lines.flat(); const cum = wordWeights(words); const { p } = activeWord(beat, t, words.length);
-    const boxW = Math.min(1000, Math.max(...lines.map(l => ctx.measureText(l.join(' ')).width)) + 80);
+    const boxW = Math.min(960, Math.max(...lines.map(l => ctx.measureText(l.join(' ')).width)) + 64);
     const pin = 0.85 + 0.15 * backOut(t / 0.3);
     ctx.save(); ctx.translate(540, y0 + total / 2); ctx.scale(pin, pin); ctx.rotate(-0.02 + Math.sin(t * 3) * 0.01); ctx.translate(-540, -(y0 + total / 2));
-    ctx.fillStyle = BW ? '#ffffff' : '#ffd60a'; rr(ctx, 540 - boxW / 2, y0 - 30, boxW, total + 50, 30); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
+    ctx.fillStyle = BW ? '#ffffff' : '#ffd60a'; rr(ctx, 540 - boxW / 2, y0 - 22, boxW, total + 38, 24); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 7; ctx.stroke();
     let wi = 0;
     lines.forEach((ln, li) => {
       const lw = ctx.measureText(ln.join(' ')).width; let x = 540 - lw / 2; const y = y0 + (li + 0.82) * lh;
@@ -620,8 +623,8 @@ function drawCaption(ctx, beat, t, opts) {
   }
   if (kind === 'reflect') {
     const fade = clamp(t / 0.5, 0, 1) * clamp((beat.dur - t) / 0.3, 0, 1);
-    const { size, lines } = fitText(ctx, text, 940, 4, 74, 46, 700);
-    const lh = size * 1.2; const total = lines.length * lh; const y0 = 320 - total / 2;
+    const { size, lines } = fitText(ctx, text, 940, 4, 66, 42, 700);
+    const lh = size * 1.2; const total = lines.length * lh; const y0 = 250 - total / 2;
     const words = lines.flat(); const cum = wordWeights(words); const { p } = activeWord(beat, t, words.length);
     let wi = 0; ctx.globalAlpha = fade; ctx.lineJoin = 'round';
     lines.forEach((ln, li) => {
@@ -630,13 +633,16 @@ function drawCaption(ctx, beat, t, opts) {
     });
     ctx.restore(); return;
   }
-  // subtítulo normal (grande, palabra activa resaltada)
-  const yC = 1615;
-  const { size, lines } = fitText(ctx, text, 940, 3, kind === 'twist' ? 76 : 70, 44, 700);
+  // subtítulo normal (grande, palabra activa resaltada). En primeros planos va arriba para no tapar a nadie.
+  let reacting = false, p, started;
+  if (beat.react && t >= beat.reactStart) { reacting = true; text = beat.react.vocal; const rd = beat.reactDur || 0.7; p = clamp((t - beat.reactStart) / rd, 0, 1); started = true; }
+  const yC = capTop ? 250 : 1615;
+  const { size, lines } = fitText(ctx, text, 940, 3, reacting ? 86 : kind === 'twist' ? 72 : 66, 42, 700);
   const lh = size * 1.18; const total = lines.length * lh; const y0 = yC - total / 2;
-  const words = lines.flat(); const cum = wordWeights(words); const { p, started } = activeWord(beat, t, words.length);
+  const words = lines.flat(); const cum = wordWeights(words);
+  if (!reacting) ({ p, started } = activeWord(beat, t, words.length));
   let cur = cum.findIndex(c => c >= p); if (!started) cur = -1;
-  const pin = kind === 'twist' ? backOut((t - (beat.voiceLead || 0)) / 0.3) : backOut(t / 0.25);
+  const pin = reacting ? backOut((t - beat.reactStart) / 0.22) : kind === 'twist' ? backOut((t - (beat.voiceLead || 0)) / 0.3) : backOut(t / 0.25);
   ctx.save(); ctx.translate(540, yC); ctx.scale(pin, pin);  ctx.translate(-540, -yC);
   let wi = 0; ctx.lineJoin = 'round';
   lines.forEach((ln, li) => {
@@ -646,7 +652,7 @@ function drawCaption(ctx, beat, t, opts) {
       if (active && BW) { ctx.fillStyle = '#111'; rr(ctx, x - 10, y - size * 0.86, ww + 20, size * 1.08, 14); ctx.fill(); }
       ctx.save(); if (active) { ctx.translate(x + ww / 2, y - size / 3); ctx.scale(1.06, 1.06); ctx.translate(-(x + ww / 2), -(y - size / 3)); }
       ctx.strokeStyle = '#111'; ctx.lineWidth = 16; ctx.strokeText(w, x, y);
-      ctx.fillStyle = active ? (BW ? '#ffffff' : '#ffd60a') : '#ffffff'; ctx.fillText(w, x, y); ctx.restore();
+      ctx.fillStyle = reacting ? (BW ? '#ffffff' : '#ffd60a') : active ? (BW ? '#ffffff' : '#ffd60a') : '#ffffff'; ctx.fillText(w, x, y); ctx.restore();
       x += ww + sw; wi++;
     }
   });
@@ -724,7 +730,7 @@ function ctaWidget(ctx, type, t, clickT, g, opts) {
 function drawCTA(ctx, beat, t, g, opts) {
   const types = beat.ctaTypes && beat.ctaTypes.length ? beat.ctaTypes : [beat.ctaType || 'like'];
   const two = types.length > 1;
-  const slots = two ? [{ x: 290, y: 330, s: 0.56, click: 1.0 }, { x: 790, y: 330, s: 0.56, click: 1.9 }] : [{ x: 540, y: 320, s: 0.74, click: 1.1 }];
+  const slots = two ? [{ x: 290, y: 250, s: 0.56, click: 1.0 }, { x: 790, y: 250, s: 0.56, click: 1.9 }] : [{ x: 540, y: 245, s: 0.68, click: 1.1 }];
   const hits = [];
   types.forEach((type, i) => {
     const sl = slots[i]; const ap = backOut((t - i * 0.18) / 0.4);
@@ -749,33 +755,40 @@ function parseActs(a) {
   const m = {}; (a || '').split(/\s+/).filter(Boolean).forEach(tok => { const [r, act] = tok.split(':'); if (r === 'all') { for (const k of ROLES) if (!m[k]) m[k] = act; m._all = act; } else m[r] = act; });
   return m;
 }
-const BASEX = { 1: [540], 2: [370, 710], 3: [250, 540, 830], 4: [180, 420, 660, 900] };
+const BASEX = { 1: [540], 2: [330, 750], 3: [200, 540, 880], 4: [130, 400, 680, 950] };
 
 function sceneChars(beat, t, opts) {
   const n = opts.nChars; const acts = parseActs(beat.a); const looks = LOOKS[opts.sitId] || {};
   const xs = BASEX[n].slice();
   const chars = [];
+  const listenKinds = ['setup', 'rep', 'twist', 'after'];
   for (let i = 0; i < n; i++) {
     const role = ROLES[i];
-    let act = acts[role] || acts._all || (beat.kind === 'twist' ? 'shock' : beat.kind === 'cta' ? 'wave' : beat.kind === 'reflect' ? 'idle' : 'idle');
+    let act = acts[role] || acts._all || (beat.kind === 'twist' ? 'shock' : beat.kind === 'cta' ? 'wave' : 'idle');
     if (!acts[role] && !acts._all && i >= 2 && beat.kind === 'rep') act = beat.level > 0.6 ? 'laugh' : 'idle';
-    let x = xs[i];
-    chars.push({ role, act, x, baseX: x, seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', f: 1 });
+    // el que escucha nunca se queda quieto: asiente y gesticula
+    if (act === 'idle' && role !== beat.speaker && listenKinds.includes(beat.kind)) act = 'nod';
+    chars.push({ role, act, scripted: act, x: xs[i], baseX: xs[i], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', f: 1 });
   }
-  // caminos: A camina hacia el lado del camino
-  if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 230; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle') { c.act = 'walk'; c.settleK = clamp((t - Math.min(1.2, beat.dur)) / 0.4, 0, 1); } c.walkDir = beat.side; }
+  // caminos: el protagonista camina hacia el lado del camino
+  if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 260; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle' || c.act === 'nod') { c.act = 'walk'; c.settleK = clamp((t - Math.min(1.2, beat.dur)) / 0.4, 0, 1); c.after = 'idle'; } c.walkDir = beat.side; }
   else if (beat.env === 'caminos' && n === 1) chars[0].x = 540;
-  // movimientos
-  const mid = chars.reduce((s, c) => s + c.x, 0) / Math.max(1, chars.length);
   for (const c of chars) {
-    if (c.act === 'walk' && !c.walkDir) { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 320, c.baseX, easeOut(t / Math.min(1.4, beat.dur * 0.7))); c.walkDir = -from; c.settleK = clamp((t - Math.min(1.4, beat.dur * 0.7)) / 0.4, 0, 1); }
-    if (c.act === 'run') { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 700, c.baseX, easeOut(t / Math.min(0.9, beat.dur * 0.5))); c.walkDir = -from; c.settleK = clamp((t - Math.min(0.9, beat.dur * 0.5)) / 0.35, 0, 1); }
+    if (c.act === 'walk' && !c.walkDir) { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 420, c.baseX, easeOut(t / Math.min(1.2, beat.dur * 0.6))); c.walkDir = -from; c.settleK = clamp((t - Math.min(1.2, beat.dur * 0.6)) / 0.35, 0, 1); c.after = 'idle'; }
+    if (c.act === 'run') { const from = c.x < 540 ? -1 : 1; c.x = lerp(c.baseX + from * 900, c.baseX, easeOut(t / Math.min(0.8, beat.dur * 0.5))); c.walkDir = -from; c.settleK = clamp((t - Math.min(0.8, beat.dur * 0.5)) / 0.3, 0, 1); c.after = 'idle'; }
   }
+  // entrada (corriendo o caminando desde fuera de cuadro)
+  const en = beat.enter && chars.find(c => c.role === beat.enter.role);
+  if (en) { const T = en && beat.enter.run ? 0.7 : 1.0; en.x = lerp(en.baseX + beat.enter.from * 900, en.baseX, easeOut(t / T)); en.walkDir = -beat.enter.from; if (t < T + 0.3) { en.act = beat.enter.run ? 'run' : 'walk'; en.settleK = clamp((t - T) / 0.3, 0, 1); en.after = en.scripted === 'run' || en.scripted === 'walk' ? 'idle' : en.scripted; } else en.walkDir = 0; }
+  // salida corriendo al final de la escena
+  const ex = beat.exit && chars.find(c => c.role === beat.exit.role);
+  if (ex) { const t0 = beat.dur - 0.75; if (t > t0) { const k = clamp((t - t0) / 0.75, 0, 1); ex.x = ex.baseX + beat.exit.dir * 900 * k * k; ex.act = 'run'; ex.walkDir = beat.exit.dir; ex.settleK = 0; } }
   const huggers = chars.filter(c => c.act === 'hug');
-  if (huggers.length >= 2) { const hm = (huggers[0].baseX + huggers[1].baseX) / 2; const k = easeOut(t / 0.6); huggers[0].x = lerp(huggers[0].baseX, hm - 75, k); huggers[1].x = lerp(huggers[1].baseX, hm + 75, k); }
+  if (huggers.length >= 2) { const hm = (huggers[0].baseX + huggers[1].baseX) / 2; const k = easeOut(t / 0.6); huggers[0].x = lerp(huggers[0].baseX, hm - 105, k); huggers[1].x = lerp(huggers[1].baseX, hm + 105, k); }
   else if (huggers.length === 1) huggers[0].act = 'love';
   for (const c of chars) if (c.act === 'give') { const other = chars.filter(o => o !== c).sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0]; if (other) c.x = lerp(c.baseX, lerp(c.baseX, other.x, 0.45), easeOut(t / 0.7)); c.giveProp = beat.p === 'coffee' ? 'coffee' : 'gift'; }
-  // orientación
+  // reacción exagerada del que escucha
+  if (beat.react && t >= beat.reactStart) { const r = chars.find(c => c.role === beat.react.role); if (r) { r.from = r.act; r.act = beat.react.act; r.reactK = clamp((t - beat.reactStart) / 0.14, 0, 1); r.settleK = 0; } }
   for (const c of chars) {
     if (c.walkDir) c.f = c.walkDir;
     else if (chars.length > 1) { const others = chars.filter(o => o !== c); const nearest = others.sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0]; c.f = nearest.x >= c.x ? 1 : -1; }
@@ -786,7 +799,8 @@ function sceneChars(beat, t, opts) {
 
 function charPose(c, t, g) {
   let P = applyFront(pose(c.act, t, g, c.seed), c.f);
-  if (c.settleK > 0) P = blendPose(P, applyFront(pose('idle', t, g, c.seed), c.f), easeInOut(c.settleK));
+  if (c.settleK > 0) P = blendPose(P, applyFront(pose(c.after || 'idle', t, g, c.seed), c.f), easeInOut(c.settleK));
+  if (c.reactK != null && c.reactK < 1 && c.from) P = blendPose(applyFront(pose(c.from, t, g, c.seed), c.f), P, easeOut(c.reactK));
   return P;
 }
 
@@ -847,28 +861,32 @@ export function drawFrame(ctx, project, time, scale = 1) {
   }
   if (beat.kind === 'cta') { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   // quién habla: el que está hablando/señalando; si no, el protagonista narra
-  const speakers = new Set(chars.filter(c => c.act === 'talk' || c.act === 'point').map(c => c.role));
-  if (!speakers.size && chars[0] && !['sleep', 'cry', 'laugh', 'fall'].includes(chars[0].act)) speakers.add(chars[0].role);
+  const reactOn = beat.react && t >= beat.reactStart;
+  const talker = reactOn ? beat.react.role : (beat.speaker || 'A');
   const BL = 0.45; let prevMap = null, pb = null;
   if (bi > 0 && t < BL) { pb = project.beats[bi - 1]; prevMap = new Map(sceneChars(pb, pb.dur, opts).map(pc => [pc.role, pc])); }
   for (const c of chars) {
     let P = charPose(c, t, g);
     const pc = prevMap && prevMap.get(c.role);
     if (pc) { const k = easeInOut(t / BL); P = blendPose(charPose(pc, pb.dur, g), P, k); c.x = lerp(pc.x, c.x, k); }
-    const speech = speakers.has(c.role) ? speechFor(beat, t, g, c.seed) : null;
+    const speech = c.role !== talker ? null : reactOn ? speechFor({ voiceLead: 0, voiceDur: beat.reactDur || 0.6, lip: beat.reactLip, dur: beat.reactDur || 0.6 }, t - beat.reactStart, g, c.seed) : speechFor(beat, t, g, c.seed);
+    // mirada: a la cámara en el gancho, la reflexión, el final y en su primer plano; si no, al otro personaje
+    const target = chars.find(o => o.role === (c.role === talker ? (beat.listener || beat.speaker) : talker) && o !== c);
+    const toCam = ['hook', 'cta', 'reflect'].includes(beat.kind) || (cam.capTop && cam.role === c.role);
+    const gaze = toCam || !target ? { dx: 0, dy: 3 } : { dx: Math.sign(target.x - c.x) * 7, dy: 3 };
     if (speech && speech.talking && P.emo === 'neutral') P.emo = 'happy';
-    if (P.fx === 'glow') { const hx = c.x, hy = GY - 430 * (c.kid ? 0.7 : 1); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
-    const head = drawFigure(ctx, c, P, g, speech);
+    if (P.fx === 'glow') { const hx = c.x, hy = headY(c); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
+    const head = drawFigure(ctx, c, P, g, speech, gaze);
     drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
   }
   ctx.restore();
   // objetos de escena: franja superior
-  if (beat.kind !== 'reflect' && beat.kind !== 'hook' && beat.kind !== 'cta') { ctx.save(); ctx.translate(540, 330); ctx.scale(0.62, 0.62); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
+  if (beat.kind !== 'reflect' && beat.kind !== 'hook' && beat.kind !== 'cta' && !cam.capTop) { ctx.save(); ctx.translate(540, 245); ctx.scale(0.5, 0.5); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
   if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
   if (beat.kind === 'cta') drawCTA(ctx, beat, t, g, opts);
   if (beat.kind === 'twist' && t < 0.14) { ctx.fillStyle = `rgba(255,255,255,${1 - t / 0.14})`; ctx.fillRect(0, 0, W, H); }
-  if (beat.kind === 'twist' && t > 0.05 && t < (beat.voiceLead || 0.5) + 0.3) { ctx.save(); setFont(ctx, 180, 700); ctx.textAlign = 'center'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.fillStyle = BW ? '#fff' : '#ffd60a'; const s2 = backOut((t - 0.05) / 0.2); ctx.translate(540, 360); ctx.scale(s2, s2); ctx.rotate(-0.08); ctx.strokeText('¿¡!?', 0, 0); ctx.fillText('¿¡!?', 0, 0); ctx.restore(); }
-  drawCaption(ctx, beat, t, opts);
+  if (beat.kind === 'twist' && t > 0.05 && t < (beat.voiceLead || 0.5)) { ctx.save(); setFont(ctx, 180, 700); ctx.textAlign = 'center'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.fillStyle = BW ? '#fff' : '#ffd60a'; const s2 = backOut((t - 0.05) / 0.2); ctx.translate(540, 300); ctx.scale(s2, s2); ctx.rotate(-0.08); ctx.strokeText('¿¡!?', 0, 0); ctx.fillText('¿¡!?', 0, 0); ctx.restore(); }
+  drawCaption(ctx, beat, t, opts, cam.capTop);
   if (opts.page && opts.page.trim()) { ctx.save(); setFont(ctx, 34, 700); ctx.textAlign = 'left'; ctx.globalAlpha = 0.85; ctx.lineWidth = 8; ctx.strokeStyle = '#111'; ctx.strokeText(opts.page.trim(), 40, 70); ctx.fillStyle = '#fff'; ctx.fillText(opts.page.trim(), 40, 70); ctx.restore(); }
   ctx.fillStyle = BW ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.3)'; ctx.fillRect(0, 0, W, 10);
   ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.fillRect(0, 0, W * clamp(time / project.total, 0, 1), 10);

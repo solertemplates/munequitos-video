@@ -122,9 +122,9 @@ async function mespeakInit() {
   })();
   return meReady;
 }
-async function mespeakSpeak(text, lang, speed, actx) {
+async function mespeakSpeak(text, lang, speed, actx, variant) {
   await mespeakInit();
-  const buf = window.meSpeak.speak(text, { rawdata: 'arraybuffer', voice: lang === 'es' ? 'es' : 'en/en-us', speed: Math.round(165 * speed), pitch: 48, wordgap: 0, amplitude: 120 });
+  const buf = window.meSpeak.speak(text, { rawdata: 'arraybuffer', voice: lang === 'es' ? 'es' : 'en/en-us', speed: Math.round(165 * speed), pitch: ({ v1: 72, v2: 32, v3: 60 })[variant] || 48, wordgap: 0, amplitude: 120 });
   if (!buf) throw new Error('meSpeak falló');
   return actx.decodeAudioData(buf.slice ? buf.slice(0) : buf);
 }
@@ -182,6 +182,18 @@ let decodeCtx = null;
 const getCtx = () => (decodeCtx ||= new OfflineAudioContext(1, 1, 48000));
 
 // engine: 'piper' | 'mespeak' | 'none'
+// Voz distinta para cada personaje (A usa la elegida; B, C y D, otras que contrasten)
+const OPENAI_PAIR = { nova: ['onyx', 'shimmer', 'echo'], shimmer: ['echo', 'nova', 'ash'], coral: ['ash', 'nova', 'onyx'], onyx: ['nova', 'echo', 'coral'], echo: ['shimmer', 'onyx', 'coral'], ash: ['coral', 'nova', 'echo'], sage: ['nova', 'onyx', 'shimmer'] };
+export function voiceForRole(engine, voiceId, role, lang, elevenList) {
+  const k = { A: 0, B: 1, C: 2, D: 3 }[role] || 0;
+  if (!k) return voiceId;
+  if (engine === 'openai') return (OPENAI_PAIR[voiceId] || ['onyx', 'nova', 'echo'])[k - 1];
+  if (engine === 'eleven') { const list = (elevenList && elevenList.length ? elevenList : ELEVEN_DEFAULT_VOICES).map(v => v.id).filter(id => id !== voiceId); return list[(k - 1) % Math.max(1, list.length)] || voiceId; }
+  if (engine === 'piper') { const list = VOICES[lang].map(v => v.id).filter(id => id !== voiceId); return list[(k - 1) % list.length] || voiceId; }
+  if (engine === 'mespeak') return 'v' + k;
+  return voiceId;
+}
+
 export async function synth(text, { engine, voiceId, lang, speed = 1, onProgress, apiKey }) {
   if (engine === 'none' || !text.trim()) return null;
   const key = [engine, voiceId, lang, engine === 'openai' ? '' : speed.toFixed(2), text].join('|');
@@ -199,7 +211,7 @@ export async function synth(text, { engine, voiceId, lang, speed = 1, onProgress
     const s = trimSilence(s0, dec.sampleRate);
     ab = getCtx().createBuffer(1, s.length, dec.sampleRate); ab.copyToChannel(s, 0);
   } else {
-    const dec = await mespeakSpeak(text, lang, speed, getCtx());
+    const dec = await mespeakSpeak(text, lang, speed, getCtx(), voiceId);
     const s = trimSilence(dec.getChannelData(0), dec.sampleRate);
     ab = getCtx().createBuffer(1, s.length, dec.sampleRate); ab.copyToChannel(s, 0);
   }

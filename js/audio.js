@@ -119,6 +119,14 @@ export function sfx(ctx, dest, nb, name, t) {
     case 'laugh': for (let i = 0; i < 5; i++) osc(ctx, dest, 'triangle', 420 - i * 20, t + i * 0.13, 0.09, 0.15, { lp: 2000, vib: 30, vibAmt: 40 }); break;
     case 'notif': osc(ctx, dest, 'sine', 1318, t, 0.12, 0.25); osc(ctx, dest, 'sine', 1760, t + 0.1, 0.2, 0.22); break;
     case 'click': noise(ctx, dest, nb, t, 0.03, 0.4, 'highpass', 3000); osc(ctx, dest, 'sine', 1400, t, 0.05, 0.2); break;
+    case 'punch': osc(ctx, dest, 'sine', 110, t, 0.25, 1.0, { to: 40, glide: 0.12 }); noise(ctx, dest, nb, t, 0.08, 0.7, 'lowpass', 1800); noise(ctx, dest, nb, t, 0.03, 0.5, 'highpass', 4000); break;
+    case 'thud': osc(ctx, dest, 'sine', 90, t, 0.3, 1.0, { to: 35, glide: 0.2 }); noise(ctx, dest, nb, t, 0.12, 0.5, 'lowpass', 900); break;
+    case 'fall': osc(ctx, dest, 'sine', 1400, t, 0.6, 0.35, { to: 180, glide: 0.55 }); sfx(ctx, dest, nb, 'thud', t + 0.6); break;
+    case 'zip': noise(ctx, dest, nb, t, 0.28, 0.6, 'bandpass', 900, { to: 5000, q: 2, a: 0.03 }); osc(ctx, dest, 'triangle', 300, t, 0.25, 0.2, { to: 1200, glide: 0.22 }); break;
+    case 'gasp': noise(ctx, dest, nb, t, 0.22, 0.55, 'bandpass', 1200, { to: 2600, q: 1.5, a: 0.06 }); osc(ctx, dest, 'sine', 600, t + 0.05, 0.35, 0.35, { to: 1300, glide: 0.3 }); sfx(ctx, dest, nb, 'punch', t + 0.02); break;
+    case 'uf': noise(ctx, dest, nb, t, 0.35, 0.55, 'bandpass', 700, { to: 350, q: 2.5, a: 0.04 }); osc(ctx, dest, 'sawtooth', 160, t, 0.3, 0.12, { to: 110, glide: 0.3, lp: 800 }); break;
+    case 'aww': osc(ctx, dest, 'triangle', 520, t, 0.7, 0.3, { to: 380, glide: 0.6, vib: 6, vibAmt: 12 }); osc(ctx, dest, 'sine', 1040, t, 0.6, 0.1, { to: 760, glide: 0.6 }); break;
+    case 'laughs': for (let i = 0; i < 9; i++) { const f0 = 300 - i * 9 + (i % 2) * 25; osc(ctx, dest, 'sawtooth', f0, t + i * 0.11, 0.08, 0.22, { lp: 1600, q: 3 }); noise(ctx, dest, nb, t + i * 0.11, 0.06, 0.18, 'bandpass', 2400); } break;
     case 'sparkle': for (let i = 0; i < 6; i++) osc(ctx, dest, 'sine', 1800 + i * 300, t + i * 0.05, 0.25, 0.06); break;
   }
 }
@@ -130,27 +138,38 @@ export async function renderMix(project, { voiceVol = 1, musicVol = 0.6, sfxOn =
   const nb = noiseBuffer(ctx, 2);
   const master = ctx.createDynamicsCompressor(); master.threshold.value = -10; master.ratio.value = 4; master.attack.value = 0.003; master.release.value = 0.2;
   master.connect(ctx.destination);
-  const musicBus = ctx.createGain(); musicBus.gain.value = musicVol * 0.8; musicBus.connect(master);
-  const sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 0.55 : 0; sfxBus.connect(master);
+  const musicBus = ctx.createGain(); musicBus.gain.value = musicVol * 0.5; musicBus.connect(master);
+  const sfxBus = ctx.createGain(); sfxBus.gain.value = sfxOn ? 1.15 : 0; sfxBus.connect(master);
   const voiceBus = ctx.createGain(); voiceBus.gain.value = voiceVol * 1.25;
   // un poco de presencia en la voz
   const vEq = ctx.createBiquadFilter(); vEq.type = 'peaking'; vEq.frequency.value = 3000; vEq.gain.value = 3; vEq.Q.value = 0.8;
   voiceBus.connect(vEq); vEq.connect(master);
 
   // ducking: baja la música mientras habla la voz
-  const g = musicBus.gain; const base = musicVol * 0.8; g.setValueAtTime(base, 0);
+  const g = musicBus.gain; const base = musicVol * 0.5; g.setValueAtTime(base, 0);
   for (const b of project.beats) {
     if (!b.voiceBuffer) continue;
     const vs = b.start + b.voiceLead, ve = vs + b.voiceDur;
-    g.setTargetAtTime(base * 0.4, Math.max(0, vs - 0.08), 0.04);
+    g.setTargetAtTime(base * 0.35, Math.max(0, vs - 0.08), 0.04);
     g.setTargetAtTime(base, ve + 0.05, 0.12);
+    if (b.react && b.reactBuffer) { const rs = b.start + b.reactStart; g.setTargetAtTime(base * 0.3, Math.max(0, rs - 0.05), 0.03); g.setTargetAtTime(base, rs + b.reactDur + 0.05, 0.1); }
   }
   scheduleMusic(ctx, musicBus, nb, project.music, total, project.beats);
   project.beats.forEach((b, i) => {
     if (i > 0) sfx(ctx, sfxBus, nb, 'whoosh', Math.max(0, b.start - 0.12));
     if (b.fx) sfx(ctx, sfxBus, nb, b.fx, b.start + (b.kind === 'twist' ? 0.02 : 0.08));
     // efectos extra en cortes de plano dentro del beat
-    for (let s = 1; s < b.shots; s++) sfx(ctx, sfxBus, nb, 'pop', b.start + (b.dur / b.shots) * s);
+    if (b.shotPlan) b.shotPlan.slice(1).forEach(sh => { if (sh.type !== 'close') sfx(ctx, sfxBus, nb, 'pop', b.start + sh.t0); });
+    else for (let s = 1; s < b.shots; s++) sfx(ctx, sfxBus, nb, 'pop', b.start + (b.dur / b.shots) * s);
+    // reacción: efecto marcado + exclamación hablada del que escucha
+    if (b.react) { sfx(ctx, sfxBus, nb, b.react.fx || 'gasp', b.start + b.reactStart - 0.04); if (b.react.act === 'shock') sfx(ctx, sfxBus, nb, 'punch', b.start + b.reactStart); }
+    if (b.react && b.reactBuffer) { const s2 = ctx.createBufferSource(); s2.buffer = b.reactBuffer; s2.connect(voiceBus); s2.start(b.start + b.reactStart); }
+    // entradas y salidas
+    if (b.enter) sfx(ctx, sfxBus, nb, b.enter.run ? 'zip' : 'whoosh', b.start + 0.02);
+    if (b.exit) sfx(ctx, sfxBus, nb, 'zip', b.start + b.dur - 0.75);
+    // golpes según la acción del guion
+    if (/\bfall\b/.test(b.a || '')) sfx(ctx, sfxBus, nb, 'fall', b.start + 0.1);
+    if (/facepalm/.test(b.a || '')) sfx(ctx, sfxBus, nb, 'punch', b.start + 0.25);
     if (b.kind === 'cta') {
       const types = b.ctaTypes && b.ctaTypes.length ? b.ctaTypes : [b.ctaType];
       const clicks = types.length > 1 ? [1.0, 1.9] : [1.1];

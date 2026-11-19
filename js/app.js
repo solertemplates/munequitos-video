@@ -5,7 +5,8 @@ import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice } from '
 import { searchTrends, writeIdeas, PRICE } from './scriptai.js';
 import { computeLip } from './lipsync.js';
 import { renderMix, MUSIC_STYLES } from './audio.js';
-import { VOICES, synth, ELEVEN_DEFAULT_VOICES, OPENAI_VOICES, elevenVoices } from './tts.js';
+import { VOICES, synth, ELEVEN_DEFAULT_VOICES, OPENAI_VOICES, elevenVoices, voiceForRole } from './tts.js';
+import { planDirection, planShots } from './direction.js';
 import { exportMP4 } from './export.js';
 
 const $ = s => document.querySelector(s);
@@ -197,6 +198,7 @@ async function generate(customTexts = null) {
     const settings = { env: S.env, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel };
     const beats = buildBeats({ situation: sit, lang: S.lang, dur: S.dur, hook: hooks[S.hook] || hooks[0], ctas: S.ctaSel.map(i => ctas[i]).filter(Boolean).length ? S.ctaSel.map(i => ctas[i]).filter(Boolean) : [ctas[0]], settings });
     if (customTexts) beats.forEach((b, i) => { if (customTexts[i] != null && customTexts[i].trim()) b.text = customTexts[i].trim(); });
+    planDirection(beats, { nChars: S.nChars, lang: S.lang });
     let { engine, voiceId } = voiceParts(); const chosen = engine; const D = DURATIONS[S.dur];
     let speed = D.pace; let total = 0; let fallbackWhy = '';
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -205,7 +207,13 @@ async function generate(customTexts = null) {
         const b = beats[i];
         let buf = null;
         try {
-          buf = await synth(speakable(b.text), { engine, voiceId, apiKey: KEYS[engine], lang: S.lang, speed: b.kind === 'reflect' ? speed * 0.92 : speed, onProgress: (what, l, t) => { if (what === 'model' || what === 'phon') setStatus(L.stDl(t ? Math.round(l / t * 100) + ' %' : Math.round(l / 1e6) + ' MB')); } });
+          const prog = (what, l, t) => { if (what === 'model' || what === 'phon') setStatus(L.stDl(t ? Math.round(l / t * 100) + ' %' : Math.round(l / 1e6) + ' MB')); };
+          const vfor = role => voiceForRole(engine, voiceId, role, S.lang, S.elevenList);
+          buf = await synth(speakable(b.text), { engine, voiceId: vfor(b.speaker), apiKey: KEYS[engine], lang: S.lang, speed: b.kind === 'reflect' ? speed * 0.92 : speed, onProgress: prog });
+          if (b.react) {
+            const rb = await synth(speakable(b.react.vocal), { engine, voiceId: vfor(b.react.role), apiKey: KEYS[engine], lang: S.lang, speed: Math.min(1.25, speed * 1.08), onProgress: prog });
+            b.reactBuffer = rb; b.reactDur = rb ? Math.min(1.6, rb.duration) : 0.7; b.reactLip = computeLip(rb);
+          }
         } catch (e) {
           console.warn('TTS', e);
           if (engine === 'eleven' || engine === 'openai') { fallbackWhy = e.message || String(e); engine = 'piper'; voiceId = DEFAULTS.voiceId[S.lang]; setStatus(L.cloudFallback + ' ' + fallbackWhy, true); await new Promise(r => setTimeout(r, 1500)); i--; continue; }
@@ -215,10 +223,23 @@ async function generate(customTexts = null) {
         b.voiceBuffer = buf; b.voiceDur = buf ? buf.duration : 0; b.lip = computeLip(buf);
         if (!buf) b.voiceDur = undefined;
       }
-      total = timeBeats(beats, S.dur);
+      total = timeBeats(beats, S.dur, false);
       if (total <= D.max + 0.5 || engine === 'none' || engine === 'eleven' || engine === 'openai' || speed >= 1.35) break;
       speed = Math.min(1.35, speed * (total / D.max) * 1.02);
     }
+    // si aún se pasa: primero quita escenas intermedias (nunca la primera ni la última), luego reacciones
+    for (let guard = 0; total > D.max + 0.5 && guard < 10; guard++) {
+      const reps = beats.filter(b => b.kind === 'rep');
+      if (reps.length <= 3) break;
+      const victim = reps.slice(1, -1).filter(b => !b.enter && !b.core).sort((a, b) => b.dur - a.dur)[0] || reps[Math.floor(reps.length / 2)];
+      const vi = beats.indexOf(victim);
+      if (vi > 0 && beats[vi - 1].exit) beats[vi - 1].exit = null;
+      beats.splice(vi, 1);
+      total = timeBeats(beats, S.dur, false);
+    }
+    total = timeBeats(beats, S.dur, true);
+    beats.filter(b => b.kind === 'rep').forEach((b, i, arr) => { b.level = (i + 1) / arr.length; });
+    planShots(beats);
     project = prepareProject({ beats, total, lang: S.lang, color: S.color, nChars: S.nChars, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: sit.id });
     let imgNote = '';
     if (S.aiOn) {

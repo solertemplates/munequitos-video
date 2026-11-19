@@ -60,14 +60,14 @@ export async function searchTrends(apiKey, { lang, theme }) {
 
 // 2) Escribir 3 historias nuevas en el formato de la app
 export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur }) {
-  const reps = dur === 's' ? 4 : dur === 'm' ? 7 : 9;
+  const reps = dur === 's' ? 6 : dur === 'm' ? 10 : 13;
   const es = lang === 'es';
   const voice = es
     ? `IDIOMA Y TONO: español como se habla en la calle en Miami: sabor cubano y de los latinos de Estados Unidos, fácil de entender para cualquier latino. Mete alguna palabra en inglés de forma natural (el rent, el bill, chequear, parquear, el mall, el weekend, full, brother, nice, sorry, my God). Expresiones permitidas con moderación: asere, qué volá, tremendo, candela, pa', na', mijo/mija, ahorita, dale. NADA de frases de libro ni que suenen a traducción.`
     : `LANGUAGE AND TONE: natural, casual American English, the way people actually talk. No textbook phrasing.`;
   const sys = `Eres un guionista top de videos virales de muñequitos de palitos (Shorts, Reels, TikTok) con millones de vistas. ${voice}
 HUMOR: chistes que den risa DE VERDAD: picardía, exageración, sarcasmo cariñoso, situaciones con las que todo el mundo se identifica. Picante pero LIMPIO: sin groserías, sin insultos, sin doble sentido sexual, sin burlarse de grupos.
-RITMO: cada línea es un golpe nuevo (sorpresa, chiste, exageración o cambio de lugar) y la situación CRECE hasta el giro final. Pon una mini-sorpresa a la mitad. Cero relleno. Líneas de máximo 10 palabras (el giro puede tener hasta 16).
+DIÁLOGO: es una conversación de ida y vuelta entre los personajes, NO un narrador hablando solo. Alterna quién habla casi en cada línea (A, B, A, B…); el narrador (A contando) solo en 1 o 2 líneas. El que escucha SIEMPRE reacciona (risa, susto, cara de 'no puede ser').\nRITMO: frases cortísimas (máx 8 palabras; el giro hasta 14). Cada línea es un golpe nuevo (sorpresa, chiste, exageración, alguien entra corriendo, algo se cae) y la situación CRECE hasta el giro final, con una mini-sorpresa a la mitad, para que nadie quiera irse antes del final. Cero relleno.
 FINAL: un giro sorprendente y después una reflexión corta que emocione, sin cursilería (2 frases, máx 12 palabras cada una). NO pongas llamado a la acción (la app lo agrega).
 Responde SOLO con JSON válido.`;
   const user = `Tema: ${themeName}. Tendencia o noticia del momento para usar en la historia: ${trend ? `"${trend}"` : '(ninguna: usa algo actual de la vida diaria, precios o trabajo)'}.
@@ -79,9 +79,9 @@ Formato exacto:
  "mode":"esc" o "caminos",
  "env":"uno de: ${ENVS.join(', ')}",
  "hooks":["3 ganchos distintos para los primeros 2 segundos, máx 10 palabras, que obliguen a quedarse"],
- "setup":{"t":"línea","a":"A:talk B:shrug","p":"","fx":"pop"},
- "reps":[ exactamente ${reps} objetos {"t":"línea","a":"acciones","p":"objeto","fx":"efecto"${''}} ],
- "twist":{"t":"giro final","a":"...","p":"...","fx":"scratch"},
+ "setup":{"w":"A","t":"línea","a":"A:talk B:shrug","p":"","fx":"pop","r":"shock"},
+ "reps":[ exactamente ${reps} objetos {"w":"quién lo dice (A, B…)","t":"línea","a":"acciones","p":"objeto","fx":"efecto","r":"reacción del que escucha: laugh, shock, facepalm, love o cry"} ],
+ "twist":{"w":"A o B","t":"giro final","a":"...","p":"...","fx":"scratch","r":"shock"},
  "after":{"t":"remate corto y gracioso después del giro","a":"...","p":"","fx":"laugh"},
  "reflect":["frase 1","frase 2"],
  "signs":["letrero izquierdo","letrero derecho"]  (solo si mode es "caminos": camino malo a la izquierda, bueno a la derecha; en "caminos" cada rep lleva además "side":"left" o "right", alternando)
@@ -103,7 +103,8 @@ function toSituation(idea, k, lang, nChars) {
   const cleanP = p => { p = String(p || ''); return PROPS.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
   const cleanFx = fx => (FX.includes(fx) ? fx : 'pop');
   const both = t => ({ es: String(t || '').trim(), en: String(t || '').trim() });
-  const mk = (o, extra = {}) => ({ t: both(o && o.t), a: cleanA(o && o.a), p: cleanP(o && o.p), fx: cleanFx(o && o.fx), core: false, ...extra });
+  const REACTS = ['laugh', 'shock', 'facepalm', 'love', 'cry'];
+  const mk = (o, extra = {}) => ({ t: both(o && o.t), a: cleanA(o && o.a), p: cleanP(o && o.p), fx: cleanFx(o && o.fx), w: o && roles.includes(o.w) ? o.w : undefined, r: o && REACTS.includes(o.r) ? o.r : undefined, core: false, ...extra });
   const caminos = idea.mode === 'caminos' && Array.isArray(idea.signs) && idea.signs.length >= 2;
   const env = caminos ? 'caminos' : (ENVS.includes(idea.env) ? idea.env : 'casa');
   const setup = mk(idea.setup);

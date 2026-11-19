@@ -6,8 +6,8 @@ export const IMAGE_MODELS = [
   { id: 'gpt-image-1', label: { es: 'Mejor calidad (gpt-image-1)', en: 'Best quality (gpt-image-1)' }, price: { low: 0.016, medium: 0.063, high: 0.25 } },
 ];
 
-const STYLE = 'Flat 2D cartoon BACKGROUND illustration for a vertical animated short (stick-figure story style): detailed, colorful but soft scenery, ' +
-  'clean dark outlines, gentle flat shading, cheerful look. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
+const STYLE = 'Flat 2D cartoon BACKGROUND illustration for a vertical animated short (stick-figure story style): detailed scenery with VIVID, bright, saturated, happy colors ' +
+  '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
   'empty and uncluttered in the center (animated characters will stand there). Keep the top 25% simple (sky, wall or ceiling). ' +
   'ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
 
