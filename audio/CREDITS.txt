@@ -1,0 +1,14 @@
+Sonidos incluidos en la app / Bundled sounds
+
+sfx/*  (excepto thud, thud2, weights):
+  "Oculus Audio Pack 1" by Meta (Oculus sound design team), from
+  https://github.com/facebookincubator/Meta-open-sound (corpora/oculus-audio-pack)
+  License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/  — recortados y convertidos a MP3.
+
+sfx/thud.mp3, sfx/thud2.mp3, sfx/weights.mp3:
+  "Impact Sounds" by Kenney (kenney.nl) — CC0 1.0 (dominio público).
+
+piano/*, guitar/*:
+  Meta Piano y Meta Nylon Guitar, from https://github.com/facebookincubator/Meta-open-sound
+  (systems/instruments) — CC0 1.0 (dominio público). Recortados y convertidos a MP3.

@@ -82,7 +82,8 @@ function buildSilent({ situation, lang, dur, hook, ctas, settings, question, T, 
 
 // Texto apto para la voz (sin comillas ni símbolos)
 export function speakable(text) {
-  return text.replace(/["“”«»]/g, '').replace(/\s+/g, ' ').replace(/\.\.\./g, ',').trim();
+  // se conservan comas, puntos, «…», ¿? y ¡! para que la voz respire, pregunte y se emocione
+  return text.replace(/["“”«»]/g, '').replace(/\.\.\./g, '…').replace(/\s+/g, ' ').trim();
 }
 
 // Asigna tiempos: beat.start, beat.dur, voiceLead y, si hay reacción, reactStart (relativo al beat).

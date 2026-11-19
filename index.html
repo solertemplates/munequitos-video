@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=9">
+<link rel="stylesheet" href="css/app.css?v=10">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -33,14 +33,20 @@
 <main class="layout">
   <section class="controls">
     <div class="card">
-      <h2><span class="n">1</span><span data-i18n="s1">Tema</span></h2>
+      <h2><span class="n">1</span><span data-i18n="s0">Tipo de video</span></h2>
+      <div id="vtypeSeg" class="seg big"></div>
+      <p class="hint" id="vtypeHint"></p>
+    </div>
+
+    <div class="card" id="themeCard">
+      <h2><span class="n">2</span><span data-i18n="s1">Tema</span></h2>
       <div id="themes" class="chips"></div>
     </div>
 
     <div class="card">
-      <h2><span class="n">2</span><span data-i18n="s2">Personajes, entorno y estilo</span></h2>
+      <h2><span class="n">3</span><span data-i18n="s2">Personajes, entorno y estilo</span></h2>
       <div class="row">
-        <div class="field">
+        <div class="field" id="fNchars">
           <label data-i18n="chars">Personajes</label>
           <div id="nchars" class="seg"></div>
         </div>
@@ -48,7 +54,7 @@
           <label data-i18n="mainLbl">Protagonista</label>
           <div id="mainSeg" class="seg"></div>
         </div>
-        <div class="field">
+        <div class="field" id="fGirls">
           <label data-i18n="girlsLbl">¿Cuántas muñequitas?</label>
           <div id="girlsSeg" class="seg"></div>
         </div>
@@ -57,21 +63,21 @@
           <div id="colorSeg" class="seg"></div>
         </div>
       </div>
-      <label class="lbl" data-i18n="env">Entorno</label>
-      <div id="envs" class="chips small"></div>
+      <div id="envBox"><label class="lbl" data-i18n="env">Entorno</label>
+      <div id="envs" class="chips small"></div></div>
     </div>
 
     <div class="card">
-      <h2><span class="n">3</span><span data-i18n="s3">Duración</span></h2>
+      <h2><span class="n">4</span><span data-i18n="s3">Duración</span></h2>
       <div id="durs" class="seg big"></div>
       <p class="hint" data-i18n="durHint">La app ajusta el ritmo y la cantidad de escenas al rango elegido.</p>
-      <label class="check"><input id="actionOn" type="checkbox" checked> <span data-i18n="actionOn">🎬 Más acción, menos diálogo</span></label>
-      <p class="hint" data-i18n="actionHint">Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido y letras de cómic.</p>
+      <div id="actionBox"><label class="check"><input id="actionOn" type="checkbox" checked> <span data-i18n="actionOn">🎬 Más acción, menos diálogo</span></label>
+      <p class="hint" data-i18n="actionHint">Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido.</p></div>
     </div>
 
     <div class="card">
-      <div class="h2row"><h2><span class="n">4</span><span data-i18n="s4">Situación cotidiana</span></h2><button id="appSits" class="ghost" type="button" data-i18n="appSits" hidden>Historias de la app</button></div>
-      <div class="aiwriter">
+      <div class="h2row"><h2><span class="n">5</span><span data-i18n="s4" id="s4lbl">Situación cotidiana</span></h2><button id="appSits" class="ghost" type="button" data-i18n="appSits" hidden>Historias de la app</button></div>
+      <div class="aiwriter" id="aiWriter">
         <label class="lbl" for="trend" data-i18n="trendLbl">Tendencia del momento (opcional)</label>
         <input id="trend" type="text" maxlength="160" data-i18n-ph="trendPh" placeholder="Ej.: el precio de los huevos, la renta en Miami, las propinas">
         <div id="trendChips" class="chips small" style="margin-top:8px"></div>
@@ -85,18 +91,18 @@
       <button id="punchBtn" class="ghost strong" type="button" style="width:100%;margin-top:10px" data-i18n="punchBtn">✨ Hacer este guion más divertido (IA)</button>
     </div>
 
-    <div class="card">
-      <div class="h2row"><h2><span class="n">5</span><span data-i18n="s5">Gancho inicial</span></h2><button id="moreHooks" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
+    <div class="card" id="hookCard">
+      <div class="h2row"><h2><span class="n">6</span><span data-i18n="s5">Gancho inicial</span></h2><button id="moreHooks" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
       <div id="hooks" class="options"></div>
     </div>
 
     <div class="card">
-      <div class="h2row"><h2><span class="n">6</span><span data-i18n="s6">Llamado a la acción</span></h2><button id="moreCtas" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
+      <div class="h2row"><h2><span class="n">7</span><span data-i18n="s6">Llamado a la acción</span></h2><button id="moreCtas" class="ghost" type="button" data-i18n="other">Otras opciones</button></div>
       <p class="hint" data-i18n="ctaHint" style="margin:0 0 8px">Toca uno o dos (se combinan en una sola frase).</p>
       <div id="ctas" class="options"></div>
       <p id="ctaPreview" class="ctaPreview"></p>
-      <label class="lbl" data-i18n="qLbl" style="margin-top:14px">Pregunta final en pantalla (para que comenten)</label>
-      <div id="questions" class="options"></div>
+      <div id="qBox"><label class="lbl" data-i18n="qLbl" style="margin-top:14px">Pregunta final en pantalla (para que comenten)</label>
+      <div id="questions" class="options"></div></div>
       <details class="cfg">
         <summary data-i18n="ctaCfg">Configurar página y enlace</summary>
         <label class="lbl" for="page" data-i18n="pageName">Nombre de tu página (aparece en el video)</label>
@@ -109,13 +115,13 @@
     </div>
 
     <div class="card">
-      <h2><span class="n">7</span><span data-i18n="s7">Voz, música y efectos</span></h2>
-      <label class="lbl" for="voice" data-i18n="voice">Voz automática</label>
-      <select id="voice"></select>
-      <p class="hint" id="voiceHint"></p>
-      <div id="cloudCfg" class="cloud" hidden>
-        <label class="lbl" for="apiKey" id="apiKeyLbl">Tu clave</label>
-        <div class="keyrow"><input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-..."><button id="loadVoices" class="ghost" type="button" data-i18n="loadVoices">Cargar mis voces</button></div>
+      <h2><span class="n">8</span><span data-i18n="s7">Voz, música y efectos</span></h2>
+      <div id="voiceBox">
+        <label class="lbl" for="voice" data-i18n="voice">Voz del protagonista</label>
+        <select id="voice"></select>
+        <p class="hint" id="voiceHint"></p>
+        <label class="lbl" for="apiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
+        <input id="apiKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-...">
         <p class="hint" id="cloudHint"></p>
       </div>
       <div class="row">
@@ -128,11 +134,21 @@
           <input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.6">
         </div>
       </div>
-      <label class="check"><input id="sfx" type="checkbox" checked> <span data-i18n="sfx">Efectos de sonido</span></label>
+      <div class="upRow">
+        <label class="ghost strong upBtn"><span data-i18n="upload">📂 Subir mi música</span><input id="musicFile" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav"></label>
+        <select id="musicTag" aria-label="Estilo"></select>
+      </div>
+      <p class="hint" id="musicHint"></p>
+      <div id="myTracks" class="tracks"></div>
+      <details class="cfg">
+        <summary data-i18n="pixTitle">📱 Cómo bajar música gratis de Pixabay en tu iPhone</summary>
+        <ol id="pixSteps" class="steps"></ol>
+      </details>
+      <label class="check"><input id="sfx" type="checkbox" checked> <span data-i18n="sfx">Efectos de sonido reales</span></label>
     </div>
 
-    <div class="card ai">
-      <h2><span class="n">8</span><span data-i18n="s8">Fondos con IA</span></h2>
+    <div class="card ai" id="aiCard">
+      <h2><span class="n">9</span><span data-i18n="s8">Fondos con IA</span></h2>
       <p class="hint" data-i18n="keyNote" style="margin:0 0 8px">Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.</p>
       <label class="check"><input id="aiOn" type="checkbox"> <span data-i18n="aiOn">Usar fondos dibujados con IA (OpenAI)</span></label>
       <p class="hint" data-i18n="aiIntro">La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.</p>
@@ -181,7 +197,7 @@
     </div>
   </section>
 </main>
-<footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
-<script type="module" src="js/app.js?v=10"></script>
+<footer class="foot"><span data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</span><br><small data-i18n="credits">Sonidos: «Oculus Audio Pack 1» de Meta (CC BY 4.0) e «Impact Sounds» de Kenney (CC0). Piano y guitarra: instrumentos grabados de Meta (CC0).</small></footer>
+<script type="module" src="js/app.js?v=11"></script>
 </body>
 </html>

@@ -9,18 +9,21 @@ export const IMAGE_MODELS = [
 const STYLE = 'Flat 2D cartoon BACKGROUND illustration for a vertical animated short (stick-figure story style): detailed scenery with VIVID, bright, saturated, happy colors ' +
   '(clear blue sky, fresh greens, warm sunny tones; never dull, muddy or brownish), clean dark outlines, simple flat shading, real-world proportions for furniture and objects. Straight-on eye-level view. The floor or ground fills the bottom 30% of the image and is flat, ' +
   'empty and uncluttered in the center (animated characters will stand there). Keep the top 25% simple (sky, wall or ceiling). ' +
-  'SCALE: an adult person standing on the floor would be about 25% of the image height, so doors are about 30% of the image height, sofas and tables about 11%, cars about 21%; never giant or tiny furniture. ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
+  'SCALE: an adult person standing on the floor would be about 25% of the image height, so doors are about 30% of the image height, sofas about 11%, cars about 21%; never giant or tiny furniture. FURNITURE RULES: furniture only against the back wall; the floor in front is completely empty; NO coffee table, NO center table, NO chairs, NO stools, NO benches, NO pews, NO loose seats of any kind. ABSOLUTELY NO people, NO characters, NO stick figures, NO animals, NO text, NO letters, NO signs with words, NO logos.';
 
 const ENV_DESC = {
-  oficina: 'a modern office: desks with computers, big windows with a city view, plants, a wall clock',
-  casa: 'a cozy Latino family living room: sofa, lamp, framed photos, a window with palm trees outside (Miami)',
+  oficina: 'a modern office: computers on desks pushed against the back wall, big windows with a city view, plants, a wall clock; no chairs, empty floor in front',
+  casa: 'a cozy Latino family living room: one sofa against the back wall, a floor lamp, framed photos, a window with palm trees outside (Miami); NO coffee table, empty floor in front',
   parque: 'a sunny Miami park: palm trees and green trees, grass, a walking path, blue sky with clouds',
-  cafe: 'a cozy Cuban café (ventanita style): counter, menu board without readable text, hanging lamps, coffee cups',
+  cafe: 'a cozy Cuban café (ventanita style): counter against the back wall, menu board without readable text, hanging lamps, coffee cups; no stools, no chairs, no tables',
   ciudad: 'a colorful Miami street: pastel buildings, sidewalk, palm trees, a few parked cars',
   playa: 'a sunny Miami beach: turquoise sea, sand, a palm tree, lifeguard tower',
   cocina: 'a bright home kitchen: cabinets, fridge, stove with a Cuban coffee maker',
   vacio: 'a simple soft pastel background with subtle shapes and a plain floor',
-  iglesia: 'the inside of a peaceful church: stained glass windows, a simple cross, candles, wooden pews on the sides, central aisle',
+  iglesia: 'the inside of a peaceful church: stained glass windows, a simple cross, candles, an altar at the back, an open empty floor (no pews, no benches)',
+  gym: 'a modern bright gym: mirrors on the wall, weight racks with dumbbells against the back wall, rubber floor; no benches, no machines in the center',
+  montana: 'a big green mountain seen from the side with a trail going up to a summit with a small flag, blue sky and clouds',
+  camino: 'a sunny countryside dirt road crossing the image from left to right, green hills and trees',
   caminos: 'a countryside fork in the road seen from the middle: the LEFT road goes into a gray, gloomy, rainy area; the RIGHT road goes into a sunny, bright, flowery area; NO signpost',
 };
 

@@ -4,8 +4,10 @@ import { drawFrame, prepareProject, FONT, LOOKS } from './render.js';
 import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice, clearBgCache } from './aiimages.js';
 import { searchTrends, writeIdeas, punchUp, PRICE } from './scriptai.js';
 import { computeLip } from './lipsync.js';
-import { renderMix, MUSIC_STYLES } from './audio.js';
-import { VOICES, synth, ELEVEN_DEFAULT_VOICES, OPENAI_VOICES, elevenVoices, voiceForRole } from './tts.js';
+import { renderMix, MUSIC_STYLES, MUSIC_TAGS, listTracks, addTrack, deleteTrack, loadTrack } from './audio.js';
+import { synth, OPENAI_VOICES, voiceForRole } from './tts.js';
+import { MESSAGE_STORIES, buildMessage } from './message.js';
+import { tagVisuals } from './visuals.js';
 import { planDirection, planShots, insertActions } from './direction.js';
 import { exportMP4 } from './export.js';
 
@@ -16,15 +18,22 @@ const I18N = {
     s1: 'Tema', s2: 'Personajes, entorno y estilo', chars: 'Personajes', style: 'Estilo', env: 'Entorno', s3: 'Duración',
     durHint: 'La app ajusta el ritmo y la cantidad de escenas al rango elegido.', s4: 'Situación cotidiana', s5: 'Gancho inicial',
     s6: 'Llamado a la acción', other: 'Otras opciones', ctaCfg: 'Configurar página y enlace', pageName: 'Nombre de tu página (aparece en el video)',
-    linkUrl: 'Enlace (URL)', linkLabel: 'Texto del botón del enlace', s7: 'Voz, música y efectos', voice: 'Voz automática',
+    linkUrl: 'Enlace (URL)', linkLabel: 'Texto del botón del enlace', s7: 'Voz, música y efectos', voice: 'Voz del protagonista',
     voiceHint: 'La voz neural se descarga una sola vez (≈60 MB) y queda guardada en el navegador.', music: 'Música', musicVol: 'Volumen música',
     sfx: 'Efectos de sonido', generate: 'Generar vista previa', regenerate: 'Regenerar vista previa', empty: 'Elige tus opciones y pulsa «Generar vista previa».',
     export: 'Exportar MP4', srt: 'Subtítulos .srt', cancel: 'Cancelar', script: 'Guion (puedes editarlo)', apply: 'Aplicar cambios',
     foot: 'Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.',
     color: 'Color', bw: 'B/N', escalada: 'Repetición + giro', caminos: 'Dos caminos',
     ctaTypes: { like: 'Me gusta', follow: 'Seguir', stars: 'Estrellas', link: 'Enlace', combo: 'Combo' },
-    kinds: { act: 'Acción (sin voz)', hook: 'Gancho', setup: 'Inicio', rep: 'Repetición', twist: 'Giro final', after: 'Remate', reflect: 'Reflexión', cta: 'Llamado a la acción' },
-    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', qLbl: 'Pregunta final en pantalla (para que comenten)', punchBtn: '✨ Hacer este guion más divertido (IA)', punching: 'Reescribiendo el guion con más chispa…', punched: 'Listo: guion mejorado (marcado ✨). Genera la vista previa.', mainLbl: 'Protagonista', girlsLbl: '¿Cuántas muñequitas?', boy: '👦 Varón', girl: '👧 Hembra', actionOn: '🎬 Más acción, menos diálogo', actionHint: 'Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido y letras de cómic.', s8: 'Fondos con IA', aiOn: 'Usar fondos dibujados con IA (OpenAI)', aiIntro: 'La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.', appSits: 'Historias de la app', trendLbl: 'Tendencia del momento (opcional)', trendPh: 'Ej.: el precio de los huevos, la renta en Miami, las propinas', trendBtn: '🔎 Buscar lo viral ahora', writeBtn: '✨ Escribir 3 historias con IA', writerHint: 'Usa tu clave de OpenAI (pégala en la sección 8). La IA busca en internet lo que está viral y escribe historias con humor, a lo Miami.', searching: 'Buscando lo que está viral ahora…', writing: 'Escribiendo 3 historias nuevas…', trendsFound: n => `Encontré ${n} tendencias. Toca una para usarla.`, written: 'Listo: 3 historias nuevas escritas con IA (marcadas «IA»). Elige una.', noTrends: 'No encontré tendencias ahora; escribe una tú arriba.', needKeyAI: 'Primero pega tu clave de OpenAI en la sección 8.', costTitle: 'Costo aproximado de este video:', cTrends: 'búsqueda de tendencias', cWrite: 'guion con IA', cBg: n => `${n} fondos con IA`, cVoice: 'voz OpenAI', cEleven: 'voz ElevenLabs (créditos de tu plan)', costFree: 'Este video no tiene costo (todo se genera en tu teléfono).', keyNote: 'Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.', iaTag: 'IA', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Cada video usa 2–3 fondos (≈ ${c} USD con esta calidad), cobrados de tu saldo de OpenAI. Tarda 1–2 minutos; deja la pantalla encendida. Esta misma clave sirve para la voz de OpenAI y para escribir historias con IA. Si OpenAI pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Dibujando fondos con IA ${i}/${n}… (1–2 minutos)`, imgFail: 'No se pudieron crear los fondos con IA; se usaron los fondos de la app. Motivo: ', imgSome: n => `${n} fondo(s) no se pudieron crear y se usaron los de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
+    kinds: { msg: 'Frase en pantalla', act: 'Acción (sin voz)', hook: 'Gancho', setup: 'Inicio', rep: 'Repetición', twist: 'Giro final', after: 'Remate', reflect: 'Reflexión', cta: 'Llamado a la acción' },
+    vPiper: 'Voz neural', vMe: 'Voz básica sin conexión (robótica)', vNone: 'Sin voz (solo subtítulos)', qLbl: 'Pregunta final en pantalla (para que comenten)', punchBtn: '✨ Hacer este guion más divertido (IA)', punching: 'Reescribiendo el guion con más chispa…', punched: 'Listo: guion mejorado (marcado ✨). Genera la vista previa.', mainLbl: 'Protagonista', girlsLbl: '¿Cuántas muñequitas?', boy: '👦 Varón', girl: '👧 Hembra', actionOn: '🎬 Más acción, menos diálogo', actionHint: 'Menos frases habladas y más comedia física: resbalones, desmayos, persecuciones y huidas, con golpes de sonido reales.', s8: 'Fondos con IA', aiOn: 'Usar fondos dibujados con IA (OpenAI)', aiIntro: 'La IA dibuja escenarios detallados (casas, calles, oficina, iglesia…) y la app anima encima a los muñequitos: hablan, parpadean, gesticulan y caminan.', appSits: 'Historias de la app', trendLbl: 'Tendencia del momento (opcional)', trendPh: 'Ej.: el precio de los huevos, la renta en Miami, las propinas', trendBtn: '🔎 Buscar lo viral ahora', writeBtn: '✨ Escribir 3 historias con IA', writerHint: 'Usa tu clave de OpenAI (pégala en la sección 8). La IA busca en internet lo que está viral y escribe historias con humor, a lo Miami.', searching: 'Buscando lo que está viral ahora…', writing: 'Escribiendo 3 historias nuevas…', trendsFound: n => `Encontré ${n} tendencias. Toca una para usarla.`, written: 'Listo: 3 historias nuevas escritas con IA (marcadas «IA»). Elige una.', noTrends: 'No encontré tendencias ahora; escribe una tú arriba.', needKeyAI: 'Primero pega tu clave de OpenAI en la sección 8.', costTitle: 'Costo aproximado de este video:', cTrends: 'búsqueda de tendencias', cWrite: 'guion con IA', cBg: n => `${n} fondos con IA`, cVoice: 'voz OpenAI', cEleven: 'voz ElevenLabs (créditos de tu plan)', costFree: 'Este video no tiene costo (todo se genera en tu teléfono).', keyNote: 'Tu clave de OpenAI sirve para los fondos, la voz de OpenAI y las historias con IA.', iaTag: 'IA', aiModel: 'Modelo', aiQuality: 'Calidad', aiConsistent: 'Mantener los mismos personajes en todas las escenas', qLow: 'Baja (rápida)', qMedium: 'Media (recomendada)', qHigh: 'Alta (cara)', aiHintTxt: (n, c) => `Cada video usa 2–3 fondos (≈ ${c} USD con esta calidad), cobrados de tu saldo de OpenAI. Tarda 1–2 minutos; deja la pantalla encendida. Esta misma clave sirve para la voz de OpenAI y para escribir historias con IA. Si OpenAI pide «verificar la organización», hazlo en platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Dibujando fondos con IA ${i}/${n}… (1–2 minutos)`, imgFail: 'No se pudieron crear los fondos con IA; se usaron los fondos de la app. Motivo: ', imgSome: n => `${n} fondo(s) no se pudieron crear y se usaron los de la app.`, gFree: 'Gratis (en el navegador)', gEleven: 'ElevenLabs · muy natural (gratis 10 min/mes, requiere clave)', gOpenai: 'OpenAI · natural (de pago, requiere clave)', loadVoices: 'Cargar mis voces', ctaHint: 'Toca uno o dos (se combinan en una sola frase).', hintPiper: 'Gratis. Se descarga una sola vez (≈60 MB, usa Wi‑Fi) y queda guardada en el navegador. Suena aceptable, menos natural que ElevenLabs.', hintMe: 'Robótica. Solo úsala si no tienes internet.', hintNone: 'El video tendrá música, efectos y subtítulos, sin voz.', keyEleven: 'Tu clave de ElevenLabs (API key)', keyOpenai: 'Tu clave de OpenAI (API key)', cloudEleven: 'Se guarda solo en este teléfono. Plan gratis: unos 10 minutos de voz al mes (≈15 videos de 40 s), sin uso comercial. Para monetizar: plan Starter (≈5 USD/mes). Crea tu clave en <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Se guarda solo en este teléfono. Es de pago por uso (unos centavos por video) y necesitas saldo cargado. Crea tu clave en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Se cargaron ${n} voces de tu cuenta.`, needKey: 'Primero pega tu clave.', cloudFallback: 'No se pudo usar la voz de la nube; se usó la voz neural gratuita.', ctaBadge: n => `${n}º`,
+    s0: 'Tipo de video', vVoz: '🎙️ Con voces', vVozD: 'Los personajes hablan', vMus: '🎵 Solo música con mensaje', vMusD: 'Sin voces, frases en pantalla',
+    vtypeVoz: 'Los muñequitos hablan en español o inglés, con voces naturales de OpenAI, subtítulos y música que baja sola cuando hablan.', vtypeMus: 'Sin voces: un muñequito hace algo con significado (subir una montaña, caerse y levantarse, caminar bajo la lluvia…) con música emotiva. El mensaje aparece en pocas frases, grandes y cortas, y termina con una reflexión fuerte. No necesita clave.',
+    s4msg: 'Historia con mensaje', upload: '📂 Subir mi música', pixTitle: '📱 Cómo bajar música gratis de Pixabay en tu iPhone', mine: 'Mi música', builtIn: 'Incluida en la app (instrumentos reales)', tagFor: 'Estilo de la canción que subes:',
+    musicHintTxt: 'Para la mejor música, sube una canción tuya (por ejemplo, de Pixabay Music) con el botón de arriba: se guarda solo en este teléfono y aparece en la lista. Si no subes ninguna, la app usa piano y guitarra reales grabados.', uploaded: n => `Listo: «${n}» quedó guardada en tu teléfono y ya está elegida.`, upFail: 'No se pudo leer ese audio. Prueba con un .mp3 o .m4a.', delTrack: 'Borrar', sfx: 'Efectos de sonido reales',
+    pix: ['Abre <b>Safari</b> y entra a <a href="https://pixabay.com/music/" target="_blank" rel="noopener">pixabay.com/music</a>.', 'En el buscador escribe el estilo que quieres: <b>emotional piano</b>, <b>inspiring</b>, <b>motivational</b> o <b>happy ukulele</b>. También puedes usar el filtro <b>Mood</b> (Emotional, Happy, Hopeful…).', 'Toca ▶ para escucharla. Cuando te guste, toca <b>Download</b> (Descargar). Si te pide cuenta, puedes crearla gratis.', 'Safari pregunta si quieres descargar: toca <b>Descargar</b>. La canción (.mp3) se guarda en la app <b>Archivos → Descargas</b> (la flechita ⬇ arriba en Safari la muestra).', 'Vuelve a esta app, elige el estilo (Emotiva, Alegre o Superación) y toca <b>📂 Subir mi música</b> → <b>Explorar</b> → <b>Descargas</b> → toca la canción.', 'Listo: queda guardada en tu teléfono, aparece en la lista <b>Música</b> y la app la baja de volumen sola cuando los muñequitos hablan.', '<b>Licencia:</b> la música de Pixabay se puede usar gratis en tus videos, también monetizados, sin dar crédito (aunque es buen gesto). No la vendas ni la compartas como archivo suelto. Si alguna red marca un aviso de derechos, en la página de la canción en Pixabay está la licencia para disputarlo.'],
+    voiceHintTxt: 'Solo voces naturales de OpenAI, habladas con emoción. Cada personaje usa una voz de su género: hombres Onyx y Ash; mujeres Coral y Nova.', cloudOpenaiTxt: 'Es la misma clave de la sección 9 y se guarda solo en este teléfono. Es de pago por uso (unos centavos por video). Créala en <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', noKeyVoice: 'Sin clave de OpenAI el video salió sin voces (solo subtítulos). Pega tu clave en la sección 8 para que hablen.', aiMsgNote: 'En «Solo música con mensaje» se usan los escenarios animados de la app.',
+    credits: 'Sonidos: «Oculus Audio Pack 1» de Meta (CC BY 4.0) e «Impact Sounds» de Kenney (CC0). Piano y guitarra: instrumentos grabados de Meta (CC0).',
     stVoice: (i, n) => `Generando voz ${i}/${n}…`, stDl: (p) => `Descargando voz neural… ${p}`, stMix: 'Mezclando música y efectos…',
     stReady: (s, n) => `Listo: ${s.toFixed(1)} s · ${n} escenas. Revisa la vista previa y exporta.`, stFallback: 'No se pudo cargar la voz neural (¿sin internet?). Usando la voz básica sin conexión.',
     exporting: p => `Exportando… ${Math.round(p * 100)} %`, exported: 'Descargar video', exportErr: 'Error al exportar: ', webmNote: 'Tu navegador no graba MP4: se exportó en WebM. Para MP4 usa Chrome, Edge o Safari actualizados.',
@@ -35,15 +44,22 @@ const I18N = {
     s1: 'Topic', s2: 'Characters, setting and style', chars: 'Characters', style: 'Style', env: 'Setting', s3: 'Length',
     durHint: 'The app adapts the pacing and number of scenes to the chosen range.', s4: 'Everyday situation', s5: 'Opening hook',
     s6: 'Call to action', other: 'More options', ctaCfg: 'Set up page and link', pageName: 'Your page name (shown in the video)',
-    linkUrl: 'Link (URL)', linkLabel: 'Link button text', s7: 'Voice, music and sound effects', voice: 'Automatic voice',
+    linkUrl: 'Link (URL)', linkLabel: 'Link button text', s7: 'Voice, music and sound effects', voice: 'Main character voice',
     voiceHint: 'The neural voice downloads once (≈60 MB) and stays saved in your browser.', music: 'Music', musicVol: 'Music volume',
     sfx: 'Sound effects', generate: 'Generate preview', regenerate: 'Regenerate preview', empty: 'Pick your options and press "Generate preview".',
     export: 'Export MP4', srt: 'Subtitles .srt', cancel: 'Cancel', script: 'Script (editable)', apply: 'Apply changes',
     foot: 'Everything is generated in your browser. Vertical 1080×1920 for Shorts, Reels and Facebook.',
     color: 'Color', bw: 'B/W', escalada: 'Rising gag + twist', caminos: 'Two paths',
     ctaTypes: { like: 'Like', follow: 'Follow', stars: 'Stars', link: 'Link', combo: 'Combo' },
-    kinds: { act: 'Action (no voice)', hook: 'Hook', setup: 'Setup', rep: 'Repetition', twist: 'Final twist', after: 'Punchline', reflect: 'Reflection', cta: 'Call to action' },
-    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', qLbl: 'On-screen final question (to drive comments)', punchBtn: '✨ Make this script funnier (AI)', punching: 'Punching up the script…', punched: 'Done: improved script (marked ✨). Generate the preview.', mainLbl: 'Main character', girlsLbl: 'How many girls?', boy: '👦 Boy', girl: '👧 Girl', actionOn: '🎬 More action, less talking', actionHint: 'Fewer spoken lines and more physical comedy: slips, faints, chases and escapes, with punchy sound effects and comic-book letters.', s8: 'AI backgrounds', aiOn: 'Use AI-drawn backgrounds (OpenAI)', aiIntro: 'The AI draws detailed scenery (houses, streets, office, church…) and the app animates the stick figures on top: they talk, blink, gesture and walk.', appSits: 'App stories', trendLbl: 'Current trend (optional)', trendPh: 'E.g.: egg prices, rent, tipping culture', trendBtn: '🔎 Find what\'s viral now', writeBtn: '✨ Write 3 stories with AI', writerHint: 'Uses your OpenAI key (paste it in section 8). The AI searches the web for what\'s viral and writes funny stories.', searching: 'Searching what\'s viral right now…', writing: 'Writing 3 new stories…', trendsFound: n => `Found ${n} trends. Tap one to use it.`, written: 'Done: 3 new AI stories (tagged "AI"). Pick one.', noTrends: 'No trends found right now; type one above.', needKeyAI: 'Paste your OpenAI key in section 8 first.', costTitle: 'Approximate cost of this video:', cTrends: 'trend search', cWrite: 'AI script', cBg: n => `${n} AI backgrounds`, cVoice: 'OpenAI voice', cEleven: 'ElevenLabs voice (your plan credits)', costFree: 'This video is free (everything runs on your phone).', keyNote: 'Your OpenAI key is used for backgrounds, the OpenAI voice and AI stories.', iaTag: 'AI', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `Each video uses 2–3 backgrounds (≈ ${c} USD at this quality), charged to your OpenAI balance. Takes 1–2 minutes; keep the screen on. The same key works for the OpenAI voice and AI story writing. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Drawing AI backgrounds ${i}/${n}… (1–2 minutes)`, imgFail: 'Could not create the AI backgrounds; the app backgrounds were used. Reason: ', imgSome: n => `${n} background(s) failed and the app ones were used.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
+    kinds: { msg: 'On-screen phrase', act: 'Action (no voice)', hook: 'Hook', setup: 'Setup', rep: 'Repetition', twist: 'Final twist', after: 'Punchline', reflect: 'Reflection', cta: 'Call to action' },
+    vPiper: 'Neural voice', vMe: 'Basic offline voice (robotic)', vNone: 'No voice (subtitles only)', qLbl: 'On-screen final question (to drive comments)', punchBtn: '✨ Make this script funnier (AI)', punching: 'Punching up the script…', punched: 'Done: improved script (marked ✨). Generate the preview.', mainLbl: 'Main character', girlsLbl: 'How many girls?', boy: '👦 Boy', girl: '👧 Girl', actionOn: '🎬 More action, less talking', actionHint: 'Fewer spoken lines and more physical comedy: slips, faints, chases and escapes, with punchy real sound effects.', s8: 'AI backgrounds', aiOn: 'Use AI-drawn backgrounds (OpenAI)', aiIntro: 'The AI draws detailed scenery (houses, streets, office, church…) and the app animates the stick figures on top: they talk, blink, gesture and walk.', appSits: 'App stories', trendLbl: 'Current trend (optional)', trendPh: 'E.g.: egg prices, rent, tipping culture', trendBtn: '🔎 Find what\'s viral now', writeBtn: '✨ Write 3 stories with AI', writerHint: 'Uses your OpenAI key (paste it in section 8). The AI searches the web for what\'s viral and writes funny stories.', searching: 'Searching what\'s viral right now…', writing: 'Writing 3 new stories…', trendsFound: n => `Found ${n} trends. Tap one to use it.`, written: 'Done: 3 new AI stories (tagged "AI"). Pick one.', noTrends: 'No trends found right now; type one above.', needKeyAI: 'Paste your OpenAI key in section 8 first.', costTitle: 'Approximate cost of this video:', cTrends: 'trend search', cWrite: 'AI script', cBg: n => `${n} AI backgrounds`, cVoice: 'OpenAI voice', cEleven: 'ElevenLabs voice (your plan credits)', costFree: 'This video is free (everything runs on your phone).', keyNote: 'Your OpenAI key is used for backgrounds, the OpenAI voice and AI stories.', iaTag: 'AI', aiModel: 'Model', aiQuality: 'Quality', aiConsistent: 'Keep the same characters in every scene', qLow: 'Low (fast)', qMedium: 'Medium (recommended)', qHigh: 'High (expensive)', aiHintTxt: (n, c) => `Each video uses 2–3 backgrounds (≈ ${c} USD at this quality), charged to your OpenAI balance. Takes 1–2 minutes; keep the screen on. The same key works for the OpenAI voice and AI story writing. If OpenAI asks you to verify your organization, do it at platform.openai.com → Settings → Organization.`, stImg: (i, n) => `Drawing AI backgrounds ${i}/${n}… (1–2 minutes)`, imgFail: 'Could not create the AI backgrounds; the app backgrounds were used. Reason: ', imgSome: n => `${n} background(s) failed and the app ones were used.`, gFree: 'Free (in the browser)', gEleven: 'ElevenLabs · very natural (free 10 min/month, needs key)', gOpenai: 'OpenAI · natural (paid, needs key)', loadVoices: 'Load my voices', ctaHint: 'Tap one or two (they are combined into one sentence).', hintPiper: 'Free. Downloads once (≈60 MB, use Wi‑Fi) and stays saved in your browser. Decent, less natural than ElevenLabs.', hintMe: 'Robotic. Use only when offline.', hintNone: 'The video will have music, sound effects and subtitles, no voice.', keyEleven: 'Your ElevenLabs API key', keyOpenai: 'Your OpenAI API key', cloudEleven: 'Saved only on this phone. Free plan: about 10 minutes of voice per month (≈15 videos of 40 s), no commercial use. To monetize: Starter plan (≈5 USD/month). Create your key at <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener">elevenlabs.io → API Keys</a>.', cloudOpenai: 'Saved only on this phone. Pay per use (a few cents per video) and you need prepaid credit. Create your key at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', voicesLoaded: n => `Loaded ${n} voices from your account.`, needKey: 'Paste your key first.', cloudFallback: 'The cloud voice failed; the free neural voice was used instead.', ctaBadge: n => `#${n}`,
+    s0: 'Video type', vVoz: '🎙️ With voices', vVozD: 'Characters talk', vMus: '🎵 Music + message only', vMusD: 'No voices, on-screen phrases',
+    vtypeVoz: 'The stick figures talk in Spanish or English with natural OpenAI voices, subtitles and music that ducks when they speak.', vtypeMus: 'No voices: one stick figure does something meaningful (climbing a mountain, falling and getting up, walking in the rain…) with emotional music. The message appears in a few big, short phrases and ends with a strong reflection. No key needed.',
+    s4msg: 'Story with a message', upload: '📂 Upload my music', pixTitle: '📱 How to get free music from Pixabay on your iPhone', mine: 'My music', builtIn: 'Built-in (real instruments)', tagFor: 'Style of the song you upload:',
+    musicHintTxt: 'For the best music, upload your own song (for example from Pixabay Music) with the button above: it is saved only on this phone and shows up in the list. Otherwise the app plays real recorded piano and guitar.', uploaded: n => `Done: "${n}" is saved on your phone and selected.`, upFail: 'Could not read that audio. Try an .mp3 or .m4a.', delTrack: 'Delete', sfx: 'Real sound effects',
+    pix: ['Open <b>Safari</b> and go to <a href="https://pixabay.com/music/" target="_blank" rel="noopener">pixabay.com/music</a>.', 'Search for a style: <b>emotional piano</b>, <b>inspiring</b>, <b>motivational</b> or <b>happy ukulele</b>, or use the <b>Mood</b> filter.', 'Tap ▶ to listen. When you like one, tap <b>Download</b>. If it asks for an account, you can sign up for free.', 'Safari asks if you want to download it: tap <b>Download</b>. The song (.mp3) goes to the <b>Files → Downloads</b> app (the ⬇ arrow in Safari shows it).', 'Come back to this app, pick the style (Emotional, Happy or Uplifting) and tap <b>📂 Upload my music</b> → <b>Browse</b> → <b>Downloads</b> → tap the song.', 'Done: it is saved on your phone, appears in the <b>Music</b> list, and the app lowers it automatically when the characters talk.', '<b>License:</b> Pixabay music is free to use in your videos, monetized ones too, no credit required (but nice to give). Do not sell or share it as a standalone file. If a platform flags a copyright notice, the license on the song\'s Pixabay page lets you dispute it.'],
+    voiceHintTxt: 'Only natural OpenAI voices, spoken with emotion. Each character gets a voice of their gender: men Onyx and Ash; women Coral and Nova.', cloudOpenaiTxt: 'Same key as section 9, saved only on this phone. Pay per use (a few cents per video). Create it at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com → API keys</a>.', noKeyVoice: 'Without an OpenAI key the video has no voices (subtitles only). Paste your key in section 8 so they talk.', aiMsgNote: 'In "Music + message only" the app\'s animated scenery is used.',
+    credits: 'Sounds: "Oculus Audio Pack 1" by Meta (CC BY 4.0) and "Impact Sounds" by Kenney (CC0). Piano and guitar: recorded instruments by Meta (CC0).',
     stVoice: (i, n) => `Generating voice ${i}/${n}…`, stDl: (p) => `Downloading neural voice… ${p}`, stMix: 'Mixing music and sound effects…',
     stReady: (s, n) => `Ready: ${s.toFixed(1)} s · ${n} scenes. Check the preview and export.`, stFallback: 'Could not load the neural voice (offline?). Using the basic offline voice.',
     exporting: p => `Exporting… ${Math.round(p * 100)}%`, exported: 'Download video', exportErr: 'Export error: ', webmNote: 'Your browser cannot record MP4, so it was exported as WebM. Use an up-to-date Chrome, Edge or Safari for MP4.',
@@ -53,17 +69,22 @@ const I18N = {
 
 // ---------- estado ----------
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const DEFAULTS = { mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, elevenList: null, page: '', linkUrl: '', linkLabel: '', engine: 'piper', voiceId: { es: IOS ? 'es_MX-ald-medium' : 'es_MX-claude-high', en: 'en_US-hfc_female-medium' }, music: 'alegre', musicVol: 0.6, sfx: true };
+const DEFAULTS = { vtype: 'voz', msgSel: 0, voice: 'ash', musicTag: 'emotiva', mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, page: '', linkUrl: '', linkLabel: '', music: 'emotiva', musicVol: 0.6, sfx: true };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-state') || '{}') }; } catch { /* sin almacenamiento */ }
 const save = () => { try { localStorage.setItem('munequitos-state', JSON.stringify(S)); } catch { /* ignorar */ } };
 if (!Array.isArray(S.ctaSel) || !S.ctaSel.length) S.ctaSel = [S.cta || 0];
-if (!S.voiceSel) S.voiceSel = { es: S.engine === 'piper' ? 'piper:' + S.voiceId.es : S.engine, en: S.engine === 'piper' ? 'piper:' + S.voiceId.en : S.engine };
-// claves de voces en la nube: solo en este dispositivo
-let KEYS = { eleven: '', openai: '' };
+// solo voces de OpenAI (las robóticas y las otras se quitaron)
+if (!OPENAI_VOICES.some(v => v.id === S.voice)) S.voice = S.mainGender === 'f' ? 'nova' : 'ash';
+if (!(MUSIC_STYLES.some(m => m.id === S.music) || String(S.music).startsWith('mine:'))) S.music = 'emotiva';
+delete S.engine; delete S.voiceSel; delete S.voiceId; delete S.elevenList;
+// clave de OpenAI: solo en este dispositivo
+let KEYS = { openai: '' };
 try { KEYS = { ...KEYS, ...JSON.parse(localStorage.getItem('munequitos-keys') || '{}') }; } catch { /* sin almacenamiento */ }
 const saveKeys = () => { try { localStorage.setItem('munequitos-keys', JSON.stringify(KEYS)); } catch { /* ignorar */ } };
-const voiceParts = () => { const v = S.voiceSel[S.lang] || 'piper:' + DEFAULTS.voiceId[S.lang]; const [engine, ...rest] = v.split(':'); return { engine, voiceId: rest.join(':') }; };
+const MSG = () => S.vtype === 'musica';
+let TRACKS = [];
+async function refreshTracks() { TRACKS = await listTracks(); if (String(S.music).startsWith('mine:') && !TRACKS.some(t => 'mine:' + t.id === S.music)) S.music = 'emotiva'; renderAll(); }
 const tr = () => I18N[S.lang];
 let project = null, mix = null, dirty = true;
 
@@ -78,9 +99,14 @@ function renderAll() {
   if (project) $('#genBtn').textContent = L.regenerate;
   const [es, en] = $('#langBtn').children; es.classList.toggle('on', S.lang === 'es'); en.classList.toggle('on', S.lang === 'en');
 
+  // tipo de video
+  $('#vtypeSeg').replaceChildren(btn('', `${L.vVoz}<small>${L.vVozD}</small>`, !MSG(), () => { S.vtype = 'voz'; change(); }), btn('', `${L.vMus}<small>${L.vMusD}</small>`, MSG(), () => { S.vtype = 'musica'; if (!String(S.music).startsWith('mine:')) S.music = (MESSAGE_STORIES[S.msgSel || 0] || MESSAGE_STORIES[0]).music; change(); }));
+  $('#vtypeHint').textContent = MSG() ? L.vtypeMus : L.vtypeVoz;
+  for (const id of ['#themeCard', '#fNchars', '#envBox', '#actionBox', '#aiWriter', '#punchBtn', '#hookCard', '#qBox', '#voiceBox', '#aiCard']) $(id).hidden = MSG();
+  $('#s4lbl').textContent = MSG() ? L.s4msg : L.s4;
   const th = $('#themes'); th.replaceChildren(...THEMES.map(t => btn('chip', `${t.emoji} ${esc(t.name[S.lang])}`, S.theme === t.id, () => { S.theme = t.id; S.sit = 0; S.hook = 0; S.hookSeed = 1; S.qSel = 0; change(); })));
   $('#nchars').replaceChildren(...[1, 2, 3, 4].map(n => btn('', String(n), S.nChars === n, () => { S.nChars = n; change(); })));
-  { const minG = S.mainGender === 'f' ? 1 : 0, maxG = S.mainGender === 'f' ? S.nChars : S.nChars - 1; S.nGirls = Math.max(minG, Math.min(maxG, S.nGirls ?? 1));
+  $('#fGirls').hidden = MSG(); { const minG = S.mainGender === 'f' ? 1 : 0, maxG = S.mainGender === 'f' ? S.nChars : S.nChars - 1; S.nGirls = Math.max(minG, Math.min(maxG, S.nGirls ?? 1));
     $('#mainSeg').replaceChildren(btn('', L.boy, S.mainGender !== 'f', () => { S.mainGender = 'm'; change(); }), btn('', L.girl, S.mainGender === 'f', () => { S.mainGender = 'f'; change(); }));
     const opts2 = []; for (let k = minG; k <= maxG; k++) opts2.push(k);
     $('#girlsSeg').replaceChildren(...opts2.map(k => btn('', String(k), S.nGirls === k, () => { S.nGirls = k; change(); }))); }
@@ -89,7 +115,8 @@ function renderAll() {
   $('#durs').replaceChildren(...Object.entries(DURATIONS).map(([k, d]) => btn('', `${d.label[S.lang]}<small>${k === 's' ? (S.lang === 'es' ? 'Rápido' : 'Quick') : k === 'm' ? (S.lang === 'es' ? 'Estándar' : 'Standard') : (S.lang === 'es' ? 'Completo' : 'Full')}</small>`, S.dur === k, () => { S.dur = k; change(); })));
 
   const sits = currentSits();
-  $('#sits').replaceChildren(...sits.map((s, i) => btn('opt', `<span class="tag${s.ai ? ' ia' : ''}">${s.ai ? L.iaTag + ' · ' : ''}${s.mode === 'caminos' ? L.caminos : L.escalada}</span><div><b>${esc(s.title[S.lang])}</b><span class="d">${esc(s.hook[S.lang])}</span></div>`, S.sit === i, () => { S.sit = i; S.hook = 0; S.qSel = 0; change(); })));
+  if (MSG()) $('#sits').replaceChildren(...MESSAGE_STORIES.map((m, i) => btn('opt', `<span class="tag">${m.emoji}</span><div><b>${esc(m.title[S.lang])}</b><span class="d">${esc(m.desc[S.lang])}</span></div>`, (S.msgSel || 0) === i, () => { S.msgSel = i; if (!String(S.music).startsWith('mine:')) S.music = m.music; change(); })));
+  else $('#sits').replaceChildren(...sits.map((s, i) => btn('opt', `<span class="tag${s.ai ? ' ia' : ''}">${s.ai ? L.iaTag + ' · ' : ''}${s.mode === 'caminos' ? L.caminos : L.escalada}</span><div><b>${esc(s.title[S.lang])}</b><span class="d">${esc(s.hook[S.lang])}</span></div>`, S.sit === i, () => { S.sit = i; S.hook = 0; S.qSel = 0; change(); })));
   const sit = sits[S.sit] || sits[0];
   const hooks = hookOptions(S.theme, sit, S.hookSeed);
   $('#hooks').replaceChildren(...hooks.map((h, i) => btn('opt', `<span class="tag">${i + 1}</span><div><b>${esc(h[S.lang])}</b></div>`, S.hook === i, () => { S.hook = i; change(); })));
@@ -101,18 +128,10 @@ function renderAll() {
   }); }));
   $('#ctaPreview').textContent = S.ctaSel.length > 1 ? '“' + fillPreview(combineCtas(S.ctaSel.map(i => ctas[i]), S.lang)) + '”' : '';
 
-  const vs = $('#voice'); const group = (label, opts) => { const g = document.createElement('optgroup'); g.label = label; g.append(...opts); return g; };
-  const elevenList = (S.elevenList && S.elevenList.length ? S.elevenList : ELEVEN_DEFAULT_VOICES);
-  vs.replaceChildren(
-    group(L.gFree, [...VOICES[S.lang].map(v => new Option(`${L.vPiper}: ${v.label}`, 'piper:' + v.id)), new Option(L.vMe, 'mespeak'), new Option(L.vNone, 'none')]),
-    group(L.gEleven, elevenList.map(v => new Option('ElevenLabs: ' + v.label, 'eleven:' + v.id))),
-    group(L.gOpenai, OPENAI_VOICES.map(v => new Option('OpenAI: ' + v.label, 'openai:' + v.id))));
-  vs.value = S.voiceSel[S.lang] || 'piper:' + DEFAULTS.voiceId[S.lang];
-  if (vs.selectedIndex < 0) vs.value = 'piper:' + DEFAULTS.voiceId[S.lang];
-  const { engine } = voiceParts(); const cloud = engine === 'eleven' || engine === 'openai';
-  $('#voiceHint').textContent = engine === 'piper' ? L.hintPiper : engine === 'mespeak' ? L.hintMe : engine === 'none' ? L.hintNone : '';
-  $('#cloudCfg').hidden = !cloud;
-  if (cloud) { $('#apiKeyLbl').textContent = engine === 'eleven' ? L.keyEleven : L.keyOpenai; $('#cloudHint').innerHTML = engine === 'eleven' ? L.cloudEleven : L.cloudOpenai; $('#loadVoices').hidden = engine !== 'eleven'; if (document.activeElement !== $('#apiKey')) $('#apiKey').value = KEYS[engine] || ''; $('#apiKey').placeholder = engine === 'eleven' ? 'sk_...' : 'sk-...'; }
+  const vs = $('#voice');
+  vs.replaceChildren(...OPENAI_VOICES.map(v => new Option(v.label[S.lang], v.id))); vs.value = S.voice;
+  $('#voiceHint').textContent = L.voiceHintTxt; $('#cloudHint').innerHTML = L.cloudOpenaiTxt;
+  if (document.activeElement !== $('#apiKey')) $('#apiKey').value = KEYS.openai || '';
   $('#actionOn').checked = S.action !== false; $('#aiOn').checked = S.aiOn; $('#aiCfg').hidden = !S.aiOn;
   if (document.activeElement !== $('#aiKey')) $('#aiKey').value = KEYS.openai || '';
   $('#aiModel').replaceChildren(...IMAGE_MODELS.map(m => new Option(m.label[S.lang], m.id))); $('#aiModel').value = S.aiModel;
@@ -124,7 +143,15 @@ function renderAll() {
   $('#appSits').hidden = !(S.aiIdeas && S.aiIdeas[S.theme + '|' + S.lang]);
   renderCost();
   { const qs = questionOptions(S.theme, sit, S.qSeed || 1); $('#questions').replaceChildren(...qs.map((q, i) => btn('opt', `<span class="tag">?</span><div><b>${esc(q[S.lang])}</b></div>`, (S.qSel || 0) === i, () => { S.qSel = i; change(); }))); }
-  $('#music').replaceChildren(...MUSIC_STYLES.map(m => new Option(m.name[S.lang], m.id))); $('#music').value = S.music;
+  { const group = (label, opts) => { const g = document.createElement('optgroup'); g.label = label; g.append(...opts); return g; };
+    const tagName = id => (MUSIC_TAGS.find(t => t.id === id) || MUSIC_TAGS[0]).name[S.lang];
+    const groups = []; if (TRACKS.length) groups.push(group('🎵 ' + L.mine, TRACKS.map(t => new Option(`${t.name} · ${tagName(t.tag)}`, 'mine:' + t.id))));
+    groups.push(group(L.builtIn, MUSIC_STYLES.filter(m => m.id !== 'none').map(m => new Option(m.name[S.lang], m.id))), new Option(MUSIC_STYLES.find(m => m.id === 'none').name[S.lang], 'none'));
+    $('#music').replaceChildren(...groups); $('#music').value = S.music; if ($('#music').selectedIndex < 0) { S.music = 'emotiva'; $('#music').value = 'emotiva'; }
+    $('#musicTag').replaceChildren(...MUSIC_TAGS.map(t => new Option(L.tagFor + ' ' + t.name[S.lang], t.id))); $('#musicTag').value = S.musicTag || 'emotiva';
+    $('#musicHint').textContent = L.musicHintTxt;
+    $('#myTracks').replaceChildren(...TRACKS.map(t => { const d = document.createElement('div'); d.className = 'track'; d.innerHTML = `<span>🎵</span><b>${esc(t.name)}</b><small>${tagName(t.tag)} · ${Math.round(t.dur || 0)} s</small>`; const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.textContent = '✕'; x.title = L.delTrack; x.addEventListener('click', async () => { await deleteTrack(t.id); dirty = true; await refreshTracks(); }); d.appendChild(x); return d; }));
+    $('#pixSteps').innerHTML = L.pix.map(x => `<li>${x}</li>`).join(''); }
   $('#musicVol').value = S.musicVol; $('#sfx').checked = S.sfx;
   $('#page').value = S.page; $('#linkUrl').value = S.linkUrl; $('#linkLabel').value = S.linkLabel;
   if (project) $('#meta').textContent = L.meta(project.total, project.beats.length, project.beats.reduce((s, b) => s + b.shots, 0));
@@ -146,12 +173,13 @@ function change(content = true) { if (content) dirty = true; save(); renderAll()
 $('#langBtn').addEventListener('click', () => { S.lang = S.lang === 'es' ? 'en' : 'es'; dirty = true; change(); });
 $('#moreHooks').addEventListener('click', () => { S.hookSeed++; S.hook = 0; change(); });
 $('#moreCtas').addEventListener('click', () => { S.ctaSeed++; S.ctaSel = [0]; change(); });
-$('#voice').addEventListener('change', e => { S.voiceSel = { ...S.voiceSel, [S.lang]: e.target.value }; dirty = true; save(); renderAll(); });
-$('#apiKey').addEventListener('input', e => { const { engine } = voiceParts(); KEYS[engine] = e.target.value.trim(); saveKeys(); dirty = true; });
-$('#loadVoices').addEventListener('click', async () => {
-  const L = tr(); if (!KEYS.eleven) { setStatus(L.needKey, true); return; }
-  try { const list = await elevenVoices(KEYS.eleven); if (list.length) { S.elevenList = list; S.voiceSel = { ...S.voiceSel, [S.lang]: 'eleven:' + list[0].id }; save(); renderAll(); setStatus(L.voicesLoaded(list.length)); } }
-  catch (e) { setStatus(String(e.message || e), true); }
+$('#voice').addEventListener('change', e => { S.voice = e.target.value; dirty = true; save(); renderAll(); });
+$('#apiKey').addEventListener('input', e => { KEYS.openai = e.target.value.trim(); saveKeys(); dirty = true; renderCost(); });
+$('#musicTag').addEventListener('change', e => { S.musicTag = e.target.value; save(); });
+$('#musicFile').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; const L = tr();
+  try { const id = await addTrack(f, S.musicTag || 'emotiva'); S.music = 'mine:' + id; dirty = true; save(); await refreshTracks(); setStatus(L.uploaded(f.name.replace(/\.[^.]+$/, ''))); }
+  catch (err) { console.warn(err); setStatus(L.upFail, true); }
 });
 $('#trend').addEventListener('input', e => { S.trend = e.target.value; save(); });
 $('#appSits').addEventListener('click', () => { delete S.aiIdeas[S.theme + '|' + S.lang]; S.sit = 0; S.hook = 0; change(); });
@@ -196,95 +224,102 @@ for (const id of ['page', 'linkUrl', 'linkLabel']) $('#' + id).addEventListener(
 
 // ---------- generación ----------
 function renderCost() {
-  const L = tr(); const items = []; const { engine } = voiceParts();
+  const L = tr(); const items = []; const engine = MSG() ? 'none' : 'openai';
   const k = S.theme + '|' + S.lang; const aiStory = !!(S.aiIdeas && S.aiIdeas[k]);
-  if (S.usedAI && S.usedAI[k + '|t']) items.push([L.cTrends, PRICE.trends]);
-  if (aiStory) items.push([L.cWrite, PRICE.write]);
-  if (S.aiOn) { const n = S.dur === 's' ? 2 : 3; items.push([L.cBg(n), n * imagePrice(S.aiModel, S.aiQuality)]); }
+  if (S.usedAI && S.usedAI[k + '|t'] && !MSG()) items.push([L.cTrends, PRICE.trends]);
+  if (aiStory && !MSG()) items.push([L.cWrite, PRICE.write]);
+  if (S.aiOn && !MSG()) { const n = S.dur === 's' ? 2 : 3; items.push([L.cBg(n), n * imagePrice(S.aiModel, S.aiQuality)]); }
   if (engine === 'openai') items.push([L.cVoice, S.dur === 's' ? 0.008 : S.dur === 'm' ? 0.014 : 0.02]);
   const box = $('#costBox');
-  if (!items.length && engine !== 'eleven') { box.hidden = false; box.textContent = L.costFree; return; }
+  if (!items.length) { box.hidden = false; box.textContent = L.costFree; return; }
   const total = items.reduce((a, b) => a + b[1], 0);
   box.hidden = false;
-  box.innerHTML = `${esc(L.costTitle)} <b>≈ ${total.toFixed(2)} USD</b><br><small>${items.map(([n, c]) => `${esc(n)}: ${c.toFixed(3)}`).join(' · ')}${engine === 'eleven' ? ' · ' + esc(L.cEleven) : ''}</small>`;
+  box.innerHTML = `${esc(L.costTitle)} <b>≈ ${total.toFixed(2)} USD</b><br><small>${items.map(([n, c]) => `${esc(n)}: ${c.toFixed(3)}`).join(' · ')}</small>`;
 }
 function setStatus(msg, err = false) { const el = $('#status'); el.textContent = msg; el.classList.toggle('err', err); }
+
+async function musicBuffer() {
+  if (!String(S.music).startsWith('mine:')) return null;
+  try { return await loadTrack(S.music.slice(5)); } catch (e) { console.warn('música propia', e); return null; }
+}
+
+async function generateMessage(L, customTexts) {
+  const story = MESSAGE_STORIES[S.msgSel || 0] || MESSAGE_STORIES[0];
+  const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
+  const chosen = S.ctaSel.map(i => ctas[i]).filter(Boolean);
+  const settings = { page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel };
+  const { beats, total, ambience, ambienceUntil } = buildMessage({ story, lang: S.lang, dur: S.dur, ctas: chosen.length ? chosen : [ctas[0]], settings });
+  if (customTexts) beats.forEach((b, i) => { if (customTexts[i] != null && customTexts[i].trim()) b.text = customTexts[i].trim(); });
+  project = prepareProject({ mode: 'musica', beats, total, lang: S.lang, color: S.color, nChars: 1, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: story.id, genders: { A: S.mainGender === 'f' ? 'f' : 'm' }, ambience, ambienceUntil });
+  setStatus(L.stMix);
+  mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx, ownMusic: await musicBuffer() });
+  return '';
+}
 
 async function generate(customTexts = null) {
   const L = tr(); stop();
   $('#genBtn').disabled = true;
   try {
     await document.fonts.load(`700 80px ${FONT}`).catch(() => {});
-    const sits = currentSits(); const sit = sits[S.sit] || sits[0];
-    const hooks = hookOptions(S.theme, sit, S.hookSeed); const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
-    const settings = { env: S.env, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, action: S.action !== false };
-    const question = questionOptions(S.theme, sit, S.qSeed || 1)[S.qSel || 0];
-    let beats = buildBeats({ situation: sit, lang: S.lang, dur: S.dur, hook: hooks[S.hook] || hooks[0], question, ctas: S.ctaSel.map(i => ctas[i]).filter(Boolean).length ? S.ctaSel.map(i => ctas[i]).filter(Boolean) : [ctas[0]], settings });
-    if (customTexts) beats.forEach((b, i) => { if (customTexts[i] != null && customTexts[i].trim()) b.text = customTexts[i].trim(); });
-    if (settings.action && !sit.ai && !sit.silent) beats = insertActions(beats, { nChars: S.nChars, lang: S.lang, every: 1 });
-    planDirection(beats, { nChars: S.nChars, lang: S.lang, action: settings.action });
-    let { engine, voiceId } = voiceParts(); const chosen = engine; const D = DURATIONS[S.dur];
-    let speed = D.pace; let total = 0; let fallbackWhy = '';
-    for (let attempt = 0; attempt < 4; attempt++) {
-      for (let i = 0; i < beats.length; i++) {
-        setStatus(L.stVoice(i + 1, beats.length));
-        const b = beats[i];
-        let buf = null;
-        if (b.kind === 'act' || b.mute) continue;
-        try {
-          const prog = (what, l, t) => { if (what === 'model' || what === 'phon') setStatus(L.stDl(t ? Math.round(l / t * 100) + ' %' : Math.round(l / 1e6) + ' MB')); };
-          const vfor = role => voiceForRole(engine, voiceId, role, S.lang, S.elevenList, castGenders());
-          buf = await synth(speakable(b.text), { engine, voiceId: vfor(b.speaker), apiKey: KEYS[engine], lang: S.lang, speed: b.kind === 'reflect' ? speed * 0.92 : speed, onProgress: prog });
+    let note = '', warn = false;
+    if (MSG()) { note = await generateMessage(L, customTexts); }
+    else {
+      const sits = currentSits(); const sit = sits[S.sit] || sits[0];
+      const hooks = hookOptions(S.theme, sit, S.hookSeed); const ctas = ctaOptions(S.ctaSeed, !!(S.linkUrl || S.linkLabel));
+      const settings = { env: S.env, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, action: S.action !== false };
+      const question = questionOptions(S.theme, sit, S.qSeed || 1)[S.qSel || 0];
+      let beats = buildBeats({ situation: sit, lang: S.lang, dur: S.dur, hook: hooks[S.hook] || hooks[0], question, ctas: S.ctaSel.map(i => ctas[i]).filter(Boolean).length ? S.ctaSel.map(i => ctas[i]).filter(Boolean) : [ctas[0]], settings });
+      if (customTexts) beats.forEach((b, i) => { if (customTexts[i] != null && customTexts[i].trim()) b.text = customTexts[i].trim(); });
+      if (settings.action && !sit.ai && !sit.silent) beats = insertActions(beats, { nChars: S.nChars, lang: S.lang, every: 1 });
+      planDirection(beats, { nChars: S.nChars, lang: S.lang, action: settings.action });
+      tagVisuals(beats); // lo que se dice, se ve
+      const D = DURATIONS[S.dur]; const key = KEYS.openai; const genders = castGenders();
+      const vfor = role => voiceForRole(S.voice, role || 'A', genders);
+      if (key) {
+        for (let i = 0; i < beats.length; i++) {
+          const b = beats[i]; if (b.kind === 'act' || b.mute || !b.text) continue;
+          setStatus(L.stVoice(i + 1, beats.length));
+          const buf = await synth(speakable(b.text), { voiceId: vfor(b.speaker), apiKey: key, lang: S.lang, mood: b.kind });
           if (b.react && b.react.vocal) {
-            const rb = await synth(speakable(b.react.vocal), { engine, voiceId: vfor(b.react.role), apiKey: KEYS[engine], lang: S.lang, speed: Math.min(1.25, speed * 1.08), onProgress: prog });
+            const rb = await synth(speakable(b.react.vocal), { voiceId: vfor(b.react.role), apiKey: key, lang: S.lang, mood: 'react' });
             b.reactBuffer = rb; b.reactDur = rb ? Math.min(1.6, rb.duration) : 0.7; b.reactLip = computeLip(rb);
           }
-        } catch (e) {
-          console.warn('TTS', e);
-          if (engine === 'eleven' || engine === 'openai') { fallbackWhy = e.message || String(e); engine = 'piper'; voiceId = DEFAULTS.voiceId[S.lang]; setStatus(L.cloudFallback + ' ' + fallbackWhy, true); await new Promise(r => setTimeout(r, 1500)); i--; continue; }
-          if (engine === 'piper') { fallbackWhy = (fallbackWhy ? fallbackWhy + ' / ' : '') + (e.message || String(e)); engine = 'mespeak'; setStatus(L.stFallback, true); await new Promise(r => setTimeout(r, 1200)); i--; continue; }
-          throw e;
+          b.voiceBuffer = buf; b.voiceDur = buf ? buf.duration : undefined; b.lip = computeLip(buf);
         }
-        b.voiceBuffer = buf; b.voiceDur = buf ? buf.duration : 0; b.lip = computeLip(buf);
-        if (!buf) b.voiceDur = undefined;
+      } else { note = L.noKeyVoice; warn = true; }
+      let total = timeBeats(beats, S.dur, false);
+      // si se pasa: primero quita escenas intermedias (nunca la primera ni la última), luego reacciones
+      for (let guard = 0; total > D.max + 0.5 && guard < 10; guard++) {
+        const reps = beats.filter(b => b.kind === 'rep');
+        if (reps.length <= 3) break;
+        const victim = reps.slice(1, -1).filter(b => !b.enter && !b.core).sort((a, b) => b.dur - a.dur)[0] || reps[Math.floor(reps.length / 2)];
+        const vi = beats.indexOf(victim);
+        if (vi > 0 && beats[vi - 1].exit) beats[vi - 1].exit = null;
+        beats.splice(vi, 1);
+        total = timeBeats(beats, S.dur, false);
       }
-      total = timeBeats(beats, S.dur, false);
-      if (total <= D.max + 0.5 || engine === 'none' || engine === 'eleven' || engine === 'openai' || speed >= 1.35) break;
-      speed = Math.min(1.35, speed * (total / D.max) * 1.02);
+      total = timeBeats(beats, S.dur, true);
+      beats.filter(b => b.kind === 'rep').forEach((b, i, arr) => { b.level = (i + 1) / arr.length; });
+      planShots(beats);
+      project = prepareProject({ mode: 'voz', beats, total, lang: S.lang, color: S.color, nChars: S.nChars, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: sit.id, genders });
+      if (S.aiOn) {
+        try {
+          const { images, errors } = await generateBackgrounds(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, onProgress: (i2, n) => setStatus(L.stImg(i2, n)) });
+          if (images.size) project.aiBg = images;
+          if (!images.size) { note = L.imgFail + (errors[0] || ''); warn = true; }
+          else if (errors.length) { note = L.imgSome(errors.length) + ' ' + errors[0]; warn = true; }
+        } catch (e) { console.warn('IA fondos', e); note = L.imgFail + (e.message || e); warn = true; }
+      }
+      setStatus(L.stMix);
+      mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx, ownMusic: await musicBuffer() });
     }
-    // si aún se pasa: primero quita escenas intermedias (nunca la primera ni la última), luego reacciones
-    for (let guard = 0; total > D.max + 0.5 && guard < 10; guard++) {
-      const reps = beats.filter(b => b.kind === 'rep');
-      if (reps.length <= 3) break;
-      const victim = reps.slice(1, -1).filter(b => !b.enter && !b.core).sort((a, b) => b.dur - a.dur)[0] || reps[Math.floor(reps.length / 2)];
-      const vi = beats.indexOf(victim);
-      if (vi > 0 && beats[vi - 1].exit) beats[vi - 1].exit = null;
-      beats.splice(vi, 1);
-      total = timeBeats(beats, S.dur, false);
-    }
-    total = timeBeats(beats, S.dur, true);
-    beats.filter(b => b.kind === 'rep').forEach((b, i, arr) => { b.level = (i + 1) / arr.length; });
-    planShots(beats);
-    project = prepareProject({ beats, total, lang: S.lang, color: S.color, nChars: S.nChars, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: sit.id, genders: castGenders() });
-    let imgNote = '';
-    if (S.aiOn) {
-      try {
-        const { images, errors } = await generateBackgrounds(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, onProgress: (i2, n) => setStatus(L.stImg(i2, n)) });
-        if (images.size) project.aiBg = images;
-        if (!images.size) imgNote = L.imgFail + (errors[0] || '');
-        else if (errors.length) imgNote = L.imgSome(errors.length) + ' ' + errors[0];
-      } catch (e) { console.warn('IA fondos', e); imgNote = L.imgFail + (e.message || e); }
-    }
-    setStatus(L.stMix);
-    mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx });
     dirty = false;
     renderScript();
     $('#redoBg').hidden = !project.aiBg;
     $('#emptyMsg').hidden = true; $('#player').hidden = false; $('#exportRow').hidden = false; $('#bigPlay').hidden = false; $('#dl').hidden = true;
     curTime = 0; drawAt(0);
     if (window.matchMedia('(max-width: 900px)').matches) document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (imgNote) { setStatus(imgNote, true); renderAll(); return; }
-    setStatus(L.stReady(total, beats.length) + (engine !== chosen ? ' · ' + (chosen === 'eleven' || chosen === 'openai' ? L.cloudFallback : L.stFallback) + (fallbackWhy ? ` (${fallbackWhy})` : '') : ''), engine !== chosen);
+    setStatus(L.stReady(project.total, project.beats.length) + (note ? ' · ' + note : ''), warn);
     renderAll();
   } catch (e) {
     console.error(e); setStatus(String(e.message || e), true);
@@ -295,7 +330,7 @@ $('#redoBg').addEventListener('click', () => { clearBgCache(); generate(); });
 
 function renderScript() {
   const L = tr(); const ol = $('#scriptList');
-  ol.replaceChildren(...project.beats.map((b, i) => { const li = document.createElement('li'); li.innerHTML = `<span class="k">${i + 1}. ${L.kinds[b.kind]} · ${b.dur.toFixed(1)} s</span>`; const ta = document.createElement('textarea'); ta.value = b.text; ta.rows = 2; ta.dataset.i = i; li.appendChild(ta); return li; }));
+  ol.replaceChildren(...project.beats.map((b, i) => { const li = document.createElement('li'); li.innerHTML = `<span class="k">${i + 1}. ${L.kinds[b.kind] || L.kinds.msg} · ${b.dur.toFixed(1)} s${b.vis ? ' · 🎞️' : ''}</span>`; const ta = document.createElement('textarea'); ta.value = b.text; ta.rows = 2; ta.dataset.i = i; li.appendChild(ta); return li; }));
   $('#scriptCard').hidden = false;
 }
 $('#applyBtn').addEventListener('click', () => { const texts = [...document.querySelectorAll('#scriptList textarea')].map(t => t.value); generate(texts); });
@@ -365,6 +400,6 @@ $('#srtBtn').addEventListener('click', () => {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `munequitos-${S.theme}-${S.lang}.srt`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 });
 
-renderAll();
+renderAll(); refreshTracks();
 // expone para pruebas automatizadas
 window.__app = { generate, get project() { return project; }, get mix() { return mix; }, S, drawAt, exportMP4: () => exportMP4(project, mix) };

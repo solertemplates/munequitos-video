@@ -1,4 +1,5 @@
 // Motor de dibujo: cada fotograma es una función pura del tiempo t (sirve para vista previa y exportación).
+import { visWindow } from './visuals.js';
 export const W = 1080, H = 1920, GY = 1390;
 const TAU = Math.PI * 2;
 const ROLES = ['A', 'B', 'C', 'D'];
@@ -199,10 +200,36 @@ const ENV_DRAW = {
     // velas
     for (const vx of [420, 660]) { ctx.fillStyle = '#fffaf0'; rr(ctx, vx - 12, 640, 24, 90, 5); ctx.fill(); ctx.strokeStyle = C('#d6c3a5'); ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = C('#ffb703'); ctx.beginPath(); ctx.ellipse(vx + Math.sin(g * 7 + vx) * 2, 625, 8, 16, 0, 0, TAU); ctx.fill(); }
     ctx.fillStyle = C('#e9d8c4'); ctx.fillRect(-600, GY - 360, W + 1200, 20);
-    // bancas
-    for (const [bx, bw] of [[-80, 400], [760, 420]]) { ctx.fillStyle = C('#b5835a'); rr(ctx, bx, GY - 250, bw, 40, 10); ctx.fill(); ctx.fillStyle = C('#9c6b45'); rr(ctx, bx - 10, GY - 140, bw + 20, 36, 10); ctx.fill(); ctx.fillRect(bx + 10, GY - 110, 22, 110); ctx.fillRect(bx + bw - 32, GY - 110, 22, 110); }
     floor(ctx, '#d9c2a3', '#c4a882');
     ctx.fillStyle = C('#c9454a'); ctx.beginPath(); ctx.moveTo(420, GY); ctx.lineTo(660, GY); ctx.lineTo(820, H + 300); ctx.lineTo(260, H + 300); ctx.fill();
+  },
+  gym(ctx, g) {
+    sky(ctx, '#e9eef7', '#d6deeb');
+    ctx.fillStyle = C('#3d5a80'); ctx.fillRect(-600, 120, W + 1200, 90); // franja de pared
+    for (let i = 0; i < 4; i++) { const mx = -120 + i * 330; ctx.fillStyle = C('#cfe8ff'); rr(ctx, mx, 330, 280, 560, 12); ctx.fill(); ctx.strokeStyle = C('#9fb6cf'); ctx.lineWidth = 10; ctx.stroke(); ctx.globalAlpha = 0.35; line(ctx, [[mx + 40, 360], [mx + 120, 860]], '#ffffff', 22); ctx.globalAlpha = 1; } // espejos
+    // rack de pesas pegado a la pared (al fondo)
+    ctx.fillStyle = C('#495057'); ctx.fillRect(-200, GY - 330, 1480, 22); ctx.fillRect(-200, GY - 200, 1480, 22);
+    for (let i = 0; i < 9; i++) { const dx = -150 + i * 160; for (const yy of [GY - 330, GY - 200]) { ctx.fillStyle = C(i % 3 ? '#343a40' : '#ff4d6d'); rr(ctx, dx, yy - 46, 26, 46, 6); ctx.fill(); rr(ctx, dx + 74, yy - 46, 26, 46, 6); ctx.fill(); ctx.fillStyle = C('#868e96'); ctx.fillRect(dx + 20, yy - 28, 60, 10); } }
+    floor(ctx, '#3b3f46', '#2b2f36');
+    ctx.globalAlpha = 0.25; for (let i = 0; i < 10; i++) line(ctx, [[i * 150 - 300, GY + 10], [i * 150 - 420, H + 200]], '#000', 4); ctx.globalAlpha = 1;
+  },
+  montana(ctx, g) {
+    const gr = ctx.createLinearGradient(0, -400, 0, GY); gr.addColorStop(0, C('#5aa9ff')); gr.addColorStop(0.7, C('#bfe3ff')); gr.addColorStop(1, C('#ffe8c2')); ctx.fillStyle = gr; ctx.fillRect(-600, -1200, W + 1200, GY + 1200);
+    cloud(ctx, ((g * 14) % 1700) - 500, -250, 1.1); cloud(ctx, ((g * 9 + 900) % 1700) - 500, 80, 0.8);
+    // montañas lejanas
+    ctx.fillStyle = C('#a5b4fc'); ctx.beginPath(); ctx.moveTo(-600, GY - 200); for (let x = -600; x <= 1700; x += 220) ctx.lineTo(x + 110, GY - 520 - hash(x) * 260), ctx.lineTo(x + 220, GY - 260); ctx.lineTo(1700, GY + 200); ctx.lineTo(-600, GY + 200); ctx.fill();
+    // la montaña que sube (el suelo del muñequito)
+    ctx.fillStyle = C('#5cb85c'); ctx.beginPath(); ctx.moveTo(-600, H + 800); ctx.lineTo(-600, GY); for (let x = -600; x <= 1700; x += 20) ctx.lineTo(x, groundY('montana', x)); ctx.lineTo(1700, H + 800); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C('#7c5a3a'); ctx.beginPath(); ctx.moveTo(-600, H + 800); for (let x = -600; x <= 1700; x += 20) ctx.lineTo(x, groundY('montana', x) + 60); ctx.lineTo(1700, H + 800); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C('#6fcf6f'); for (let x = -600; x <= 1700; x += 20) { ctx.fillRect(x, groundY('montana', x) - 2, 22, 10); }
+    // piedras y pinitos en la ladera
+    for (let i = 0; i < 9; i++) { const x = -200 + i * 170; const y = groundY('montana', x); ctx.fillStyle = C('#2f8f46'); ctx.beginPath(); ctx.moveTo(x, y - 150); ctx.lineTo(x - 45, y + 4); ctx.lineTo(x + 45, y + 4); ctx.fill(); }
+    // bandera en la cima
+    const fx = 1080, fy = groundY('montana', fx); line(ctx, [[fx, fy], [fx, fy - 260]], '#495057', 9); ctx.fillStyle = C('#ff4d6d'); ctx.beginPath(); ctx.moveTo(fx, fy - 260); ctx.lineTo(fx + 120 + Math.sin(g * 5) * 10, fy - 225); ctx.lineTo(fx, fy - 190); ctx.fill();
+  },
+  camino(ctx, g) {
+    ENV_DRAW.parque(ctx, g);
+    ctx.fillStyle = C('#e9d8b4'); ctx.fillRect(-600, GY - 6, W + 1200, 140); ctx.fillStyle = C('#d9c49a'); for (let i = 0; i < 30; i++) circle(ctx, hash(i) * 2200 - 600, GY + 20 + hash(i + 5) * 100, 6 + hash(i + 2) * 6, C('#cdb78a'));
   },
   caminos(ctx, g, beat) {
     sky(ctx, '#9bd4ff', '#fff4d6');
@@ -244,6 +271,12 @@ function drawSigns(ctx, s, lang, g, side) {
   sign(1, l[1], top + 190, '#ffd43b', side > 0);
 }
 
+// altura del suelo en cada punto (la montaña sube; el resto es plano)
+export function groundY(env, x) {
+  if (env !== 'montana') return GY;
+  const k = clamp((x - 160) / (980 - 160), 0, 1); return GY - (k * k * (3 - 2 * k)) * 620;
+}
+
 // ---------- MUÑECO ----------
 // Proporciones tipo caricatura: cabeza grande, cuerpo negro sólido y grueso.
 const SK = { thigh: 98, shin: 96, torso: 150, neck: 8, head: 64, upper: 78, fore: 74 };
@@ -278,7 +311,16 @@ function pose(action, t, g, seed) {
     case 'angry': P.arms = [{ a: 0.5, e: -0.4 + s(6, 0.1) }, { a: 0.5, e: -0.4 - s(6, 0.1) }]; P.emo = 'angry'; P.fx = 'steam'; P.shake = 3; P.lean = 0.08; P.legs = [{ a: -0.25, k: 0.15 }, { a: 0.25, k: 0.15 }]; break;
     case 'laugh': P.lean = -0.1 + s(8, 0.06); P.bend = -0.12; P.arms = [{ a: 0.55, e: -1.2 + s(8, 0.1) }, { a: 0.55, e: -1.2 - s(8, 0.1) }]; P.emo = 'laugh'; P.fx = 'haha'; P.y += s(9, 4); break;
     case 'think': P.arms[1] = { a: 0.42, e: 2.4 }; P.arms[0] = { a: 0.6, e: -1.15 }; P.tilt = -0.14 + s(1.3, 0.05); P.emo = 'think'; P.fx = 'question'; break;
-    case 'type': P.sit = true; P.arms = [{ a: 0.75, e: 0.6 + s(14, 0.1) }, { a: 0.75, e: 0.6 + s(14, 0.1, 2) }]; P.tilt = 0.15; P.bend = 0.12; P.emo = 'neutral'; P.desk = true; break;
+    case 'type': case 'laptop': P.arms = [{ a: 0.95, e: 0.75 + s(14, 0.08) }, { a: 0.95, e: 0.75 + s(14, 0.08, 2) }]; P.tilt = 0.2; P.bend = 0.08; P.emo = 'neutral'; P.hand = 'laptop'; break;
+    case 'barbell': { const k = (Math.sin(t * 3.4 + seed) + 1) / 2; P.arms = [{ a: lerp(1.05, 2.9, k), e: lerp(2.0, 0.12, k) }, { a: lerp(1.05, 2.9, k), e: lerp(2.0, 0.12, k) }]; P.legs = [{ a: -0.3, k: 0.18 + (1 - k) * 0.25 }, { a: 0.3, k: 0.18 + (1 - k) * 0.25 }]; P.y = -(1 - k) * 8; P.emo = k > 0.7 ? 'happy' : 'tired'; P.hand = 'barbell'; P.fx = 'sweat'; break; }
+    case 'money': P.front = { a: 1.7 + s(3, 0.08), e: 0.5 }; P.arms[0] = { a: 0.5, e: -1.6 }; P.emo = 'laugh'; P.hand = 'cash'; P.fx = 'sparkle'; break;
+    case 'eat': { const k = (Math.sin(t * 4 + seed) + 1) / 2; P.front = { a: 0.55 + k * 0.25, e: 2.45 - k * 0.2 }; P.emo = k > 0.5 ? 'happy' : 'love'; P.hand = 'food'; P.tilt = -0.05; break; }
+    case 'coffee': { const k = Math.max(0, Math.sin(t * 2 + seed)); P.front = { a: 0.5 + k * 0.3, e: 2.2 - k * 0.15 }; P.emo = 'peace'; P.hand = 'coffee'; P.tilt = -0.08 * k; break; }
+    case 'read': P.arms = [{ a: 0.9, e: 1.25 }, { a: 0.9, e: 1.25 }]; P.tilt = 0.25 + s(1.5, 0.03); P.emo = 'think'; P.hand = 'book'; break;
+    case 'water': P.front = { a: 1.25, e: 0.5 + s(3, 0.06) }; P.kneel = 1; P.legs = [{ a: -0.15, k: 1.42 }, { a: 1.5, k: 1.5 }]; P.lean = 0.18; P.tilt = 0.2; P.emo = 'peace'; P.hand = 'can'; break;
+    case 'climb': { const sp = 6.5, ph = t * sp + seed; P.legs = [0, Math.PI].map(o => { const sw = Math.sin(ph + o); return { a: sw * 0.45 - 0.1, k: Math.max(0, -Math.cos(ph + o)) * 0.95 + 0.15 }; }); P.arms = [0, Math.PI].map(o => ({ a: 0.45 - Math.sin(ph + o) * 0.5, e: 0.6 })); P.y = -Math.abs(Math.cos(ph)) * 7; P.lean = 0.24; P.bend = 0.12; P.emo = 'tired'; P.fx = 'sweat'; break; }
+    case 'rise': { const k = easeInOut(clamp((t - 0.2) / 1.2, 0, 1)); P.rot = (1 - k) * 1.4; P.arms = [{ a: lerp(1.6, 0.4, k), e: lerp(0.3, 0.3, k) }, { a: lerp(1.4, 0.5, k), e: 0.3 }]; P.legs = [{ a: lerp(0.4, -0.12, k), k: lerp(0.9, 0.08, k) }, { a: lerp(0.1, 0.12, k), k: lerp(0.6, 0.08, k) }]; P.emo = k < 0.6 ? 'tired' : 'happy'; P.fx = k > 0.85 ? 'sparkle' : null; break; }
+    case 'downSad': P.rot = 1.4; P.arms = [{ a: 1.4, e: 0.4 }, { a: 1.2, e: 0.6 }]; P.legs = [{ a: 0.3, k: 0.5 }, { a: 0.05, k: 0.3 }]; P.emo = 'sad'; P.y = 0; break;
     case 'phone': P.arms[1] = { a: 0.35, e: 2.0 }; P.arms[0] = { a: 0.25, e: 0.35 }; P.tilt = 0.24; P.bend = 0.08; P.hand = 'phone'; P.emo = 'neutral'; P.fx = 'notif'; break;
     case 'sleep': P.sit = true; P.tilt = 0.5 + s(1.4, 0.05); P.bend = 0.2; P.arms = [{ a: 0.25, e: 0.5 }, { a: 0.25, e: 0.5 }]; P.emo = 'sleep'; P.fx = 'zzz'; break;
     case 'fall': { const k = easeOut(t / 0.6); P.rot = k * 1.4; P.emo = t < 0.6 ? 'shock' : 'dizzy'; P.arms = [{ a: 2.1, e: 0.7 }, { a: 1.9, e: 0.5 }]; P.legs = [{ a: 0.3, k: 0.4 }, { a: -0.1, k: 0.2 }]; P.fx = t > 0.6 ? 'stars' : null; break; }
@@ -320,7 +362,7 @@ function blendPose(A, B, k) {
   for (const key of ['lean', 'tilt', 'y', 'rot', 'bend', 'sitAmt', 'shake']) out[key] = m(A[key], B[key]);
   out.arms = B.arms.map((b, i) => ({ a: m(A.arms[i].a, b.a), e: m(A.arms[i].e, b.e) }));
   out.legs = B.legs.map((b, i) => ({ a: m(A.legs[i].a, b.a), k: m(A.legs[i].k, b.k) }));
-  out.sit = out.sitAmt > 0.5; out.desk = k > 0.5 ? B.desk : A.desk; out.kneel = k > 0.5 ? B.kneel : A.kneel;
+  out.sit = out.sitAmt > 0.5; out.kneel = k > 0.5 ? B.kneel : A.kneel;
   if (k < 0.5) { out.hand = A.hand; }
   return out;
 }
@@ -416,10 +458,17 @@ function drawFace(ctx, hx, hy, f, emo, speech, g, seed, gaze) {
   }
 }
 
-function drawHandProp(ctx, type, x, y) {
+function drawHandProp(ctx, type, x, y, f = 1, g = 0) {
   if (type === 'phone') { ctx.save(); ctx.translate(x, y); ctx.rotate(-0.2); ctx.fillStyle = '#212529'; rr(ctx, -21, -38, 42, 72, 9); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#a5d8ff'; rr(ctx, -16, -32, 32, 58, 5); ctx.fill(); ctx.restore(); }
   if (type === 'gift') { ctx.fillStyle = C('#e64980'); rr(ctx, x - 40, y - 66, 80, 66, 6); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#ffd43b'); ctx.fillRect(x - 8, y - 66, 16, 66); ctx.fillRect(x - 40, y - 42, 80, 13); }
   if (type === 'boxup') { ctx.fillStyle = C('#d4a373'); rr(ctx, x - 95, y - 125, 190, 125, 8); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke(); line(ctx, [[x - 95, y - 62], [x + 95, y - 62]], FIG, 4); }
+  if (type === 'cash') { ctx.save(); ctx.translate(x, y - 20); for (let i = 0; i < 5; i++) { ctx.save(); ctx.rotate((i - 2) * 0.22); ctx.fillStyle = C('#5bd47a'); rr(ctx, -16, -78, 32, 70, 5); ctx.fill(); ctx.strokeStyle = C('#1f8a43'); ctx.lineWidth = 3.5; ctx.stroke(); ctx.fillStyle = C('#1f8a43'); setFont(ctx, 22, 700); ctx.textAlign = 'center'; ctx.fillText('$', 0, -36); ctx.restore(); } ctx.restore(); }
+  if (type === 'food') { ctx.fillStyle = C('#f4a340'); ctx.beginPath(); ctx.moveTo(x - 6, y + 10); ctx.lineTo(x - 40, y - 60); ctx.quadraticCurveTo(x - 4, y - 82, x + 34, y - 62); ctx.closePath(); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); ctx.fillStyle = C('#ffd43b'); ctx.beginPath(); ctx.moveTo(x - 6, y); ctx.lineTo(x - 30, y - 52); ctx.quadraticCurveTo(x - 4, y - 66, x + 24, y - 54); ctx.closePath(); ctx.fill(); circle(ctx, x - 10, y - 40, 7, C('#e03131')); circle(ctx, x + 6, y - 50, 6, C('#e03131')); }
+  if (type === 'laptop') { ctx.save(); ctx.translate(x, y); ctx.fillStyle = C('#3b4250'); rr(ctx, -80, -10, 160, 16, 5); ctx.fill(); ctx.save(); ctx.translate(0, -10); ctx.transform(1, 0, -0.18 * (f || 1), 1, 0, 0); rr(ctx, -74, -100, 148, 100, 8); ctx.fill(); ctx.fillStyle = BW ? '#ddd' : '#8fd0ff'; rr(ctx, -66, -92, 132, 84, 5); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,0.8)'; for (let i = 0; i < 3; i++) rr(ctx, -56, -80 + i * 22, 70 + ((g || 0) * 40 + i * 30) % 40, 9, 4), ctx.fill(); ctx.restore(); ctx.restore(); }
+  if (type === 'book') { ctx.save(); ctx.translate(x, y - 10); ctx.fillStyle = C('#ff6b6b'); rr(ctx, -62, -46, 60, 82, 6); ctx.fill(); rr(ctx, 2, -46, 60, 82, 6); ctx.fill(); ctx.fillStyle = '#fff'; rr(ctx, -56, -40, 52, 70, 4); ctx.fill(); rr(ctx, 4, -40, 52, 70, 4); ctx.fill(); ctx.strokeStyle = '#c5cad3'; ctx.lineWidth = 3; for (let i = 0; i < 4; i++) { line(ctx, [[-48, -28 + i * 15], [-12, -28 + i * 15]], '#c5cad3', 3); line(ctx, [[12, -28 + i * 15], [48, -28 + i * 15]], '#c5cad3', 3); } ctx.restore(); }
+  if (type === 'barbell') { ctx.save(); ctx.translate(x, y); line(ctx, [[-190, 0], [190, 0]], '#5c6370', 12); for (const sd of [-1, 1]) { ctx.fillStyle = '#2b2f36'; rr(ctx, sd * 150 - 16, -62, 32, 124, 8); ctx.fill(); rr(ctx, sd * 190 - 12, -46, 24, 92, 7); ctx.fill(); ctx.fillStyle = C('#ff4d6d'); ctx.fillRect(sd * 150 - 16, -8, 32, 16); } ctx.restore(); }
+  if (type === 'trophy') { ctx.fillStyle = C('#fcc419'); ctx.beginPath(); ctx.moveTo(x - 36, y - 90); ctx.lineTo(x + 36, y - 90); ctx.quadraticCurveTo(x + 36, y - 30, x, y - 26); ctx.quadraticCurveTo(x - 36, y - 30, x - 36, y - 90); ctx.fill(); ctx.fillRect(x - 8, y - 28, 16, 22); rr(ctx, x - 26, y - 8, 52, 14, 4); ctx.fill(); }
+  if (type === 'can') { ctx.save(); ctx.translate(x, y); ctx.fillStyle = C('#4dabf7'); rr(ctx, -30, -40, 60, 54, 10); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4; ctx.stroke(); line(ctx, [[28, -30], [78, -56]], C('#4dabf7'), 10); for (let i = 0; i < 4; i++) { const ph = (((g || 0) * 1.6) + i / 4) % 1; ctx.globalAlpha = 1 - ph; ctx.fillStyle = C('#74c0fc'); ctx.beginPath(); ctx.ellipse(84 + ph * 30, -50 + ph * 130, 6, 10, 0, 0, TAU); ctx.fill(); } ctx.globalAlpha = 1; ctx.restore(); }
   if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
 }
 
@@ -429,7 +478,7 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   const f = ch.f, lw = 15;
   ctx.save();
   const sc = (ch.kid ? 0.7 : 1) * RS;
-  ctx.translate(ch.x + (P.shake ? Math.sin(g * 9) * P.shake * 0.6 : 0), GY);
+  ctx.translate(ch.x + (P.shake ? Math.sin(g * 9) * P.shake * 0.6 : 0), GY + (ch.dy || 0));
   if (P.rot) ctx.rotate(-f * P.rot);
   ctx.scale(sc, sc);
   ctx.globalAlpha = 0.2; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 4, 78, 13, 0, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
@@ -438,14 +487,7 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   const maxY = lerp(standY, 150, P.sitAmt || 0);
   const hipY = -maxY + (P.y || 0);
   ctx.translate(0, hipY);
-  if ((P.sitAmt || 0) > 0.5 && !P.kneel && !ch.onSofa) { // butaca de tamaño real
-    const bx = -f * 70, col = C('#7048e8'), dark = C('#5235b8');
-    ctx.strokeStyle = FIG; ctx.lineWidth = 6;
-    ctx.fillStyle = col; rr(ctx, bx - (f > 0 ? 34 : -4), -175, 34, 205, 14); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = col; rr(ctx, Math.min(bx, bx + f * 175) - 10, 8, 195, 52, 16); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = dark; for (const lx of [bx, bx + f * 160]) ctx.fillRect(lx - 7, 58, 16, maxY - 58);
-    ctx.fillStyle = col; rr(ctx, Math.min(bx, bx + f * 150) - 10, -48, 170, 30, 12); ctx.fill(); ctx.stroke();
-  }
+  // (sin sillas sueltas: solo se sienta en el sofá del escenario; si no hay sofá, se queda de pie)
   for (const l of legs) { limb(ctx, l[0], l[1], l[2], lw); ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(l[2][0] + f * 10, l[2][1] + 2, 20, 11, 0, 0, TAU); ctx.fill(); }
   const lean = P.lean || 0, bend = P.bend || 0;
   const up = [f * Math.sin(lean), -Math.cos(lean)];   // dirección del torso
@@ -526,11 +568,12 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   const fh = arms[f > 0 ? 1 : 0][2];
   arms.forEach((a, i) => { limb(ctx, cuffs[i], [lerp(a[0][0], a[1][0], 0.95), lerp(a[0][1], a[1][1], 0.95)], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); });
   if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 12);
-  if (P.hand === 'selfie') { drawHandProp(ctx, 'phone', fh[0], fh[1] - 16); if (Math.sin(g * 4.5) > 0.97) { ctx.globalAlpha = 0.8; circle(ctx, fh[0], fh[1] - 20, 70, '#ffffff'); ctx.globalAlpha = 1; } }
+  if (P.hand === 'selfie') drawHandProp(ctx, 'phone', fh[0], fh[1] - 16);
   if (P.hand === 'scroll') { const mx2 = (arms[0][2][0] + arms[1][2][0]) / 2, my2 = (arms[0][2][1] + arms[1][2][1]) / 2; drawHandProp(ctx, 'phone', mx2, my2 - 14); ctx.globalAlpha = 0.18; circle(ctx, hx, hy, SK.head - 6, BW ? '#ccc' : '#4dabf7'); ctx.globalAlpha = 1; }
   if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10);
   if (P.hand === 'boxup') drawHandProp(ctx, 'boxup', (arms[0][2][0] + arms[1][2][0]) / 2, Math.min(arms[0][2][1], arms[1][2][1]) + 10);
-  if (P.desk) { ctx.fillStyle = C('#8d6e63'); ctx.fillRect(f * 60, 0, f * 200, 16); ctx.fillRect(f * 230 - 8, 16, 16, maxY - 16); ctx.fillStyle = '#343a40'; ctx.save(); ctx.translate(f * 150, 0); ctx.fillRect(-60, -8, 120, 8); ctx.beginPath(); ctx.moveTo(-50 * f, -8); ctx.lineTo(-62 * f, -90); ctx.lineTo(-8 * f, -90); ctx.lineTo(4 * f, -8); ctx.fill(); ctx.restore(); }
+  if (ch.handProp && !P.hand) drawHandProp(ctx, ch.handProp, fh[0] + f * 6, fh[1] - 4, f);
+  if (P.hand && !['phone', 'selfie', 'scroll', 'gift', 'boxup'].includes(P.hand)) drawHandProp(ctx, P.hand, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][0] + arms[1][2][0]) / 2 : fh[0] + f * 6, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][1] + arms[1][2][1]) / 2 : fh[1] - 4, f, g);
   ctx.restore();
   return { hx: ch.x + hx * sc, hy: GY + (hipY + hy) * sc, r: SK.head * sc };
 }
@@ -688,13 +731,13 @@ function drawQuestion(ctx, beat, t) {
 
 function drawOnoma(ctx, beat, t) {
   const t0 = beat.onomaT || 0.3; if (!beat.onoma || t < t0) return;
-  const k = backOut((t - t0) / 0.25); const fade = clamp((beat.dur - t) / 0.2, 0, 1);
-  ctx.save(); ctx.globalAlpha = fade; ctx.translate(540, 335); ctx.rotate(-0.09 + Math.sin(t * 6) * 0.02); ctx.scale(k * 0.9, k * 0.9);
-  ctx.beginPath(); for (let i = 0; i < 28; i++) { const a = i / 28 * TAU; const r2 = i % 2 ? 150 : 215; ctx.lineTo(Math.cos(a) * r2 * 1.55, Math.sin(a) * r2 * 0.78); } ctx.closePath();
-  ctx.fillStyle = BW ? '#ffffff' : '#ffd60a'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
-  const { size } = fitText(ctx, beat.onoma, 520, 1, 108, 50, 700); setFont(ctx, size, 700);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.strokeText(beat.onoma, 0, 6);
-  ctx.fillStyle = BW ? '#ffffff' : '#ff2d55'; ctx.fillText(beat.onoma, 0, 6); ctx.textBaseline = 'alphabetic';
+  const k = easeOut((t - t0) / 0.22); const fade = clamp((beat.dur - t) / 0.2, 0, 1);
+  ctx.save(); ctx.globalAlpha = fade * k; ctx.translate(540, 330 - (1 - k) * 30); ctx.rotate(-0.05); ctx.scale(0.92 + 0.08 * k, 0.92 + 0.08 * k);
+  const { size } = fitText(ctx, beat.onoma, 820, 1, 104, 50, 700); setFont(ctx, size, 700);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+  ctx.lineWidth = 14; ctx.strokeStyle = '#111'; ctx.strokeText(beat.onoma, 0, 0); ctx.shadowColor = 'transparent';
+  ctx.fillStyle = '#ffffff'; ctx.fillText(beat.onoma, 0, 0); ctx.textBaseline = 'alphabetic';
   ctx.restore();
 }
 
@@ -855,6 +898,8 @@ function parseActs(a) {
   const m = {}; (a || '').split(/\s+/).filter(Boolean).forEach(tok => { const [r, act] = tok.split(':'); if (r === 'all') { for (const k of ROLES) if (!m[k]) m[k] = act; m._all = act; } else m[r] = act; });
   return m;
 }
+const STANDING = { sit: 'idle', sleep: 'tired', type: 'laptop' };
+const PROP2HAND = { money: 'cash', phone: 'phone', coffee: 'coffee', laptop: 'laptop', pizza: 'food', gift: 'gift', trophy: 'trophy', chart_up: 'phone', chart_down: 'phone', calendar: 'phone' };
 const BASEX = { 1: [540], 2: [330, 750], 3: [200, 540, 880], 4: [130, 400, 680, 950] };
 
 function sceneChars(beat, t, opts) {
@@ -868,7 +913,7 @@ function sceneChars(beat, t, opts) {
     if (!acts[role] && !acts._all && i >= 2 && beat.kind === 'rep') act = beat.level > 0.6 ? 'laugh' : 'idle';
     // el que escucha nunca se queda quieto: asiente y gesticula
     if (act === 'idle' && role !== beat.speaker && listenKinds.includes(beat.kind)) act = 'nod';
-    chars.push({ girl: !!(opts.genders && opts.genders[role] === 'f'), onSofa: beat.env === 'casa' && !opts.aiBg, role, act, scripted: act, x: xs[i], baseX: xs[i], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', tie: looks[role] === 'tie', cap: false, f: 1 });
+    chars.push({ girl: !!(opts.genders && opts.genders[role] === 'f'), onSofa: false, role, act, scripted: act, x: xs[i], baseX: xs[i], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', tie: looks[role] === 'tie', cap: false, f: 1 });
   }
   // caminos: el protagonista camina hacia el lado del camino
   if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 260; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle' || c.act === 'nod') { c.act = 'walk'; c.settleK = clamp((t - Math.min(1.2, beat.dur)) / 0.4, 0, 1); c.after = 'idle'; } c.walkDir = beat.side; }
@@ -883,6 +928,14 @@ function sceneChars(beat, t, opts) {
   // salida corriendo al final de la escena
   const ex = beat.exit && chars.find(c => c.role === beat.exit.role);
   if (ex) { const t0 = beat.dur - 0.75; if (t > t0) { const k = clamp((t - t0) / 0.75, 0, 1); ex.x = ex.baseX + beat.exit.dir * 900 * k * k; ex.act = 'run'; ex.walkDir = beat.exit.dir; ex.settleK = 0; } }
+  // sentarse SOLO en el sofá del escenario (a tamaño real); si no hay sofá, de pie. Nunca sobre mesas ni sillas sueltas.
+  for (const c of chars) {
+    c.onSofa = beat.env === 'casa' && !opts.aiBg && c.x > 110 && c.x < 730;
+    if (!c.onSofa && STANDING[c.act]) c.act = STANDING[c.act];
+  }
+  // objetos de la escena: los sostiene quien habla (dentro de la escena, nada cae del techo)
+  const hp = PROP2HAND[(beat.p || '').split(':')[0]];
+  if (hp) { const who = chars.find(c => c.role === (beat.speaker || 'A')) || chars[0]; if (who) who.handProp = hp; }
   const huggers = chars.filter(c => c.act === 'hug');
   if (huggers.length >= 2) { const hm = (huggers[0].baseX + huggers[1].baseX) / 2; const k = easeOut(t / 0.6); huggers[0].x = lerp(huggers[0].baseX, hm - 105, k); huggers[1].x = lerp(huggers[1].baseX, hm + 105, k); }
   else if (huggers.length === 1) huggers[0].act = 'love';
@@ -990,12 +1043,124 @@ function drawPOV(ctx, project, beat, t, g, scale) {
   ctx.restore();
 }
 
+// ---------- «QUE SE VEA LO QUE SE DICE»: recuerdo visual ----------
+function drawMemory(ctx, project, beat, t, g, scale, w0, w1) {
+  const v = beat.vis; const tt = t - w0;
+  const env = v.env || (beat.env === 'caminos' ? 'parque' : beat.env) || 'parque';
+  const role = beat.speaker || 'A'; const looks = LOOKS[project.sitId] || {};
+  const c = { role, girl: !!(project.genders && project.genders[role] === 'f'), look: looks[role], kid: looks[role] === 'kid', tie: looks[role] === 'tie', seed: 0.7, f: 1, x: env === 'casa' ? 430 : 540, act: v.act };
+  c.onSofa = env === 'casa' && v.act === 'sleep';
+  if (!c.onSofa && STANDING[c.act]) c.act = STANDING[c.act];
+  const P = applyFront(pose(c.act, tt, g, c.seed), 1);
+  const z = lerp(1.5, 1.62, clamp(tt / Math.max(1, w1 - w0), 0, 1)); const fy = GY - 470 / z; const fx = c.x + 40;
+  ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-fx, -fy);
+  (ENV_DRAW[env] || ENV_DRAW.vacio)(ctx, g, beat);
+  const head = drawFigure(ctx, c, P, g, null, { dx: 0, dy: 3 });
+  drawFx(ctx, P.fx, head.hx, head.hy, tt, g, 7);
+  ctx.restore();
+  ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  // aspecto de recuerdo: luz cálida y bordes suaves y claros
+  const vg = ctx.createRadialGradient(540, 900, 380, 540, 900, 1250); vg.addColorStop(0, 'rgba(255,255,255,0)'); vg.addColorStop(1, BW ? 'rgba(255,255,255,0.7)' : 'rgba(255,248,235,0.75)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H); if (!BW) { ctx.fillStyle = 'rgba(255,210,150,0.08)'; ctx.fillRect(0, 0, W, H); }
+  // flash de la foto (Instagram, selfies…)
+  if (v.flash) { const fl = clamp(1 - Math.abs(tt - 0.75) / 0.14, 0, 1); if (fl > 0) { ctx.fillStyle = `rgba(255,255,255,${0.92 * fl})`; ctx.fillRect(0, 0, W, H); } }
+  // entrada y salida con un destello suave
+  const edge = Math.max(clamp(1 - tt / 0.16, 0, 1), clamp(1 - (w1 - t) / 0.14, 0, 1));
+  if (edge > 0) { ctx.fillStyle = `rgba(255,255,255,${0.85 * edge})`; ctx.fillRect(0, 0, W, H); }
+  ctx.restore();
+}
+
+// ---------- MODO «SOLO MÚSICA CON MENSAJE» ----------
+function msgDoll(project, beat, t) {
+  const [x0, x1] = beat.path || [540, 540]; const moving = ['walk', 'climb', 'run'].includes(beat.act);
+  const k = moving ? clamp(t / (beat.dur * 0.94), 0, 1) : 0;
+  const x = lerp(x0, x1, k);
+  return { role: 'A', girl: !!(project.genders && project.genders.A === 'f'), seed: 0.5, f: x1 < x0 ? -1 : 1, x, dy: groundY(beat.env, x) - GY, act: beat.act, walkDir: moving ? (x1 < x0 ? -1 : 1) : 0 };
+}
+function drawPlant(ctx, x, y, s, g) {
+  ctx.fillStyle = C('#8b5e3c'); ctx.beginPath(); ctx.ellipse(x, y, 90, 26, 0, Math.PI, TAU); ctx.fill();
+  if (s <= 0.02) return;
+  const h = s < 0.35 ? s / 0.35 * 120 : 120 + (s - 0.35) / 0.65 * 520; const sw = Math.sin(g * 1.6) * 4 * s;
+  line(ctx, [[x, y - 6], [x + sw, y - h]], C(s < 0.35 ? '#2f9e44' : '#8d5a3b'), s < 0.35 ? 10 : 10 + s * 26);
+  if (s < 0.35) { for (const sd of [-1, 1]) { ctx.fillStyle = C('#51cf66'); ctx.beginPath(); ctx.ellipse(x + sd * 26 + sw, y - h + 10, 28 * (s / 0.35), 12 * (s / 0.35), sd * -0.5, 0, TAU); ctx.fill(); } return; }
+  const r = 60 + (s - 0.35) / 0.65 * 200; ctx.fillStyle = C('#40c057'); ctx.beginPath(); ctx.arc(x + sw, y - h - r * 0.3, r, 0, TAU); ctx.arc(x - r * 0.7 + sw, y - h + r * 0.2, r * 0.7, 0, TAU); ctx.arc(x + r * 0.7 + sw, y - h + r * 0.2, r * 0.72, 0, TAU); ctx.fill();
+  for (let i = 0; i < 7; i++) circle(ctx, x + (hash(i) - 0.5) * r * 1.6 + sw, y - h - r * 0.2 + (hash(i + 4) - 0.5) * r, 12, C(['#ff6b6b', '#ffd43b', '#ffffff'][i % 3]));
+}
+function drawMsgText(ctx, beat, t, strong) {
+  const text = beat.text || ''; if (!text) return;
+  const { size, lines } = fitText(ctx, text, 940, strong ? 4 : 3, strong ? 100 : 116, 58, 700);
+  const lh = size * 1.14; const total = lines.length * lh; const y0 = (strong ? 470 : 430) - total / 2;
+  const words = lines.flat(); const n = words.length; const step = Math.min(0.34, (beat.dur * 0.5) / Math.max(1, n));
+  const out = clamp((beat.dur - t) / 0.28, 0, 1);
+  ctx.save(); ctx.textBaseline = 'alphabetic'; ctx.lineJoin = 'round'; setFont(ctx, size, 700);
+  let wi = 0;
+  lines.forEach((ln, li) => {
+    const spc = ctx.measureText(' ').width; const lw = ln.reduce((a, w) => a + ctx.measureText(w).width, 0) + spc * (ln.length - 1); let x = 540 - lw / 2; const y = y0 + (li + 0.82) * lh;
+    for (const w of ln) {
+      const a = easeOut((t - 0.15 - wi * step) / 0.35); const ww = ctx.measureText(w).width;
+      if (a > 0) {
+        ctx.save(); ctx.globalAlpha = a * out; ctx.translate(x + ww / 2, y + (1 - a) * 26); ctx.scale(0.9 + 0.1 * a, 0.9 + 0.1 * a);
+        ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6; ctx.strokeStyle = 'rgba(17,17,17,0.85)'; ctx.lineWidth = 12; ctx.strokeText(w, -ww / 2, 0);
+        ctx.shadowColor = 'transparent'; const hi = strong && wi >= n - 2; ctx.fillStyle = hi ? (BW ? '#ffffff' : '#ffd60a') : '#ffffff'; ctx.fillText(w, -ww / 2, 0); ctx.restore();
+      }
+      x += ww + spc; wi++;
+    }
+  });
+  ctx.restore();
+}
+function drawRain(ctx, g, amt) {
+  ctx.save(); ctx.globalAlpha = 0.55 * amt; ctx.strokeStyle = BW ? '#ffffff' : '#cfe6ff'; ctx.lineWidth = 3; ctx.beginPath();
+  for (let i = 0; i < 140; i++) { const x = (hash(i) * 1300 - 110 + g * 90) % 1300 - 110; const y = ((hash(i + 40) * 2100 + g * 1500 * (0.8 + hash(i + 9) * 0.4)) % 2100) - 100; ctx.moveTo(x, y); ctx.lineTo(x - 14, y + 46); }
+  ctx.stroke(); ctx.restore();
+}
+function drawMessageFrame(ctx, project, bi, beat, t, g, scale, time) {
+  const c = msgDoll(project, beat, t);
+  // la pose fluye desde la escena anterior
+  let P = applyFront(pose(c.act, t, g, c.seed), c.f);
+  const BL = 0.45; let px = null;
+  if (bi > 0 && t < BL) { const pb = project.beats[bi - 1]; const pc = msgDoll(project, pb, pb.dur); const k = easeInOut(t / BL); P = blendPose(applyFront(pose(pc.act, pb.dur, g, pc.seed), pc.f), P, k); px = lerp(pc.x, c.x, k); c.x = px; c.dy = groundY(beat.env, c.x) - GY; }
+  const z = beat.kind === 'cta' ? 1.12 : beat.kind === 'reflect' ? lerp(1.2, 1.3, t / beat.dur) : lerp(1.3, 1.38, t / beat.dur);
+  const feetY = GY + (c.dy || 0);
+  // si está en el suelo, la cámara se abre y se centra en el cuerpo
+  const down = Math.abs(P.rot || 0) > 0.6; const zz = down ? Math.min(z, 1.12) : z;
+  let fx = clamp(c.x + (beat.plant ? 90 : 0) - (down ? c.f * 210 * Math.sign(P.rot) : 0), -600 + 540 / zz + 10, 1680 - 540 / zz - 10); const fy = feetY - 470 / zz;
+  fx += Math.sin(time * 0.5) * 6;
+  ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(zz, zz); ctx.translate(-fx, -fy);
+  (ENV_DRAW[beat.env] || ENV_DRAW.vacio)(ctx, g, beat);
+  if (beat.rain) { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.fillStyle = 'rgba(25,35,60,0.42)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  // reflexión y final: baja la luz SOLO del fondo (la cabeza sigue blanca)
+  if (beat.kind === 'reflect' || beat.kind === 'cta') { const k = beat.kind === 'cta' ? 0.5 : clamp(t / 0.6, 0, 1); ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, `rgba(10,8,30,${0.75 * k})`); gr.addColorStop(0.6, `rgba(30,15,45,${0.4 * k})`); gr.addColorStop(1, `rgba(0,0,0,${0.15 * k})`); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  if (beat.plant) { const [p0, p1] = beat.plant; drawPlant(ctx, 600, GY + 4, lerp(p0, p1, easeOut(t / Math.max(0.5, beat.dur * 0.8))), g); }
+  const head = drawFigure(ctx, c, P, g, null, { dx: c.f * 4, dy: 2 });
+  drawFx(ctx, P.fx, head.hx, head.hy, t, g, 11 + bi);
+  ctx.restore();
+  ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  if (beat.rain) drawRain(ctx, g, 1);
+  if (beat.sun && !BW) { const k = clamp(t / 1.2, 0, 1); ctx.globalAlpha = 0.35 * k; const gr = ctx.createRadialGradient(900, 160, 20, 900, 160, 900); gr.addColorStop(0, '#fff3bf'); gr.addColorStop(1, 'rgba(255,243,191,0)'); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 0.45 * k; ['#ff6b6b', '#ffa94d', '#ffe066', '#69db7c', '#4dabf7', '#9775fa'].forEach((col, i) => { ctx.strokeStyle = col; ctx.lineWidth = 22; ctx.beginPath(); ctx.arc(540, 1250, 760 - i * 22, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke(); }); ctx.globalAlpha = 1; }
+  ctx.restore();
+  ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  drawCard(ctx, beat, t);
+  if (beat.kind === 'cta') { drawCTA(ctx, beat, t, g, project); drawCaption(ctx, beat, t, project, false); }
+  else drawMsgText(ctx, beat, t, beat.kind === 'reflect');
+  if (project.page && project.page.trim()) { setFont(ctx, 34, 700); ctx.textAlign = 'left'; ctx.globalAlpha = 0.85; ctx.lineWidth = 8; ctx.strokeStyle = '#111'; ctx.strokeText(project.page.trim(), 40, 70); ctx.fillStyle = '#fff'; ctx.fillText(project.page.trim(), 40, 70); ctx.globalAlpha = 1; }
+  ctx.fillStyle = BW ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.3)'; ctx.fillRect(0, 0, W, 10);
+  ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.fillRect(0, 0, W * clamp(time / project.total, 0, 1), 10);
+  ctx.restore();
+}
+
 export function drawFrame(ctx, project, time, scale = 1) {
   BW = !project.color; LANG = project.lang || 'es'; cache.clear();
   const opts = project;
   const bi = beatAt(project, time); const beat = project.beats[bi]; const t = Math.max(0, time - beat.start); const g = time;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.fillStyle = BW ? '#ffffff' : '#000'; ctx.fillRect(0, 0, W, H);
+  if (project.mode === 'musica') { drawMessageFrame(ctx, project, bi, beat, t, g, scale, time); return; }
+  if (beat.vis) {
+    let [w0, w1] = visWindow(beat); let v = beat.vis;
+    if (beat.vis2) { const mid = (beat.voiceLead || 0) + (beat.voiceDur || beat.dur) * beat.visSplit; if (t >= mid) { w0 = mid; v = beat.vis2; } else w1 = mid; }
+    if (t >= w0 && t < w1 && w1 - w0 > 0.8) { drawMemory(ctx, project, { ...beat, vis: v }, t, g, scale, w0, w1); drawCaption(ctx, beat, t, opts, false); ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.fillRect(0, 0, W * clamp(time / project.total, 0, 1), 10); return; }
+  }
   const img = bgImageFor(project, beat); const box = img ? bgRect(img) : null;
   const chars = sceneChars(beat, t, opts);
   const cam = cameraFor(beat, bi, t, chars, box);
@@ -1043,9 +1208,11 @@ export function drawFrame(ctx, project, time, scale = 1) {
   }
   ctx.restore();
   // objetos de escena: franja superior
-  if (beat.kind !== 'reflect' && beat.kind !== 'hook' && beat.kind !== 'cta' && !cam.capTop) { ctx.save(); ctx.translate(540, 245); ctx.scale(0.5, 0.5); ctx.translate(-540, -600); drawProp(ctx, beat.p, t, g, project.lang, beat); ctx.restore(); }
+  // (sin carteles ni objetos flotando arriba: los objetos están dentro de la escena)
+  if (beat.p === 'light') drawProp(ctx, 'light', t, g, project.lang, beat);
   if (beat.kind === 'after' && (!beat.p || beat.p === 'confetti')) drawProp(ctx, 'confetti', t, g, project.lang, beat);
   if (beat.kind === 'cta') drawCTA(ctx, beat, t, g, opts);
+  if (chars.some(c => c.act === 'selfie')) { const fl = clamp(1 - Math.abs(t - 0.9) / 0.13, 0, 1); if (fl > 0) { ctx.fillStyle = `rgba(255,255,255,${0.85 * fl})`; ctx.fillRect(0, 0, W, H); } }
   if (beat.kind === 'twist' && t < 0.14) { ctx.fillStyle = `rgba(255,255,255,${1 - t / 0.14})`; ctx.fillRect(0, 0, W, H); }
   if (beat.kind === 'twist' && t > 0.05 && t < (beat.voiceLead || 0.5)) { ctx.save(); setFont(ctx, 180, 700); ctx.textAlign = 'center'; ctx.lineWidth = 16; ctx.strokeStyle = '#111'; ctx.fillStyle = BW ? '#fff' : '#ffd60a'; const s2 = backOut((t - 0.05) / 0.2); ctx.translate(540, 300); ctx.scale(s2, s2); ctx.rotate(-0.08); ctx.strokeText('¿¡!?', 0, 0); ctx.fillText('¿¡!?', 0, 0); ctx.restore(); }
   drawCaption(ctx, beat, t, opts, cam.capTop);

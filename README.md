@@ -32,16 +32,31 @@ Todo se genera en el navegador: no hay servidor, ni claves de API, ni costos.
 - **Subtítulos grandes**, con la palabra que se está diciendo resaltada.
 - **Voz automática** en español o inglés, **música** generada (alegre, enérgica, lo-fi) que baja sola cuando habla la voz, y **efectos de sonido** (whoosh, pop, boing, scratch de disco en el giro, aplausos, caja registradora, etc.).
 
+## Tipo de video (lo primero que eliges)
+
+- **🎙️ Con voces**: los muñequitos hablan en español (Miami/cubano) o inglés (EE. UU.), con subtítulos.
+- **🎵 Solo música con mensaje**: sin voces. Un muñequito hace algo con significado (subir una montaña, caerse y levantarse, caminar bajo la lluvia, sembrar una semilla) con música emotiva; el mensaje aparece poco a poco en frases cortas y grandes, y termina con una reflexión fuerte. No necesita clave.
+
 ## Voz
 
-| Voz | Precio | Calidad | Cómo se usa |
-|---|---|---|---|
-| **Voz neural (Piper)** | Gratis | Buena | Viene en la app. La primera vez descarga ≈60 MB (usa Wi‑Fi) y queda guardada. |
-| **ElevenLabs** | Gratis ≈10 min/mes (sin uso comercial); Starter ≈5 USD/mes para monetizar | Excelente, la más natural | Crea tu clave en elevenlabs.io → API Keys y pégala en la app. «Cargar mis voces» trae las voces de tu cuenta. |
-| **OpenAI** | De pago por uso (centavos por video), requiere saldo | Muy buena | Crea tu clave en platform.openai.com → API keys y pégala en la app. |
-| **Voz básica sin conexión** | Gratis | Robótica | Solo como respaldo cuando no hay internet. |
+Solo las voces más naturales de OpenAI (`gpt-4o-mini-tts`): **Onyx** y **Ash** (hombres), **Coral** y **Nova** (mujeres). Cada personaje recibe una voz de su género. Se les indica hablar con emoción y naturalidad, respirando en las comas, haciendo pausas en los puntos y «…», subiendo en las preguntas y con energía en las exclamaciones. Los guiones llevan puntuación completa (¿? ¡! , ; …).
 
-Las claves se guardan solo en el navegador del teléfono. Si una voz de la nube falla (clave mala o sin créditos), la app usa la voz neural gratuita y explica el motivo.
+La clave se guarda solo en el teléfono. Sin clave, el video sale con subtítulos pero sin voces.
+
+## Música y efectos
+
+- **Tu música**: botón «📂 Subir mi música» (mp3/m4a desde la app Archivos del iPhone), con estilo Emotiva, Alegre o Superación. Se guarda solo en el teléfono (IndexedDB). En la app hay una guía paso a paso para bajar música gratis de **Pixabay Music** (licencia gratuita, uso comercial permitido) desde el iPhone. Las canciones de Pixabay no se incluyen dentro de la app porque su licencia no permite redistribuirlas como archivos sueltos.
+- **Música incluida**: piano y guitarra de nailon **grabados de verdad** (no 8 bits), tocados por la app en tres estilos.
+- La música **baja sola** cuando alguien habla y vuelve a subir después.
+- **Efectos reales grabados** (pasos, golpes, whoosh, risas, cámara de fotos, pesas, monedas, lluvia…).
+
+## Lo que se dice, se ve
+
+Si una frase menciona algo concreto (el gym, Instagram/fotos, la comida, el café, el trabajo, el dinero, dormir, correr, estudiar, orar, la playa…), la escena corta a un «recuerdo» limpio donde el muñequito lo está haciendo: levantando pesas en el gym, haciéndose una selfie con flash, comiendo, con el laptop, etc. Los objetos van en las manos o en la escena; ya no caen carteles ni objetos del techo.
+
+## Muebles
+
+No hay sillas sueltas, banquetas, bancos ni mesitas de centro (tampoco en los fondos con IA). Los personajes solo se sientan en el sofá del escenario, a tamaño real; si no hay sofá, se quedan de pie, siempre en el suelo.
 
 ## Historias con IA y tendencias (opcional, usa tu clave de OpenAI)
 
@@ -102,10 +117,13 @@ munequitos-video/
 ├── js/content.js       temas, 24 situaciones, ganchos y llamados (ES/EN)
 ├── js/script.js        arma el guion y ajusta los tiempos a la duración
 ├── js/render.js        dibujo: muñecos, poses, entornos, cámara, subtítulos, CTA
-├── js/audio.js         música procedural, efectos y mezcla
-├── js/tts.js           voz (Piper neural + meSpeak sin conexión)
+├── js/audio.js         música (instrumentos reales o la tuya), efectos reales y mezcla
+├── js/tts.js           voces de OpenAI (Onyx, Ash, Coral, Nova)
+├── js/message.js       historias «solo música con mensaje»
+├── js/visuals.js       palabras → escena (lo que se dice, se ve)
+├── audio/              efectos y muestras de piano/guitarra (ver créditos)
 ├── js/export.js        MP4 (H.264 + AAC) con Mediabunny
-└── vendor/             Mediabunny + codificador AAC, piper-phonemize y meSpeak
+└── vendor/             Mediabunny + codificador AAC
 ```
 
 ### Agregar tus propias situaciones
@@ -114,7 +132,7 @@ En `js/content.js`, añade una entrada al tema que quieras. Cada línea es
 `L(textoES, textoEN, acciones, objeto, efecto)`:
 
 - **acciones**: `"A:talk B:shrug"` o `"all:laugh"`. Disponibles: `idle talk walk run wave hug cheer jump facepalm shrug sad cry angry laugh think type phone sleep fall point sit give dance wait shock love tired strong lift pray`.
-- **objeto** (aparece grande y animado): `clock:9:30 money pizza heart gift box chart_up chart_down trophy calendar coffee bulb rocket plant laptop phone confetti light`.
+- **objeto** (lo sostiene quien habla): `money pizza gift trophy coffee laptop phone light`.
 - **efecto**: `pop boing ding whoosh scratch applause cash sad drum type heart alarm laugh notif`.
 
 Para «dos caminos» usa `mode: 'caminos'`, pon en el inicio el objeto `sign:IzqES|DerES|IzqEN|DerEN` y marca cada repetición con `'left'` o `'right'`.
@@ -125,7 +143,8 @@ Como es una página estática, puedes subir la carpeta a GitHub Pages, Netlify o
 
 ## Créditos
 
-- [Piper](https://github.com/rhasspy/piper) (voces neuronales) mediante `@diffusionstudio/piper-wasm` y `onnxruntime-web`.
-- [meSpeak / eSpeak](https://www.masswerk.at/mespeak/) (GPL) para la voz sin conexión.
+- Efectos: «Oculus Audio Pack 1» de Meta, [Meta-open-sound](https://github.com/facebookincubator/Meta-open-sound), licencia **CC BY 4.0** (requiere crédito, uso comercial permitido).
+- Golpes y pasos: «Impact Sounds» de [Kenney](https://kenney.nl), **CC0**.
+- Piano y guitarra de nailon: instrumentos grabados de Meta-open-sound, **CC0**.
 - [Mediabunny](https://mediabunny.dev) y su codificador AAC (MPL-2.0; el codificador usa FFmpeg, LGPL).
 - Tipografía Fredoka (Google Fonts).

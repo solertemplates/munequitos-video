@@ -7,12 +7,14 @@ const ANTI_RULES = `CERO ABURRIMIENTO (lo más importante):
 - Diálogo de ping-pong: réplicas rápidas y respuestas inesperadas, máx 7 palabras por línea.
 - Regla de tres: dos veces algo normal y la tercera, absurda.
 - Sube la tensión hasta el giro; el giro le da otro sentido a todo y conecta con el principio (que den ganas de verlo otra vez).
+- PUNTUACIÓN COMPLETA (para que la voz respire y se emocione): usa comas, puntos, punto y coma, puntos suspensivos (…) y, en español, SIEMPRE los signos de apertura y cierre: ¿…? y ¡…!. Cada línea termina en punto, «…», ? o !. Pon pausas donde una persona real respiraría.
+- Cuando alguien mencione algo concreto (el gym, Instagram, la comida, el trabajo, el dinero…), nómbralo con su palabra: la app mostrará esa escena como un recuerdo.
 `;
 
-const ACTIONS = ['selfie', 'scroll', 'slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'type', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
-const PROPS = ['money', 'pizza', 'heart', 'gift', 'box', 'chart_up', 'chart_down', 'trophy', 'calendar', 'coffee', 'bulb', 'rocket', 'plant', 'laptop', 'phone', 'confetti', 'light'];
-const FX = ['punch', 'thud', 'fall', 'zip', 'gasp', 'laughs', 'sneak', 'pop', 'boing', 'ding', 'whoosh', 'scratch', 'applause', 'cash', 'sad', 'drum', 'type', 'heart', 'alarm', 'laugh', 'notif'];
-const ENVS = ['oficina', 'casa', 'parque', 'cafe', 'ciudad', 'playa', 'cocina', 'iglesia'];
+const ACTIONS = ['selfie', 'scroll', 'barbell', 'money', 'eat', 'coffee', 'laptop', 'read', 'slip', 'faint', 'trip', 'kneel', 'sneak', 'chase', 'flee', 'idle', 'talk', 'walk', 'run', 'wave', 'hug', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'phone', 'sleep', 'fall', 'point', 'sit', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'lift', 'pray'];
+const PROPS = ['money', 'pizza', 'gift', 'trophy', 'coffee', 'laptop', 'phone', 'light'];
+const FX = ['shutter', 'weights', 'steps', 'door', 'victory', 'levelup', 'effort', 'paper', 'punch', 'thud', 'fall', 'zip', 'gasp', 'laughs', 'sneak', 'pop', 'boing', 'ding', 'whoosh', 'scratch', 'applause', 'cash', 'sad', 'drum', 'type', 'heart', 'alarm', 'laugh', 'notif'];
+const ENVS = ['oficina', 'casa', 'parque', 'cafe', 'ciudad', 'playa', 'cocina', 'iglesia', 'gym'];
 const THEME_EN = { amistad: 'friendship', matrimonio: 'marriage', trabajo: 'work and jobs', emprendimiento: 'starting a small business', familia: 'family', dinero: 'money, prices and the economy', habitos: 'habits and health', redes: 'social media', fe: 'faith and God' };
 
 // Precios aproximados (USD) para el estimado
@@ -91,6 +93,7 @@ CERO ABURRIMIENTO (lo más importante):
 - Historias reales de la vida joven: el móvil, los reels, las selfies, los likes, la familia, los estudios, el primer trabajo, la amistad. Incluye escenas con el teléfono (selfies, buscando, pasando reels) usando el objeto "pov:reels", "pov:selfie" o "pov:search" para mostrar la pantalla en primera persona.
 - Además del humor, historias de RESILIENCIA y SUPERACIÓN (ej.: un hermano mayor que dejó de ser esclavo del teléfono ayuda a su hermanito).
 - La historia crece hasta un GIRO FINAL que sorprenda y den ganas de volver a verlo, y termina con una REFLEXIÓN esperanzadora que la gente quiera mandarle a un amigo.
+- PUNTUACIÓN COMPLETA (para que la voz respire y se emocione): usa comas, puntos, punto y coma, puntos suspensivos (…) y, en español, SIEMPRE los signos de apertura y cierre: ¿…? y ¡…!. Cada línea termina en punto, «…», ? o !. Pon pausas donde una persona real respiraría.
 Responde SOLO con JSON válido.`;
   const user = `Tema: ${themeName}. Tendencia o idea del momento: ${trend ? `"${trend}"` : '(ninguna)'}.
 Personajes: ${cast}.

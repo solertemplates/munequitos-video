@@ -31,6 +31,7 @@ export const ENVIRONMENTS = [
   { id: 'playa', emoji: '🏖️', name: R('Playa', 'Beach') },
   { id: 'cocina', emoji: '🍳', name: R('Cocina', 'Kitchen') },
   { id: 'iglesia', emoji: '⛪', name: R('Iglesia', 'Church') },
+  { id: 'gym', emoji: '🏋️', name: R('Gimnasio', 'Gym') },
   { id: 'vacio', emoji: '⬜', name: R('Fondo liso', 'Plain') },
 ];
 
