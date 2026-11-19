@@ -8,6 +8,7 @@ const L = (es, en, a = '', p = '', fx = '', core = false) => ({ t: { es, en }, a
 const R = (es, en) => ({ es, en });
 
 export const THEMES = [
+  { id: 'trabajador', emoji: '💪', name: R('Vida de trabajador', 'Working-class life') },
   { id: 'amistad', emoji: '🤝', name: R('Amistad', 'Friendship') },
   { id: 'matrimonio', emoji: '💍', name: R('Matrimonio', 'Marriage') },
   { id: 'trabajo', emoji: '💼', name: R('Trabajo', 'Work') },
@@ -39,7 +40,78 @@ const S = (id, env, mode, title, hook, setup, reps, twist, after, r1, r2) => ({
   id, env, mode, title: R(...title), hook: R(...hook), setup: [setup], reps, twist, after: after || undefined, reflect: [R(...r1), R(...r2)],
 });
 
+// Escena muda: cartel de tiempo + acción + efecto; la frase corta (q) es opcional
+const M = ({ c, a = 'A:idle', p = '', fx = 'pop', o, q, w, r }) => ({ card: R(...c), a, p, fx, o: o ? R(...o) : null, q: q ? R(...q) : null, w: w || 'A', r: r || null });
+
 export const SITUATIONS = {
+  // Historias casi mudas: las cuentan las acciones, las caras, los carteles de tiempo y los efectos.
+  // M({ c: [cartel es, en], a, p, fx, o: [onomatopeya es, en], q: [frase corta es, en] (opcional), w: quién la dice, r: reacción })
+  trabajador: [
+    {
+      id: 'quincena', env: 'casa', mode: 'mudo', silent: true,
+      title: R('El sueldo que dura un fin de semana', 'The paycheck that lasts one weekend'),
+      hook: R('POV: cobraste el viernes y el lunes ya estás pela\'o.', 'POV: you got paid Friday and you\'re broke by Monday.'),
+      scenes: [
+        M({ c: ['VIERNES 5:00 PM', 'FRIDAY 5:00 PM'], a: 'A:cheer', p: 'money', fx: 'cash', o: ['¡COBRÉ!', 'PAYDAY!'] }),
+        M({ c: ['VIERNES 5:05 PM', 'FRIDAY 5:05 PM'], a: 'A:phone', p: 'phone', fx: 'notif', q: ['¿El rent ya?', 'Rent already?'], r: 'shock' }),
+        M({ c: ['VIERNES 5:10 PM', 'FRIDAY 5:10 PM'], a: 'A:shock', p: 'chart_down', fx: 'cash', o: ['¡LUZ, CARRO, TELÉFONO!', 'BILLS!'] }),
+        M({ c: ['SÁBADO', 'SATURDAY'], a: 'A:chase', p: 'money', fx: 'zip', o: ['¡VUELVE!', 'COME BACK!'] }),
+        M({ c: ['DOMINGO', 'SUNDAY'], a: 'A:sad', fx: 'sad', q: ['Arroz con... arroz.', 'Rice with... more rice.'], r: 'laugh' }),
+        M({ c: ['LUNES 6:00 AM', 'MONDAY 6:00 AM'], a: 'A:tired', p: 'coffee', fx: 'alarm', o: ['¡A TRABAJAR!', 'BACK TO WORK!'] }),
+      ],
+      twist: M({ c: ['DÍA 15', 'DAY 15'], a: 'A:faint', p: 'phone', fx: 'thud', o: ['¡KO!', 'K.O.!'], q: ['¿Me cobran por no tener dinero?', 'They charge me for being broke?'] }),
+      reflect: [R('No eres malo con el dinero.', 'You\'re not bad with money.'), R('Es que la vida está carísima.', 'Life is just that expensive.')],
+      question: R('¿A ti también te dura el sueldo un fin de semana?', 'Does your paycheck last a weekend too?'),
+    },
+    {
+      id: 'turno', env: 'ciudad', mode: 'mudo', silent: true,
+      title: R('El turno de noche', 'The night shift'),
+      hook: R('Etiqueta a ese que trabaja de noche.', 'Tag the friend who works nights.'),
+      scenes: [
+        M({ c: ['9:00 PM', '9:00 PM'], a: 'A:walk B:wave', fx: 'whoosh', o: ['TODOS A DORMIR...', 'EVERYONE SLEEPS...'] }),
+        M({ c: ['11:00 PM', '11:00 PM'], a: 'A:lift', p: 'box', fx: 'punch', o: ['¡PUM!', 'THUMP!'] }),
+        M({ c: ['2:00 AM', '2:00 AM'], a: 'A:sleep', fx: 'boing', o: ['Zzz...', 'Zzz...'] }),
+        M({ c: ['3:00 AM', '3:00 AM'], a: 'A:shock', p: 'phone', fx: 'drum', o: ['¡RIIING!', 'RIIING!'], q: ['¡Estoy despierto, jefe!', 'I\'m awake, boss!'] }),
+        M({ c: ['6:00 AM', '6:00 AM'], a: 'A:tired', p: 'coffee', fx: 'uf', o: ['¡POR FIN!', 'FINALLY!'] }),
+        M({ c: ['7:00 AM', '7:00 AM'], a: 'C:jump A:tired', fx: 'laughs', o: ['¡PAPIII!', 'DADDY!'] }),
+      ],
+      twist: M({ c: ['7:05 AM', '7:05 AM'], a: 'B:talk A:faint', fx: 'thud', o: ['¡PLAF!', 'THUD!'], q: ['Mi amor, ¿me llevas al mall?', 'Babe, can you take me to the mall?'], w: 'B' }),
+      reflect: [R('Detrás de cada ojera hay alguien que no se rinde.', 'Behind every tired face is someone who never quits.'), R('Gracias a los que trabajan mientras otros duermen.', 'Respect to those who work while others sleep.')],
+      question: R('¿Quién más trabaja de noche?', 'Who else works the night shift?'),
+    },
+    {
+      id: 'aumento', env: 'oficina', mode: 'mudo', silent: true,
+      title: R('Pedirle aumento al jefe', 'Asking the boss for a raise'),
+      hook: R('Así se pide un aumento en la vida real.', 'How asking for a raise really goes.'),
+      scenes: [
+        M({ c: ['8:00 AM', '8:00 AM'], a: 'A:strong', fx: 'ding', q: ['Hoy pido aumento.', 'Today I ask for a raise.'] }),
+        M({ c: ['8:30 AM', '8:30 AM'], a: 'A:sneak', fx: 'sneak', o: ['shhh...', 'shhh...'] }),
+        M({ c: ['8:31 AM', '8:31 AM'], a: 'B:angry A:shock', fx: 'drum', o: ['¡GLUP!', 'GULP!'] }),
+        M({ c: ['8:32 AM', '8:32 AM'], a: 'A:talk B:think', fx: 'pop', q: ['Jefe... yo quería...', 'Boss... I was wondering...'] }),
+        M({ c: ['8:33 AM', '8:33 AM'], a: 'B:laugh A:sad', fx: 'laughs', o: ['¡JAJAJA!', 'HAHAHA!'] }),
+        M({ c: ['8:34 AM', '8:34 AM'], a: 'A:flee', fx: 'zip', o: ['¡ZAS!', 'ZOOM!'] }),
+      ],
+      twist: M({ c: ['VIERNES', 'FRIDAY'], a: 'B:cheer A:facepalm', p: 'money', fx: 'scratch', o: ['¡CARRO NUEVO!', 'NEW CAR!'], q: ['Con MI aumento.', 'With MY raise.'] }),
+      reflect: [R('Tu trabajo vale más de lo que te pagan.', 'Your work is worth more than they pay you.'), R('Nunca dejes de prepararte.', 'Never stop leveling up.')],
+      question: R('¿Cuándo fue tu último aumento?', 'When was your last raise?'),
+    },
+    {
+      id: 'muerto', env: 'casa', mode: 'mudo', silent: true,
+      title: R('Llegar muerto del trabajo', 'Getting home dead tired'),
+      hook: R('Este eres tú después de diez horas de trabajo.', 'This is you after a 10-hour shift.'),
+      scenes: [
+        M({ c: ['7:00 PM', '7:00 PM'], a: 'A:tired', fx: 'uf', o: ['10 HORAS DESPUÉS...', '10 HOURS LATER...'] }),
+        M({ c: ['7:01 PM', '7:01 PM'], a: 'A:faint', fx: 'thud', o: ['¡PLAF!', 'THUD!'] }),
+        M({ c: ['7:02 PM', '7:02 PM'], a: 'B:talk A:sleep', fx: 'pop', q: ['Mi amor, ¿y la cena?', 'Babe, what\'s for dinner?'], w: 'B', r: 'laugh' }),
+        M({ c: ['7:03 PM', '7:03 PM'], a: 'C:jump A:shock', fx: 'boing', o: ['¡PAPÁÁÁ!', 'DADDY!'] }),
+        M({ c: ['10:00 PM', '10:00 PM'], a: 'A:phone', p: 'phone', fx: 'notif', o: ['UN VIDEO MÁS...', 'ONE MORE VIDEO...'] }),
+        M({ c: ['1:00 AM', '1:00 AM'], a: 'A:phone', p: 'clock:1:00', fx: 'drum', q: ['Uno más y me acuesto.', 'One more and I\'m done.'] }),
+      ],
+      twist: M({ c: ['5:30 AM', '5:30 AM'], a: 'A:faint', p: 'clock:5:30', fx: 'alarm', o: ['¡NOOO!', 'NOOO!'] }),
+      reflect: [R('Descansar también es parte del trabajo.', 'Rest is part of the job too.'), R('Cuídate. Nadie trabaja por ti.', 'Take care of yourself. Nobody works for you.')],
+      question: R('¿Tú también haces esto?', 'Do you do this too?'),
+    },
+  ],
   amistad: [
     S('tarde', 'cafe', 'esc', ['El socio que siempre llega tarde', 'The friend who\'s always late'],
       ['Todos tenemos un socio que llega tarde. TODOS.', 'We all have that one friend who\'s always late. ALL of us.'],
@@ -397,6 +469,7 @@ export const SITUATIONS = {
 
 // Ganchos por tema (se combinan con el gancho propio de la situación)
 const THEME_HOOKS = {
+  trabajador: [R('Etiqueta a ese que siempre está pela\'o.', 'Tag the friend who\'s always broke.'), R('Este eres tú a fin de mes.', 'This is you at the end of the month.'), R('Si trabajas solo pa\' pagar los bills, esto es pa\' ti.', 'If you work just to pay bills, this one\'s for you.')],
   amistad: [R('Etiqueta a ese amigo que es EXACTAMENTE así.', 'Tag the friend who is EXACTLY like this.'), R('La amistad de verdad se prueba en momentos así.', 'Real friendship gets tested in moments like this.'), R('Si tienes un socio así, no lo sueltes.', 'If you\'ve got a friend like this, never let go.')],
   matrimonio: [R('Si estás casado, esto te va a sonar familiar.', 'If you\'re married, this is gonna sound familiar.'), R('Esto nadie te lo cuenta antes de casarte.', 'Nobody tells you this before you get married.'), R('El matrimonio de verdad. Sin filtro.', 'Real marriage. No filter.')],
   trabajo: [R('Esto pasa en TODOS los trabajos del mundo.', 'This happens at EVERY job on the planet.'), R('Tu jefe no quiere que veas esto.', 'Your boss doesn\'t want you to see this.'), R('Si trabajas, esto es pa\' ti.', 'If you\'ve got a job, this one\'s for you.')],
@@ -478,6 +551,21 @@ export function mulberry(seed) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+// Preguntas finales en pantalla (para que la gente comente)
+const QUESTIONS = {
+  _: [R('¿A ti también te pasa?', 'Does this happen to you too?'), R('¿Este eres tú o tu pareja?', 'Is this you or your partner?'), R('¿A quién vas a etiquetar?', 'Who are you tagging?'), R('¿Te ha pasado? Cuéntame abajo.', 'Been there? Tell me below.'), R('¿Tú qué hubieras hecho?', 'What would you have done?')],
+  trabajador: [R('¿A ti también te pasa?', 'Does this happen to you too?'), R('¿Cuántas horas trabajas tú?', 'How many hours do you work?'), R('¿A quién vas a etiquetar?', 'Who are you tagging?')],
+  dinero: [R('¿A ti también se te va el sueldo así?', 'Does your paycheck vanish like this too?'), R('¿A ti también te pasa?', 'Does this happen to you too?'), R('¿Quién más está pela\'o?', 'Who else is broke?')],
+  matrimonio: [R('¿Este eres tú o tu pareja?', 'Is this you or your partner?'), R('¿A ti también te pasa?', 'Does this happen to you too?'), R('Etiqueta a tu pareja.', 'Tag your partner.')],
+};
+export function questionOptions(themeId, situation, seed = 1) {
+  const pool = [...(QUESTIONS[themeId] || []), ...QUESTIONS._];
+  const out = []; if (situation && situation.question) out.push(situation.question);
+  const rnd = mulberry(seed * 31 + 5);
+  for (let guard = 0; out.length < 3 && guard < 50; guard++) { const q = pool[Math.floor(rnd() * pool.length)]; if (!out.some(x => x.es === q.es)) out.push(q); }
+  return out;
 }
 
 export function hookOptions(themeId, situation, seed = 1) {

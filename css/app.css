@@ -106,3 +106,4 @@ button.download { width: 100%; border: 0; cursor: pointer; font-size: 17px; }
 .cost { margin: 0 0 10px; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 2px solid var(--ac2); font-size: 15px; }
 .cost b { font-size: 17px; }
 .opt .tag.ia { background: #7048e8; color: #fff; }
+.series { margin: 10px 0 4px; padding: 10px 12px; border-radius: 14px; background: var(--chip); border: 2px solid var(--bd); }

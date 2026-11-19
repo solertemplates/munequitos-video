@@ -63,6 +63,15 @@ En **8 · Fondos con IA**, la IA dibuja 2–3 escenarios detallados por video (s
 - **Planos de reacción**: después de casi cada línea, primer plano del que escucha con cara exagerada, una exclamación hablada («¡Ñooo!», «¡Uf!», «¡Jajaja!»…) y un efecto de sonido marcado.
 - **Escenas cortas**: un corte de plano cada 1–2 s (plano de los dos, plano de uno, primer plano), personajes que entran y salen corriendo, golpes, caídas, risas y sorpresas por encima de la música.
 
+## La serie de Tito (videos para hacerse virales)
+
+- **Tema «💪 Vida de trabajador»** (el primero): el sueldo que dura un fin de semana, el turno de noche, pedirle aumento al jefe, llegar muerto del trabajo.
+- **Historias casi mudas**: las cuentan las acciones, las caras, los **carteles de tiempo** («6:00 AM», «DÍA 15», «VIERNES») y los efectos; solo de vez en cuando una frase corta y graciosa. Nadie narra lo que hace.
+- **Protagonista fijo**: **Tito**, con gorra roja y camiseta verde, sale en todos los videos y su nombre aparece en el gancho. En «2 · Personajes» puedes cambiarle el nombre y la personalidad (la usa la IA al escribir). Su esposa lleva pelo largo; el jefe, corbata roja.
+- **«Este eres tú»**: ganchos tipo «POV: cobraste el viernes y el lunes ya estás pela'o» o «Etiqueta a ese que trabaja de noche».
+- **Pregunta final en pantalla** antes del llamado a la acción («¿A ti también te pasa?», «¿Este eres tú o tu pareja?»…), con 3 opciones para elegir en «6 · Llamado a la acción». Sale en todos los videos.
+- **✨ Escribir 3 historias con IA** ahora escribe episodios de la serie con Tito, casi mudos, priorizando dinero, deudas, renta, cansancio, el jefe y el trabajo de noche.
+
 ## Más acción, menos diálogo (activado por defecto)
 
 En **3 · Duración**, la casilla **🎬 Más acción, menos diálogo**:

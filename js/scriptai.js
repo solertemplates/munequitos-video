@@ -59,63 +59,54 @@ export async function searchTrends(apiKey, { lang, theme }) {
 }
 
 // 2) Escribir 3 historias nuevas en el formato de la app
-export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur }) {
-  const reps = dur === 's' ? 6 : dur === 'm' ? 10 : 13;
+export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur, hero, heroBio }) {
+  const nScenes = dur === 's' ? 5 : dur === 'm' ? 7 : 9;
   const es = lang === 'es';
+  const name = (hero || '').trim() || (es ? 'el protagonista' : 'the hero');
   const voice = es
-    ? `IDIOMA Y TONO: español como se habla en la calle en Miami: sabor cubano y de los latinos de Estados Unidos, fácil de entender para cualquier latino. Mete alguna palabra en inglés de forma natural (el rent, el bill, chequear, parquear, el mall, el weekend, full, brother, nice, sorry, my God). Expresiones permitidas con moderación: asere, qué volá, tremendo, candela, pa', na', mijo/mija, ahorita, dale. NADA de frases de libro ni que suenen a traducción.`
-    : `LANGUAGE AND TONE: natural, casual American English, the way people actually talk. No textbook phrasing.`;
-  const sys = `Eres un guionista top de videos virales de muñequitos de palitos (Shorts, Reels, TikTok) con millones de vistas. ${voice}
-HUMOR: chistes que den risa DE VERDAD: picardía, exageración, sarcasmo cariñoso, situaciones con las que todo el mundo se identifica. Picante pero LIMPIO: sin groserías, sin insultos, sin doble sentido sexual, sin burlarse de grupos.
-MENOS PALABRAS, MÁS ACCIÓN: la MITAD de las líneas de "reps" son ACCIONES MUDAS (comedia física sin voz): resbalones, desmayos, tropezones, persecuciones, huidas corriendo, entrar de puntillas, arrodillarse. Una acción muda lleva "silent":true, "t":"" y una onomatopeya corta de cómic en "o" (¡PLAF!, ¡ZAS!, ¡CATAPLUM!, ¡PUM!). Las líneas habladas, máximo 6 palabras.\nDIÁLOGO: es una conversación de ida y vuelta entre los personajes, NO un narrador hablando solo. Alterna quién habla casi en cada línea (A, B, A, B…); el narrador (A contando) solo en 1 o 2 líneas. El que escucha SIEMPRE reacciona (risa, susto, cara de 'no puede ser').\nRITMO: frases cortísimas (máx 8 palabras; el giro hasta 14). Cada línea es un golpe nuevo (sorpresa, chiste, exageración, alguien entra corriendo, algo se cae) y la situación CRECE hasta el giro final, con una mini-sorpresa a la mitad, para que nadie quiera irse antes del final. Cero relleno.
-FINAL: un giro sorprendente y después una reflexión corta que emocione, sin cursilería (2 frases, máx 12 palabras cada una). NO pongas llamado a la acción (la app lo agrega).
+    ? `IDIOMA: español de la calle en Miami (sabor cubano y latino de EE. UU.), fácil para cualquier latino, con alguna palabra en inglés natural (el rent, los bills, el jefe, el weekend, full, brother). Nada de frases de libro.`
+    : `LANGUAGE: natural, casual American English.`;
+  const sys = `Eres el guionista de una serie viral de muñequitos de palitos (TikTok, Reels, Shorts) con millones de vistas. ${voice}
+PROTAGONISTA FIJO (rol A, sale en todos los episodios): ${name}. Personalidad: ${heroBio || 'trabajador, siempre cansado y sin dinero, pero optimista y chistoso'}. La gente debe encariñarse con él.
+TEMAS PRIORITARIOS: la vida de la gente trabajadora: el sueldo que no alcanza, las deudas, la renta, los bills, el cansancio, el jefe, salir de noche al trabajo y volver muerto, los precios. Situaciones TAN reales que la gente diga "este eres tú" y etiquete a un amigo o a su pareja.
+CÓMO SE CUENTA: casi SIN PALABRAS. La historia la cuentan las acciones, las caras, los carteles de tiempo ("6:00 AM", "DÍA 15", "VIERNES", "3 HORAS DESPUÉS") y los efectos de sonido. El protagonista NO narra lo que hace (prohibido "ahora voy al trabajo"). Como mucho una frase corta y graciosa (máx 6 palabras) cada 2 o 3 escenas; puede decirla otro personaje.
+HUMOR: picante pero limpio, sin groserías. Cada escena trae algo nuevo (sorpresa, exageración, golpe) y todo crece hasta un giro final que dé risa o toque el corazón.
 Responde SOLO con JSON válido.`;
-  const user = `Tema: ${themeName}. Tendencia o noticia del momento para usar en la historia: ${trend ? `"${trend}"` : '(ninguna: usa algo actual de la vida diaria, precios o trabajo)'}.
-Personajes: ${nChars} (roles A, B, C, D; A es el protagonista y narra).
-Escribe 3 historias DISTINTAS. Usa estructuras variadas: "esc" (repetición que sube + giro) o "caminos" (alegoría de dos caminos con letreros).
-Formato exacto:
+  const user = `Tema: ${themeName}. Tendencia o noticia del momento para usar: ${trend ? `"${trend}"` : '(ninguna: usa algo de la vida diaria del trabajador)'}.
+Personajes: ${nChars} (roles ${['A', 'B', 'C', 'D'].slice(0, nChars).join(', ')}; A = ${name}).
+Escribe 3 episodios DISTINTOS. Formato exacto:
 {"ideas":[{
- "title":"título corto y llamativo",
- "mode":"esc" o "caminos",
+ "title":"título corto",
  "env":"uno de: ${ENVS.join(', ')}",
- "hooks":["3 ganchos distintos para los primeros 2 segundos, máx 10 palabras, que obliguen a quedarse"],
- "setup":{"w":"A","t":"línea","a":"A:talk B:shrug","p":"","fx":"pop","r":"shock"},
- "reps":[ exactamente ${reps} objetos, alternando hablados y mudos. Hablado: {"w":"quién lo dice (A, B…)","t":"línea","a":"acciones","p":"objeto","fx":"efecto","r":"reacción del que escucha: laugh, shock, facepalm, love o cry"}. Mudo: {"silent":true,"t":"","o":"¡PLAF!","a":"A:slip B:laugh","fx":"thud","r":"laugh"} ],
- "twist":{"w":"A o B","t":"giro final","a":"...","p":"...","fx":"scratch","r":"shock"},
- "after":{"t":"remate corto y gracioso después del giro","a":"...","p":"","fx":"laugh"},
- "reflect":["frase 1","frase 2"],
- "signs":["letrero izquierdo","letrero derecho"]  (solo si mode es "caminos": camino malo a la izquierda, bueno a la derecha; en "caminos" cada rep lleva además "side":"left" o "right", alternando)
+ "hooks":["3 ganchos para los primeros 2 segundos, máx 10 palabras, estilo 'POV: …' o 'Este eres tú cuando…' o 'Etiqueta a…'"],
+ "scenes":[ exactamente ${nScenes} escenas {"card":"cartel de tiempo corto (máx 18 caracteres)","a":"acciones","p":"objeto","fx":"efecto","o":"onomatopeya o texto corto de cómic (máx 16 caracteres) o vacío","q":"frase corta hablada o vacío","w":"quién dice la frase (A, B…)","r":"reacción del otro: laugh, shock, facepalm, love o cry"} ],
+ "twist":{"card":"...","a":"...","p":"...","fx":"scratch","o":"...","q":"frase del giro (máx 10 palabras) o vacío","w":"A"},
+ "reflect":["frase corta que toque el corazón","segunda frase corta"],
+ "question":"pregunta final corta para que comenten, como '¿A ti también te pasa?'"
 }]}
-Reglas de los campos:
-- "a": acciones de los personajes con el formato "A:accion B:accion" o "all:accion". Acciones válidas: ${ACTIONS.join(', ')}. Solo roles que existan (${['A', 'B', 'C', 'D'].slice(0, nChars).join(', ')}).
-- "p": objeto grande que aparece en pantalla (o ""): ${PROPS.join(', ')}, o "clock:H:MM" para mostrar una hora.
-- "fx": efecto de sonido, VARÍALOS: ${FX.join(', ')}.
-- Cambia la acción en cada línea para que haya movimiento constante.`;
+Reglas: "a" con formato "A:accion B:accion" o "all:accion"; acciones válidas: ${ACTIONS.join(', ')}. "p": ${PROPS.join(', ')}, "clock:H:MM" o "". "fx" (VARÍALOS, que suenen fuerte): ${FX.join(', ')}. Al menos 2 de cada 3 escenas SIN frase ("q":""). Cambia la acción en cada escena.`;
   const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
   const data = extractJSON(responseText(j));
   return (data.ideas || []).slice(0, 3).map((idea, k) => toSituation(idea, k, lang, nChars));
 }
 
-// Convierte la respuesta de la IA en una "situación" de la app, validando todo
+// Convierte la respuesta de la IA en un episodio (historia casi muda) de la app, validando todo
 function toSituation(idea, k, lang, nChars) {
   const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
-  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && ACTIONS.includes(act); }).join(' ') || 'A:talk';
-  const cleanP = p => { p = String(p || ''); return PROPS.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
-  const cleanFx = fx => (FX.includes(fx) ? fx : 'pop');
-  const both = t => ({ es: String(t || '').trim(), en: String(t || '').trim() });
   const REACTS = ['laugh', 'shock', 'facepalm', 'love', 'cry'];
-  const mk = (o, extra = {}) => ({ t: both(o && o.t), a: cleanA(o && o.a), p: cleanP(o && o.p), fx: cleanFx(o && o.fx), w: o && roles.includes(o.w) ? o.w : undefined, r: o && REACTS.includes(o.r) ? o.r : undefined, core: false, ...extra });
-  const caminos = idea.mode === 'caminos' && Array.isArray(idea.signs) && idea.signs.length >= 2;
-  const env = caminos ? 'caminos' : (ENVS.includes(idea.env) ? idea.env : 'casa');
-  const setup = mk(idea.setup);
-  if (caminos) { const sg = idea.signs.map(s => String(s).slice(0, 22)); setup.p = `sign:${sg[0]}|${sg[1]}|${sg[0]}|${sg[1]}`; }
-  const reps = (idea.reps || []).filter(r => r && (r.t || r.silent)).map(r => { const o = mk(r, { core: caminos }); if (r.silent || !r.t) { o.silent = true; o.o = String(r.o || '¡ZAS!').slice(0, 14); o.t = { es: '', en: '' }; } if (caminos) o.p = r.side === 'left' ? 'left' : 'right'; return o; });
+  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && ACTIONS.includes(act); }).join(' ') || 'A:idle';
+  const cleanP = p => { p = String(p || ''); return PROPS.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
+  const both = t => ({ es: String(t || '').trim(), en: String(t || '').trim() });
+  const scene = o => {
+    o = o || {}; const q = String(o.q || '').trim(); const on = String(o.o || '').trim().slice(0, 18); const card = String(o.card || '').trim().slice(0, 20);
+    return { card: card ? both(card) : null, a: cleanA(o.a), p: cleanP(o.p), fx: FX.includes(o.fx) ? o.fx : 'pop', o: on ? both(on) : null, q: q ? both(q) : null, w: roles.includes(o.w) ? o.w : 'A', r: REACTS.includes(o.r) ? o.r : null };
+  };
   const hooks = (idea.hooks || []).filter(Boolean).slice(0, 3).map(both);
   return {
-    id: 'ia' + k + Date.now().toString(36), ai: true, env, mode: caminos ? 'caminos' : 'esc',
+    id: 'ia' + k + Date.now().toString(36), ai: true, silent: true, mode: 'mudo', env: ENVS.includes(idea.env) ? idea.env : 'casa',
     title: both(idea.title), hook: hooks[0] || both(idea.title), hooks,
-    setup: [setup], reps, twist: mk(idea.twist), after: idea.after && idea.after.t ? mk(idea.after) : undefined,
-    reflect: (idea.reflect || []).slice(0, 2).map(both),
+    scenes: (idea.scenes || []).map(scene).filter(x => x.card || x.q || x.o), twist: scene(idea.twist),
+    reflect: (idea.reflect || []).slice(0, 2).map(both), question: idea.question ? both(idea.question) : null,
   };
 }
 

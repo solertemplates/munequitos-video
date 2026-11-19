@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=5">
+<link rel="stylesheet" href="css/app.css?v=6">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -47,6 +47,13 @@
         <div class="field">
           <label data-i18n="style">Estilo</label>
           <div id="colorSeg" class="seg"></div>
+        </div>
+      </div>
+      <div class="series">
+        <label class="check"><input id="seriesOn" type="checkbox" checked> <span data-i18n="seriesOn">⭐ Protagonista fijo de la serie (sale en todos los videos)</span></label>
+        <div id="seriesCfg" class="row">
+          <div class="field grow"><label class="lbl" for="seriesName" data-i18n="seriesName">Nombre</label><input id="seriesName" type="text" maxlength="18" placeholder="Tito"></div>
+          <div class="field grow" style="flex-basis:100%"><label class="lbl" for="seriesBio" data-i18n="seriesBio">Personalidad (la usa la IA al escribir)</label><input id="seriesBio" type="text" maxlength="200"></div>
         </div>
       </div>
       <label class="lbl" data-i18n="env">Entorno</label>
@@ -86,6 +93,8 @@
       <p class="hint" data-i18n="ctaHint" style="margin:0 0 8px">Toca uno o dos (se combinan en una sola frase).</p>
       <div id="ctas" class="options"></div>
       <p id="ctaPreview" class="ctaPreview"></p>
+      <label class="lbl" data-i18n="qLbl" style="margin-top:14px">Pregunta final en pantalla (para que comenten)</label>
+      <div id="questions" class="options"></div>
       <details class="cfg">
         <summary data-i18n="ctaCfg">Configurar página y enlace</summary>
         <label class="lbl" for="page" data-i18n="pageName">Nombre de tu página (aparece en el video)</label>
@@ -170,6 +179,6 @@
   </section>
 </main>
 <footer class="foot" data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</footer>
-<script type="module" src="js/app.js?v=5"></script>
+<script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>

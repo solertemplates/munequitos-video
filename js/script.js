@@ -23,18 +23,21 @@ function pickReps(reps, n) {
   return [...idx].sort((a, b) => a - b).map(i => reps[i]);
 }
 
-export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
+export function buildBeats({ situation, lang, dur, hook, ctas, settings, question }) {
   const D = DURATIONS[dur];
   const T = o => (typeof o === 'string' ? o : o[lang]);
   const beats = [];
   const env = situation.env;
-  const signProp = (situation.setup.find(s => s.p.startsWith('sign:')) || {}).p || '';
+  const signProp = ((situation.setup || []).find(s => s.p.startsWith('sign:')) || {}).p || '';
   const baseEnv = settings.env && settings.env !== 'auto' ? settings.env : (env === 'caminos' ? 'parque' : env);
   const mk = (kind, line, extra = {}) => ({
     kind, text: T(line.t || line), a: line.a || '', p: line.p || '', fx: line.fx || '', who: line.w || null, r: line.r || null,
     env: extra.env || baseEnv, ...extra,
   });
 
+  const NAME = (settings.seriesName || '').trim();
+  const nm = t => (NAME ? String(t).replace(/\{name\}/g, NAME) : String(t).replace(/\{name\}/g, lang === 'es' ? 'tú' : 'you'));
+  if (situation.mode === 'mudo') return buildSilent({ situation, lang, dur, hook: { es: nm(hook.es), en: nm(hook.en) }, ctas, settings, question, T, baseEnv, D, mk });
   beats.push(mk('hook', { t: hook, a: situation.mode === 'caminos' ? 'all:think' : 'all:shock', fx: 'whoosh' }));
   situation.setup.forEach(s => beats.push(mk('setup', s, situation.mode === 'caminos' ? { env: 'caminos', sign: signProp } : {})));
   const nSpoken = settings.action ? Math.max(2, D.reps - (dur === 's' ? 1 : 2)) : D.reps;
@@ -48,6 +51,30 @@ export function buildBeats({ situation, lang, dur, hook, ctas, settings }) {
   const refl = situation.reflect.map(T);
   if (D.reflect === 1) beats.push(mk('reflect', { t: refl.join(' '), a: 'A:hug B:hug all:idle', p: '' }));
   else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
+  if (question) beats.push(mk('question', { t: T(question), a: 'all:shrug', p: '', fx: 'ding' }));
+  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctaTypesFor(ctas) }));
+  return beats;
+}
+
+// Historias mudas (serie): cartel de tiempo + acción + efectos; solo frases cortas de vez en cuando
+const REACT_OF = a => (/faint|shock|flee|sneak/.test(a) ? 'shock' : /laugh|cheer|dance|jump/.test(a) ? 'laugh' : /sad|cry|tired|sleep/.test(a) ? 'facepalm' : /love|hug|kneel/.test(a) ? 'love' : 'laugh');
+function buildSilent({ situation, lang, dur, hook, ctas, settings, question, T, baseEnv, D, mk }) {
+  const beats = [];
+  const n = dur === 's' ? 4 : 6;
+  const sc = situation.ai ? situation.scenes.slice() : pickReps(situation.scenes, Math.min(n, situation.scenes.length));
+  const scene = (m, kind, i, total) => {
+    const card = m.card ? T(m.card) : '';
+    if (m.q) return mk(kind === 'twist' ? 'twist' : 'rep', { t: m.q, a: m.a, p: m.p, fx: m.fx }, { card, who: m.w || 'A', r: m.r || null, level: (i + 1) / total, onoma: m.o ? T(m.o) : '', onomaT: 0.25 });
+    const g = { a: m.a, sfx: [[m.fx || 'pop', 0.05]].concat(kind === 'twist' ? [['scratch', 0]] : []), react: m.r || REACT_OF(m.a) };
+    return { kind: 'act', text: '', a: m.a, p: m.p || '', fx: '', gag: g, onoma: m.o ? T(m.o) : '', onomaT: 0.3, actDur: kind === 'twist' ? 2.3 : 1.8, card, env: baseEnv, level: (i + 1) / total, twistLike: kind === 'twist' };
+  };
+  beats.push(Object.assign(mk('hook', { t: hook, a: 'A:tired B:idle', fx: 'whoosh' }), { mute: true }));
+  sc.forEach((m, i) => beats.push(scene(m, 'rep', i, sc.length)));
+  beats.push(scene(situation.twist, 'twist', sc.length, sc.length));
+  const refl = situation.reflect.map(T);
+  if (D.reflect === 1) beats.push(mk('reflect', { t: refl[0], a: 'all:idle', p: '' }));
+  else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
+  if (question) beats.push(mk('question', { t: T(question), a: 'all:shrug', p: '', fx: 'ding' }));
   beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctaTypesFor(ctas) }));
   return beats;
 }
@@ -60,16 +87,16 @@ export function speakable(text) {
 // Asigna tiempos: beat.start, beat.dur, voiceLead y, si hay reacción, reactStart (relativo al beat).
 export function timeBeats(beats, dur, allowDrop = true) {
   const D = DURATIONS[dur];
-  const base = { hook: 0.3, setup: 0.2, rep: 0.15, twist: 0.45, after: 0.25, reflect: 0.75, cta: 0.6 };
-  const lead = { hook: 0.12, setup: 0.08, rep: 0.06, twist: 0.5, after: 0.08, reflect: 0.3, cta: 0.2 };
-  const minD = { hook: 2.0, setup: 1.6, rep: 1.4, twist: 2.4, after: 1.6, reflect: 3.0, cta: 3.2 };
+  const base = { hook: 0.3, setup: 0.2, rep: 0.15, twist: 0.45, after: 0.25, reflect: 0.75, cta: 0.6, question: 0.7 };
+  const lead = { hook: 0.12, setup: 0.08, rep: 0.06, twist: 0.5, after: 0.08, reflect: 0.3, cta: 0.2, question: 0.2 };
+  const minD = { hook: 2.0, setup: 1.6, rep: 1.4, twist: 2.4, after: 1.6, reflect: 3.0, cta: 3.2, question: 2.6 };
   const minFor = b => (b.kind === 'cta' && b.ctaTypes && b.ctaTypes.length > 1 ? 3.8 : minD[b.kind]);
   let total = 0;
   const calc = (padMul) => {
     total = 0;
     for (const b of beats) {
       if (b.kind === 'act') { b.voiceLead = 0; b.voiceDur = 0; b.dur = b.actDur || 1.7; if (b.react) b.reactStart = b.dur - 0.6; b.start = total; total += b.dur; continue; }
-      const vd = b.voiceDur || estimateDur(b.text, D.pace);
+      const vd = b.mute ? Math.max(2.2, estimateDur(b.text, 1.25)) : (b.voiceDur || estimateDur(b.text, D.pace));
       b.voiceLead = lead[b.kind];
       const speechEnd = b.voiceLead + vd;
       if (b.react) {

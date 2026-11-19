@@ -3,6 +3,7 @@ export const W = 1080, H = 1920, GY = 1390;
 const TAU = Math.PI * 2;
 const ROLES = ['A', 'B', 'C', 'D'];
 export const LOOKS = {
+  quincena: {}, turno: { B: 'hair', C: 'kid' }, aumento: { B: 'tie' }, muerto: { B: 'hair', C: 'kid' },
   cenar: { B: 'hair' }, orar: {}, lista: {}, detalles: { B: 'hair' }, celular: { B: 'hair' }, sueter: { B: 'hair', C: 'kid' },
   abuela: { B: 'granny' }, mama: { B: 'hair' }, jugar: { C: 'kid' }, opinan: { C: 'hair' }, grupo: {}, foto: { B: 'hair' },
 };
@@ -466,16 +467,23 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   ctx.quadraticCurveTo(mid[0] + px * (wS + 2), mid[1] + py * (wS + 2), sh[0] + px * wS, sh[1] + py * wS + 10);
   ctx.quadraticCurveTo(sh[0] + up[0] * 12, sh[1] + up[1] * 12 - 4, sh[0] - px * wS, sh[1] - py * wS + 10);
   ctx.closePath(); ctx.fillStyle = shirt; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
+  if (ch.tie) { const tx = sh[0], ty = sh[1] + 16; ctx.beginPath(); ctx.moveTo(tx - 9, ty); ctx.lineTo(tx + 9, ty); ctx.lineTo(tx + 13, ty + 58); ctx.lineTo(tx, ty + 76); ctx.lineTo(tx - 13, ty + 58); ctx.closePath(); ctx.fillStyle = BW ? '#555' : '#e8262d'; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 4.5; ctx.stroke(); }
   // cabeza pegada sobre la camiseta (sin cuello)
   const ha = lean + (P.tilt || 0) + (speech && speech.talking ? speech.amp * 0.07 * Math.sin(g * 5) : 0);
   const HD = SK.head - 10;
   const hx = sh[0] + f * Math.sin(ha) * HD, hy = sh[1] - Math.cos(ha) * HD;
-  if (ch.look === 'hair' || ch.look === 'granny') { ctx.fillStyle = ch.look === 'granny' ? '#8a8a8a' : FIG; ctx.beginPath(); ctx.ellipse(hx - f * 6, hy + 16, SK.head + 9, SK.head + 20, 0, 0, TAU); ctx.fill(); }
+  if (ch.look === 'hair') { ctx.fillStyle = FIG; ctx.beginPath(); ctx.ellipse(hx - f * 30, hy + 6, SK.head * 0.75, SK.head * 1.05, -f * 0.15, 0, TAU); ctx.fill(); }
   const stretch = P.emo === 'shock' ? 1.06 : 1;
   ctx.save(); ctx.translate(hx, hy); ctx.scale(1 / Math.sqrt(stretch), stretch); circle(ctx, 0, 0, SK.head, '#ffffff', FIG, 8); ctx.restore();
   if (ch.look === 'hair') { ctx.fillStyle = FIG; ctx.beginPath(); ctx.arc(hx, hy - 4, SK.head + 4, Math.PI * 1.08, Math.PI * 1.92); ctx.quadraticCurveTo(hx, hy - SK.head + 18, hx - (SK.head + 2), hy - 12); ctx.fill(); }
   if (ch.look === 'granny') { circle(ctx, hx - f * 4, hy - SK.head - 12, 24, '#8a8a8a', FIG, 5); for (const dx of [-22, 22]) circle(ctx, hx + f * 9 + dx, hy - 12, 20, null, FIG, 4); }
   if (ch.look === 'kid') { line(ctx, [[hx - 10, hy - SK.head + 2], [hx - 2, hy - SK.head - 24], [hx + 8, hy - SK.head - 2], [hx + 18, hy - SK.head - 20], [hx + 24, hy - SK.head + 6]], FIG, 7); }
+  if (ch.cap) { // gorra roja del protagonista de la serie
+    const capC = BW ? '#444' : '#e8262d';
+    ctx.beginPath(); ctx.ellipse(hx + f * (SK.head * 0.62), hy - SK.head * 0.42, 46, 12, f * 0.12, 0, TAU); ctx.fillStyle = capC; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(hx, hy - 6, SK.head + 3, Math.PI * 1.06, Math.PI * 1.94); ctx.quadraticCurveTo(hx, hy - SK.head * 0.5, hx - (SK.head + 1), hy - 16); ctx.closePath(); ctx.fillStyle = capC; ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
+    circle(ctx, hx, hy - SK.head - 1, 7, capC, FIG, 4);
+  }
   drawFace(ctx, hx, hy, f, P.emo, speech, g, ch.seed, gaze);
   // brazos de palito saliendo de la manga, con codo flexible
   arms.forEach((a, i) => { limb(ctx, cuffs[i], [lerp(a[0][0], a[1][0], 0.95), lerp(a[0][1], a[1][1], 0.95)], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); });
@@ -609,10 +617,34 @@ function activeWord(beat, t, nWords) {
   return { p: clamp(vt / vd, 0, 1), started: vt >= 0 };
 }
 
+// Cartel de tiempo estilo sello: "6:00 AM", "DÍA 15"
+function drawCard(ctx, beat, t) {
+  if (!beat.card) return;
+  const k = backOut(t / 0.22);
+  ctx.save(); setFont(ctx, 56, 700); const tw = ctx.measureText(beat.card).width + 56;
+  ctx.translate(40 + tw / 2, 108); ctx.rotate(-0.04); ctx.scale(k, k);
+  ctx.fillStyle = '#111'; rr(ctx, -tw / 2, -44, tw, 88, 18); ctx.fill(); ctx.strokeStyle = BW ? '#fff' : '#ffd60a'; ctx.lineWidth = 5; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(beat.card, 0, 3); ctx.textBaseline = 'alphabetic';
+  ctx.restore();
+}
+function drawQuestion(ctx, beat, t) {
+  const k = backOut(t / 0.3);
+  ctx.save(); const { size, lines } = fitText(ctx, beat.text, 860, 3, 70, 44, 700); setFont(ctx, size, 700);
+  const lh = size * 1.15, total = lines.length * lh, bw = Math.min(980, Math.max(...lines.map(l => ctx.measureText(l.join(' ')).width)) + 90);
+  ctx.translate(540, 240); ctx.rotate(Math.sin(t * 3) * 0.015); ctx.scale(k, k);
+  ctx.fillStyle = '#ffffff'; rr(ctx, -bw / 2, -total / 2 - 34, bw, total + 68, 30); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 8; ctx.stroke();
+  ctx.fillStyle = '#111'; ctx.textAlign = 'center';
+  lines.forEach((ln, i) => ctx.fillText(ln.join(' '), 0, -total / 2 + (i + 0.8) * lh));
+  // flecha hacia los comentarios
+  const ay = total / 2 + 70 + Math.sin(t * 7) * 10; ctx.fillStyle = BW ? '#111' : '#ffd60a'; ctx.strokeStyle = '#111'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-26, ay); ctx.lineTo(26, ay); ctx.lineTo(26, ay + 34); ctx.lineTo(52, ay + 34); ctx.lineTo(0, ay + 80); ctx.lineTo(-52, ay + 34); ctx.lineTo(-26, ay + 34); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
 function drawOnoma(ctx, beat, t) {
   const t0 = beat.onomaT || 0.3; if (!beat.onoma || t < t0) return;
   const k = backOut((t - t0) / 0.25); const fade = clamp((beat.dur - t) / 0.2, 0, 1);
-  ctx.save(); ctx.globalAlpha = fade; ctx.translate(540, 250); ctx.rotate(-0.09 + Math.sin(t * 6) * 0.02); ctx.scale(k, k);
+  ctx.save(); ctx.globalAlpha = fade; ctx.translate(540, 335); ctx.rotate(-0.09 + Math.sin(t * 6) * 0.02); ctx.scale(k * 0.9, k * 0.9);
   ctx.beginPath(); for (let i = 0; i < 28; i++) { const a = i / 28 * TAU; const r2 = i % 2 ? 150 : 215; ctx.lineTo(Math.cos(a) * r2 * 1.55, Math.sin(a) * r2 * 0.78); } ctx.closePath();
   ctx.fillStyle = BW ? '#ffffff' : '#ffd60a'; ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 9; ctx.lineJoin = 'round'; ctx.stroke();
   const { size } = fitText(ctx, beat.onoma, 520, 1, 108, 50, 700); setFont(ctx, size, 700);
@@ -622,6 +654,9 @@ function drawOnoma(ctx, beat, t) {
 }
 
 function drawCaption(ctx, beat, t, opts, capTop = false) {
+  drawCard(ctx, beat, t);
+  if (beat.kind === 'question') { drawQuestion(ctx, beat, t); return; }
+  if (beat.kind === 'rep' && beat.onoma && !capTop) drawOnoma(ctx, beat, t);
   if (beat.kind === 'act') { drawOnoma(ctx, beat, t); if (!(beat.react && t >= beat.reactStart && beat.react.vocal)) return; }
   let text = beat.text; if (!text && !(beat.react && beat.react.vocal)) return;
   const kind = beat.kind;
@@ -656,7 +691,7 @@ function drawCaption(ctx, beat, t, opts, capTop = false) {
   // subtítulo normal (grande, palabra activa resaltada). En primeros planos va arriba para no tapar a nadie.
   let reacting = false, p, started;
   if (beat.react && beat.react.vocal && t >= beat.reactStart) { reacting = true; text = beat.react.vocal; const rd = beat.reactDur || 0.7; p = clamp((t - beat.reactStart) / rd, 0, 1); started = true; }
-  const yC = capTop ? 250 : 1615;
+  const yC = capTop ? (beat.card ? 290 : 250) : 1615;
   const { size, lines } = fitText(ctx, text, 940, 3, reacting ? 86 : kind === 'twist' ? 72 : 66, 42, 700);
   const lh = size * 1.18; const total = lines.length * lh; const y0 = yC - total / 2;
   const words = lines.flat(); const cum = wordWeights(words);
@@ -788,7 +823,7 @@ function sceneChars(beat, t, opts) {
     if (!acts[role] && !acts._all && i >= 2 && beat.kind === 'rep') act = beat.level > 0.6 ? 'laugh' : 'idle';
     // el que escucha nunca se queda quieto: asiente y gesticula
     if (act === 'idle' && role !== beat.speaker && listenKinds.includes(beat.kind)) act = 'nod';
-    chars.push({ role, act, scripted: act, x: xs[i], baseX: xs[i], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', f: 1 });
+    chars.push({ role, act, scripted: act, x: xs[i], baseX: xs[i], seed: i * 1.37 + 0.5, look: looks[role], kid: looks[role] === 'kid', tie: looks[role] === 'tie', cap: role === 'A' && !!opts.series, f: 1 });
   }
   // caminos: el protagonista camina hacia el lado del camino
   if (beat.env === 'caminos' && beat.side && chars[0]) { const c = chars[0]; const target = 540 + beat.side * 260; c.x = lerp(n > 1 ? c.baseX : 540, target, easeInOut(t / Math.min(1.2, beat.dur))); if (c.act === 'idle' || c.act === 'nod') { c.act = 'walk'; c.settleK = clamp((t - Math.min(1.2, beat.dur)) / 0.4, 0, 1); c.after = 'idle'; } c.walkDir = beat.side; }
@@ -899,11 +934,12 @@ export function drawFrame(ctx, project, time, scale = 1) {
     const speech = c.role !== talker ? null : reactOn ? speechFor({ voiceLead: 0, voiceDur: beat.reactDur || 0.6, lip: beat.reactLip, dur: beat.reactDur || 0.6 }, t - beat.reactStart, g, c.seed) : speechFor(beat, t, g, c.seed);
     // mirada: a la cámara en el gancho, la reflexión, el final y en su primer plano; si no, al otro personaje
     const target = chars.find(o => o.role === (c.role === talker ? (beat.listener || beat.speaker) : talker) && o !== c);
-    const toCam = ['hook', 'cta', 'reflect'].includes(beat.kind) || (cam.capTop && cam.role === c.role);
+    const toCam = ['hook', 'cta', 'reflect', 'question'].includes(beat.kind) || (cam.capTop && cam.role === c.role);
     const gaze = toCam || !target ? { dx: 0, dy: 3 } : { dx: Math.sign(target.x - c.x) * 7, dy: 3 };
     if (speech && speech.talking && P.emo === 'neutral') P.emo = 'happy';
     if (P.fx === 'glow') { const hx = c.x, hy = headY(c); ctx.save(); ctx.globalAlpha = 0.6 + Math.sin(g * 2) * 0.15; const gr = ctx.createRadialGradient(hx, hy, 30, hx, hy, 260); gr.addColorStop(0, BW ? 'rgba(255,255,255,0.95)' : 'rgba(255,232,150,0.9)'); gr.addColorStop(1, 'rgba(255,232,150,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(hx, hy, 260, 0, TAU); ctx.fill(); ctx.restore(); }
     const head = drawFigure(ctx, c, P, g, speech, gaze);
+    if (beat.kind === 'hook' && c.cap && project.seriesName && t > 0.3) { const k = backOut((t - 0.3) / 0.3); ctx.save(); setFont(ctx, 46, 700); const nm = project.seriesName.toUpperCase(); const tw = ctx.measureText(nm).width + 40; ctx.translate(head.hx, head.hy - head.r - 70); ctx.scale(k, k); ctx.fillStyle = BW ? '#111' : '#e8262d'; rr(ctx, -tw / 2, -32, tw, 64, 32); ctx.fill(); ctx.strokeStyle = '#111'; ctx.lineWidth = 5; ctx.stroke(); ctx.beginPath(); ctx.moveTo(-14, 30); ctx.lineTo(14, 30); ctx.lineTo(0, 52); ctx.closePath(); ctx.fillStyle = BW ? '#111' : '#e8262d'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(nm, 0, 2); ctx.textBaseline = 'alphabetic'; ctx.restore(); }
     drawFx(ctx, P.fx, head.hx, head.hy, t, g, Math.floor(c.seed * 10) + bi);
   }
   ctx.restore();

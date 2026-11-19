@@ -83,11 +83,11 @@ export function planDirection(beats, { nChars, lang, action = false }) {
     let sp = b.who && roles.includes(b.who) ? b.who : null;
     if (!sp) {
       if (b.kind === 'reflect') sp = nChars > 1 && reflectN++ % 2 === 1 ? 'B' : 'A';
-      else if (b.kind === 'hook' || b.kind === 'cta') sp = 'A';
+      else if (b.kind === 'hook' || b.kind === 'cta' || b.kind === 'question') sp = 'A';
       else if (talkers.length) sp = talkers[0];
       else sp = 'A';
     }
-    b.speaker = sp;
+    b.speaker = b.mute ? null : sp;
     b.listener = nChars > 1 ? (sp === 'A' ? 'B' : 'A') : null;
     b.enter = null; b.exit = null; b.react = null;
   });
@@ -127,10 +127,11 @@ export function planShots(beats) {
     const vs = b.voiceLead || 0, ve = vs + (b.voiceDur || Math.max(0.8, b.dur - 0.6));
     const shots = []; const add = (t0, t1, type, role) => { if (t1 - t0 > 0.05) shots.push({ t0, t1, type, role }); };
     const tail = b.react ? b.reactStart : b.dur;
-    if (b.kind === 'act') { add(0, b.react ? b.reactStart : b.dur, 'wide', 'A'); }
+    if (b.kind === 'act') { add(0, b.react ? b.reactStart : b.dur, /chase|flee/.test(b.a || '') ? 'wide' : 'two', 'A'); }
     else if (b.kind === 'hook') { add(0, Math.min(1.3, b.dur * 0.5), 'push', 'A'); add(Math.min(1.3, b.dur * 0.5), b.dur, 'two', 'A'); }
     else if (b.kind === 'reflect') add(0, b.dur, 'slow', b.speaker);
     else if (b.kind === 'cta') add(0, b.dur, 'cta', 'A');
+    else if (b.kind === 'question') add(0, b.dur, 'cta', 'A');
     else if (b.env === 'caminos' && b.side) { add(0, tail, 'side', b.speaker); }
     else {
       const first = b.p || b.enter || b.kind === 'setup' ? 'two' : (i % 2 ? 'single' : 'two');
