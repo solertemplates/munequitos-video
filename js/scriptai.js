@@ -167,3 +167,57 @@ function toSituation(idea, k, nChars) {
 }
 
 export { R };
+
+// ---------- Historias de PANTOMIMA nuevas (solo música, sin voces) ----------
+const MIME_ACTS = ['idle', 'walk', 'run', 'walkArgue', 'argue', 'cross', 'talk', 'wave', 'hug', 'hugU', 'umbrella', 'cheer', 'jump', 'facepalm', 'shrug', 'sad', 'cry', 'angry', 'laugh', 'think', 'phone', 'scroll', 'selfie', 'fall', 'trip', 'slip', 'rise', 'downSad', 'point', 'give', 'dance', 'wait', 'shock', 'love', 'tired', 'strong', 'kneel', 'flee', 'chase', 'sneak', 'eat', 'coffee', 'read', 'pray', 'nod'];
+const SIT_OK = ['idle', 'cross', 'talk', 'wave', 'hug', 'sad', 'cry', 'angry', 'laugh', 'think', 'phone', 'scroll', 'shock', 'love', 'nod', 'shrug', 'eat', 'read'];
+const MIME_ENVS = ['parque', 'casa', 'ciudad', 'playa', 'cocina', 'oficina', 'camino', 'iglesia', 'gym'];
+const MOODS = ['romantica', 'tension', 'triste', 'emotiva', 'inspiracional', 'alegre', 'humor'];
+function toMime(o, k) {
+  const env = MIME_ENVS.includes(o.env) ? o.env : 'parque';
+  const bench = !!o.bench && env === 'parque';
+  const roles = ['A', 'B', 'C'].slice(0, Math.max(1, Math.min(3, +o.nChars || 2)));
+  const cx = v => Math.max(-300, Math.min(1300, Math.round(+v || 540)));
+  const fixAct = (a, x) => {
+    let act = String(a || 'idle'); let sit = act.endsWith('@sit'); act = act.replace('@sit', '');
+    if (!MIME_ACTS.includes(act)) act = 'idle';
+    // solo se sienta en el banco del parque o en el sofá de la casa; nunca en sillas sueltas
+    if (sit && !(bench && x >= 330 && x <= 770) && !(env === 'casa' && x >= 110 && x <= 730)) sit = false;
+    if (sit && !SIT_OK.includes(act)) act = 'idle';
+    return act + (sit ? '@sit' : '');
+  };
+  const steps = (o.steps || []).slice(0, 10).map((st, i) => {
+    const cast = {};
+    for (const r of roles) { const c = (st.cast || {})[r]; if (!c) continue; const x0 = cx(c[1]), x1 = cx(c[2] ?? c[1]); const f = ['to', 'away', 1, -1].includes(c[3]) ? c[3] : 'to'; cast[r] = [fixAct(c[0], x1), x0, x1, f]; }
+    if (!Object.keys(cast).length) cast.A = ['idle', 540, 540, 1];
+    return { mood: MOODS.includes(st.mood) ? st.mood : 'emotiva', d: Math.max(2.4, Math.min(4.5, +st.d || 3)), cast, rain: !!st.rain, core: i === 0 || !!st.core, sfx: [] };
+  }).filter(Boolean);
+  const T2 = v => (typeof v === 'string' ? R(v, v) : R(v && v.es || '', v && v.en || ''));
+  const g = {}; roles.forEach(r => { g[r] = (o.genders || {})[r] === 'f' ? 'f' : 'm'; });
+  const last = steps[steps.length - 1];
+  return {
+    id: 'ai' + Date.now().toString(36) + k, ai: true, kind: 'mime', env, bench, emoji: String(o.emoji || '🎭').slice(0, 4), genders: g,
+    title: T2(o.title), desc: T2(o.desc), steps, reflect: (o.reflect || []).slice(0, 2).map(T2).filter(x => x.es || x.en),
+    reflectMood: MOODS.includes(o.reflectMood) ? o.reflectMood : 'emotiva', endCast: last ? last.cast : undefined, endRain: !!(last && last.rain),
+  };
+}
+export async function writeMime(apiKey, { lang, avoid = [], genders = {} }) {
+  const sys = `Eres guionista de cortos virales de PANTOMIMA con muñequitos de palitos (sin voces, solo música). Los personajes cuentan la historia SOLO con gestos, mímica, caras y movimientos muy expresivos; jamás hablan ni hay carteles. Historias para jóvenes, limpias, que emocionen y den ganas de compartir.
+Estructura: arranque raro o llamativo en el primer segundo; conflicto claro con gestos (pelea, celos, orgullo, prisa, el teléfono, un malentendido…); escalada en 3–5 pasos; GIRO FINAL que emocione (un gesto inesperado de cariño, perdón, ayuda o valentía); final con una frase de reflexión corta y fuerte (máx. 9 palabras cada frase), con puntuación completa (¿? ¡! , … .).
+Escena: escenario con el suelo libre. Nunca sillas sueltas, bancas sueltas, banquetas ni mesas: solo pueden sentarse en el banco del parque (si "bench": true, x entre 340 y 760) o en el sofá de la casa (env "casa", x entre 120 y 720). Responde SOLO con JSON válido.`;
+  const user = `Inventa 3 historias de pantomima NUEVAS y distintas entre sí. No repitas ni copies estas ideas: ${avoid.map(t => `"${t}"`).join(', ') || '(ninguna)'}.
+Ejemplo del estilo (NO lo repitas): un muchacho y una muchacha llegan discutiendo con gestos, se sientan en las puntas de un banco, se miran y se dan la espalda por turnos, ella intenta acercarse y él se aleja, empieza a llover, él abre una sombrilla y la tapa, ella lo abraza; frase final.
+Formato exacto: {"ideas":[{
+ "title":{"es":"título corto","en":"short title"}, "desc":{"es":"una línea","en":"one line"}, "emoji":"🎭",
+ "env":"uno de: ${MIME_ENVS.join(', ')}", "bench": true|false, "nChars": 2, "genders":{"A":"m|f","B":"m|f"},
+ "steps":[ 6 a 9 pasos {"mood":"${MOODS.join('|')}","d":3.2,"rain":false,"cast":{"A":["acción", xInicial, xFinal, "to|away|1|-1"],"B":[...]}} ],
+ "reflect":[{"es":"frase 1","en":"line 1"},{"es":"frase 2","en":"line 2"}], "reflectMood":"emotiva"
+}]}
+- Acciones válidas: ${MIME_ACTS.join(', ')}. Añade "@sit" para sentado (ej. "cross@sit"). "umbrella" = abre una sombrilla y tapa al otro; "hugU" = abraza con la sombrilla; "argue"/"walkArgue" = discute con gestos (boca que se mueve sin sonido); "cross" = brazos cruzados; "rise" = se levanta del suelo; "downSad" = sigue en el suelo.
+- x en píxeles: el escenario va de 0 a 1080 (centro 540). Dos personajes de pie a unos 250–400 px; abrazados a unos 170 px.
+- "mood" de cada paso = la emoción de ese momento (la música cambia con ella): pelea → "tension", tristeza → "triste", reconciliación → "romantica" o "emotiva", superación → "inspiracional", risa → "humor".
+- Personajes sugeridos: ${Object.entries(genders).map(([r, g2]) => `${r}=${g2 === 'f' ? 'muchacha' : 'muchacho'}`).join(', ') || 'A=muchacho, B=muchacha'} (puedes cambiar si la historia lo pide). Idioma principal del usuario: ${lang === 'es' ? 'español' : 'inglés'}.`;
+  const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
+  const data = extractJSON(responseText(j));
+  return (data.ideas || []).slice(0, 3).map(toMime).filter(x => x.steps.length >= 3 && x.reflect.length);
+}

@@ -283,6 +283,11 @@ const SK = { thigh: 98, shin: 96, torso: 150, neck: 8, head: 64, upper: 78, fore
 const FIG = '#111111';
 
 function pose(action, t, g, seed) {
+  // «acción@sit»: la misma acción, sentado (en el sofá o en el banco de la escena)
+  if (action && action.endsWith('@sit')) {
+    const P = pose(action.slice(0, -4), t, g, seed); P.sit = true; P.sitAmt = 1; P.rot = 0; P.kneel = 0; P.y = (P.y || 0) * 0.15; if (P.fx === 'dust') P.fx = null;
+    P.legs = [{ a: 1.52, k: 1.52 }, { a: 1.22, k: 1.0 }]; return P;
+  }
   const P = { lean: 0, tilt: 0, y: 0, rot: 0, bend: 0, sitAmt: 0, arms: [{ a: 0.3, e: 0.25 }, { a: 0.3, e: 0.25 }], legs: [{ a: -0.12, k: 0.08 }, { a: 0.12, k: 0.08 }], emo: 'neutral', talk: false, fx: null, hand: null, shake: 0 };
   // respiración y balanceo suave del peso
   const br = Math.sin(g * 2.2 + seed);
@@ -344,6 +349,11 @@ function pose(action, t, g, seed) {
     case 'selfie': P.front = { a: 2.35 + s(2, 0.05), e: 0.15 }; P.arms = [{ a: 1.9, e: 1.3 + s(5, 0.1) }, { a: 1.9, e: 1.3 + s(5, 0.1) }]; P.tilt = -0.18 + s(1.5, 0.05); P.emo = t % 1.4 < 0.7 ? 'happy' : 'love'; P.hand = 'selfie'; P.fx = 'flash'; break;
     case 'scroll': P.arms = [{ a: 0.62, e: -1.95 }, { a: 0.62, e: -1.95 + s(9, 0.06) }]; P.tilt = 0.32; P.bend = 0.12; P.lean = 0.08; P.emo = 'meh'; P.hand = 'scroll'; P.fx = 'notif'; break;
     case 'nod': P.tilt = 0.1 + Math.max(0, Math.sin(t * 5 + seed)) * 0.16; P.arms = [{ a: 0.45, e: -1.1 + s(2, 0.1) }, { a: 0.45, e: -1.1 - s(2, 0.1) }]; P.emo = 'happy'; P.y += Math.max(0, Math.sin(t * 5 + seed)) * 3; break;
+    case 'argue': P.arms = [{ a: 1.15 + s(7, 0.55), e: 0.9 + s(9, 0.55) }, { a: 0.95 + s(6, 0.65, 1), e: 1.2 + s(8, 0.5, 2) }]; P.emo = 'angry'; P.lean = 0.1 + s(3, 0.05); P.tilt = s(5, 0.08); P.fx = 'steam'; P.y += Math.abs(s(6, 6)); P.legs = [{ a: -0.22, k: 0.12 }, { a: 0.22, k: 0.12 }]; break;
+    case 'walkArgue': { const Wp = pose('walk', t, g, seed); Object.assign(P, Wp); P.arms = [{ a: 0.4 - Math.sin(t * 8.5 + seed) * 0.4, e: 0.5 }, { a: 1.5 + s(7, 0.6), e: 1.0 + s(9, 0.5) }]; P.emo = 'angry'; P.fx = 'steam'; break; }
+    case 'cross': P.arms = [{ a: 0.75, e: -2.25 }, { a: 0.7, e: -2.15 }]; P.emo = 'angry'; P.tilt = -0.12 + s(1.2, 0.03); P.lean = -0.04; break;
+    case 'umbrella': P.front = { a: 2.55, e: 0.12 }; P.arms = [{ a: 0.3, e: 0.3 }, { a: 0.3, e: 0.3 }]; P.emo = 'love'; P.hand = 'umbrella'; P.tilt = 0.12; break;
+    case 'hugU': P.arms = [{ a: 2.25, e: 0.35 }, { a: 2.25, e: 0.35 }]; P.front = { a: 1.4, e: 1.05 }; P.emo = 'love'; P.fx = 'hearts'; P.hand = 'umbrella'; P.umbBack = true; P.lean = 0.06; break;
     case 'pray': P.arms = [{ a: 0.85, e: -3.0 }, { a: 0.85, e: -3.0 }]; P.tilt = 0.14 + s(1.2, 0.03); P.bend = 0.06; P.emo = 'peace'; P.fx = 'glow'; break;
     default: P.emo = 'happy';
   }
@@ -472,6 +482,15 @@ function drawHandProp(ctx, type, x, y, f = 1, g = 0) {
   if (type === 'coffee') { ctx.fillStyle = '#ffffff'; rr(ctx, x - 22, y - 48, 44, 52, 9); ctx.fill(); ctx.strokeStyle = FIG; ctx.lineWidth = 5; ctx.stroke(); ctx.fillStyle = C('#9c6644'); ctx.fillRect(x - 20, y - 32, 40, 11); }
 }
 
+function drawUmbrella(ctx, x, y, f, off = 55) {
+  const cx = x + f * off, cy = y - 95, r = 135;
+  line(ctx, [[x, y + 30], [cx, cy]], '#3b3f46', 7);
+  const cols = BW ? ['#444', '#ddd'] : ['#ff4d6d', '#ffffff'];
+  for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, Math.PI + k * Math.PI / 6, Math.PI + (k + 1) * Math.PI / 6); ctx.closePath(); ctx.fillStyle = cols[k % 2]; ctx.fill(); }
+  ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, TAU); ctx.closePath(); ctx.strokeStyle = FIG; ctx.lineWidth = 6; ctx.stroke();
+  circle(ctx, cx, cy - r + 2, 8, '#3b3f46');
+}
+
 // Marioneta a tamaño de persona: cabeza pegada a la camiseta, camiseta de manga corta, brazos de palito saliendo de la manga.
 const RS = 1.45; // escala del personaje respecto al escenario (tamaño de persona real)
 function drawFigure(ctx, ch, P, g, speech, gaze) {
@@ -569,11 +588,12 @@ function drawFigure(ctx, ch, P, g, speech, gaze) {
   arms.forEach((a, i) => { limb(ctx, cuffs[i], [lerp(a[0][0], a[1][0], 0.95), lerp(a[0][1], a[1][1], 0.95)], a[2], lw); circle(ctx, a[2][0], a[2][1], 12, FIG); });
   if (P.hand === 'phone') drawHandProp(ctx, 'phone', arms[1][2][0], arms[1][2][1] - 12);
   if (P.hand === 'selfie') drawHandProp(ctx, 'phone', fh[0], fh[1] - 16);
+  if (P.hand === 'umbrella') { const h2 = P.umbBack ? arms[f > 0 ? 0 : 1][2] : fh; drawUmbrella(ctx, h2[0], h2[1], f, P.umbBack ? 150 : 55); }
   if (P.hand === 'scroll') { const mx2 = (arms[0][2][0] + arms[1][2][0]) / 2, my2 = (arms[0][2][1] + arms[1][2][1]) / 2; drawHandProp(ctx, 'phone', mx2, my2 - 14); ctx.globalAlpha = 0.18; circle(ctx, hx, hy, SK.head - 6, BW ? '#ccc' : '#4dabf7'); ctx.globalAlpha = 1; }
   if (P.hand === 'gift' && ch.giveProp) drawHandProp(ctx, ch.giveProp, fh[0] + f * 20, fh[1] + 10);
   if (P.hand === 'boxup') drawHandProp(ctx, 'boxup', (arms[0][2][0] + arms[1][2][0]) / 2, Math.min(arms[0][2][1], arms[1][2][1]) + 10);
   if (ch.handProp && !P.hand) drawHandProp(ctx, ch.handProp, fh[0] + f * 6, fh[1] - 4, f);
-  if (P.hand && !['phone', 'selfie', 'scroll', 'gift', 'boxup'].includes(P.hand)) drawHandProp(ctx, P.hand, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][0] + arms[1][2][0]) / 2 : fh[0] + f * 6, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][1] + arms[1][2][1]) / 2 : fh[1] - 4, f, g);
+  if (P.hand && !['phone', 'selfie', 'scroll', 'gift', 'boxup', 'umbrella'].includes(P.hand)) drawHandProp(ctx, P.hand, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][0] + arms[1][2][0]) / 2 : fh[0] + f * 6, P.hand === 'barbell' || P.hand === 'laptop' || P.hand === 'book' ? (arms[0][2][1] + arms[1][2][1]) / 2 : fh[1] - 4, f, g);
   ctx.restore();
   return { hx: ch.x + hx * sc, hy: GY + (hipY + hy) * sc, r: SK.head * sc };
 }
@@ -1072,11 +1092,36 @@ function drawMemory(ctx, project, beat, t, g, scale, w0, w1) {
 }
 
 // ---------- MODO «SOLO MÚSICA CON MENSAJE» ----------
-function msgDoll(project, beat, t) {
-  const [x0, x1] = beat.path || [540, 540]; const moving = ['walk', 'climb', 'run'].includes(beat.act);
-  const k = moving ? clamp(t / (beat.dur * 0.94), 0, 1) : 0;
-  const x = lerp(x0, x1, k);
-  return { role: 'A', girl: !!(project.genders && project.genders.A === 'f'), seed: 0.5, f: x1 < x0 ? -1 : 1, x, dy: groundY(beat.env, x) - GY, act: beat.act, walkDir: moving ? (x1 < x0 ? -1 : 1) : 0 };
+// personajes de la escena (uno o varios), con su recorrido y hacia dónde miran
+const MOVERS = ['walk', 'climb', 'run', 'walkArgue', 'flee', 'chase'];
+function msgCast(project, beat, t) {
+  const cast = beat.cast || { A: [beat.act || 'idle', 540, 540] };
+  const looks = beat.looks || {}; const gen = beat.genders || project.genders || {};
+  const out = Object.entries(cast).map(([role, c], i) => {
+    const [act0, x0 = 540, x1 = x0, face] = c; const act = String(act0 || 'idle');
+    const moving = MOVERS.includes(act);
+    const k = x0 === x1 ? 0 : moving ? clamp(t / (beat.dur * 0.94), 0, 1) : easeInOut(clamp(t / (beat.dur * 0.7), 0, 1));
+    const x = lerp(x0, x1, k);
+    return { role, act, face, girl: gen[role] === 'f', look: looks[role], seed: 0.5 + i * 1.37, x, dy: groundY(beat.env, x) - GY, onSofa: act.endsWith('@sit'), walkDir: moving && x1 !== x0 ? Math.sign(x1 - x0) : 0, f: x1 < x0 ? -1 : 1 };
+  });
+  for (const c of out) {
+    const other = out.filter(o => o !== c).sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0];
+    const toward = other ? (other.x >= c.x ? 1 : -1) : 1;
+    if (c.walkDir) c.f = c.walkDir;
+    else if (c.face === 'to') c.f = toward; else if (c.face === 'away') c.f = -toward;
+    else if (c.face === 1 || c.face === -1) c.f = c.face; else if (other) c.f = toward;
+  }
+  return out;
+}
+// boca que se mueve sin sonido (discusiones y charlas en pantomima)
+const MIME_TALK = /^(argue|walkArgue|talk)/;
+function mimeSpeech(c, g) { if (!MIME_TALK.test(c.act)) return null; const a = Math.abs(Math.sin(g * 11 + c.seed * 3)) * 0.85; return { talking: true, amp: a, shape: a < 0.25 ? 'small' : ['open', 'ee', 'wide', 'O'][Math.floor(g * 7 + c.seed) % 4] }; }
+function drawBench(ctx) {
+  const x0 = 320, x1 = 780, wood = C('#c98b52'), dark = C('#8a5a33'), iron = '#3b3f46';
+  for (const lx of [x0 + 30, x1 - 50]) { ctx.fillStyle = iron; ctx.fillRect(lx, GY - 212, 20, 212); ctx.fillRect(lx - 4, GY - 470, 14, 270); }
+  ctx.fillStyle = wood; ctx.strokeStyle = dark; ctx.lineWidth = 5;
+  for (const [y, h] of [[GY - 470, 34], [GY - 420, 34], [GY - 370, 30]]) { rr(ctx, x0, y, x1 - x0, h, 8); ctx.fill(); ctx.stroke(); }
+  rr(ctx, x0 - 20, GY - 222, x1 - x0 + 40, 34, 10); ctx.fill(); ctx.stroke();
 }
 function drawPlant(ctx, x, y, s, g) {
   ctx.fillStyle = C('#8b5e3c'); ctx.beginPath(); ctx.ellipse(x, y, 90, 26, 0, Math.PI, TAU); ctx.fill();
@@ -1115,25 +1160,38 @@ function drawRain(ctx, g, amt) {
   ctx.stroke(); ctx.restore();
 }
 function drawMessageFrame(ctx, project, bi, beat, t, g, scale, time) {
-  const c = msgDoll(project, beat, t);
-  // la pose fluye desde la escena anterior
-  let P = applyFront(pose(c.act, t, g, c.seed), c.f);
-  const BL = 0.45; let px = null;
-  if (bi > 0 && t < BL) { const pb = project.beats[bi - 1]; const pc = msgDoll(project, pb, pb.dur); const k = easeInOut(t / BL); P = blendPose(applyFront(pose(pc.act, pb.dur, g, pc.seed), pc.f), P, k); px = lerp(pc.x, c.x, k); c.x = px; c.dy = groundY(beat.env, c.x) - GY; }
-  const z = beat.kind === 'cta' ? 1.12 : beat.kind === 'reflect' ? lerp(1.2, 1.3, t / beat.dur) : lerp(1.3, 1.38, t / beat.dur);
-  const feetY = GY + (c.dy || 0);
-  // si está en el suelo, la cámara se abre y se centra en el cuerpo
-  const down = Math.abs(P.rot || 0) > 0.6; const zz = down ? Math.min(z, 1.12) : z;
-  let fx = clamp(c.x + (beat.plant ? 90 : 0) - (down ? c.f * 210 * Math.sign(P.rot) : 0), -600 + 540 / zz + 10, 1680 - 540 / zz - 10); const fy = feetY - 470 / zz;
+  const chars = msgCast(project, beat, t);
+  // las poses fluyen desde la escena anterior
+  const BL = 0.45; const prev = bi > 0 && t < BL ? new Map(msgCast(project, project.beats[bi - 1], project.beats[bi - 1].dur).map(c => [c.role, c])) : null;
+  const poses = chars.map(c => {
+    let P = applyFront(pose(c.act, t, g, c.seed), c.f);
+    const pc = prev && prev.get(c.role);
+    if (pc) { const k = easeInOut(t / BL); P = blendPose(applyFront(pose(pc.act, project.beats[bi - 1].dur, g, pc.seed), pc.f), P, k); c.x = lerp(pc.x, c.x, k); c.dy = groundY(beat.env, c.x) - GY; if (k < 0.5) c.f = pc.f; }
+    return P;
+  });
+  const multi = chars.length > 1;
+  const zBase = beat.kind === 'cta' ? 1.12 : beat.kind === 'reflect' ? lerp(1.2, 1.3, t / beat.dur) : lerp(1.3, 1.38, t / beat.dur);
+  const down = poses.some(P => Math.abs(P.rot || 0) > 0.6);
+  const span = multi ? Math.max(...chars.map(c => c.x)) - Math.min(...chars.map(c => c.x)) : 0;
+  const zz = multi ? Math.min(zBase * 0.9, 1080 / (span + 560)) : down ? Math.min(zBase, 1.12) : zBase;
+  const lead = chars[0]; const feetY = GY + Math.max(...chars.map(c => c.dy || 0));
+  let cx = multi ? (Math.min(...chars.map(c => c.x)) + Math.max(...chars.map(c => c.x))) / 2 : lead.x + (beat.plant ? 90 : 0);
+  if (down) { const k = poses.findIndex(P => Math.abs(P.rot || 0) > 0.6); cx -= chars[k].f * (multi ? 90 : 210) * Math.sign(poses[k].rot); }
+  let fx = clamp(cx, -600 + 540 / zz + 10, 1680 - 540 / zz - 10); const fy = feetY - 470 / zz;
   fx += Math.sin(time * 0.5) * 6;
   ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(zz, zz); ctx.translate(-fx, -fy);
   (ENV_DRAW[beat.env] || ENV_DRAW.vacio)(ctx, g, beat);
   if (beat.rain) { ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.fillStyle = 'rgba(25,35,60,0.42)'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
-  // reflexión y final: baja la luz SOLO del fondo (la cabeza sigue blanca)
+  // reflexión y final: baja la luz SOLO del fondo (las cabezas siguen blancas)
   if (beat.kind === 'reflect' || beat.kind === 'cta') { const k = beat.kind === 'cta' ? 0.5 : clamp(t / 0.6, 0, 1); ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0); const gr = ctx.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, `rgba(10,8,30,${0.75 * k})`); gr.addColorStop(0.6, `rgba(30,15,45,${0.4 * k})`); gr.addColorStop(1, `rgba(0,0,0,${0.15 * k})`); ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  if (beat.bench) drawBench(ctx);
   if (beat.plant) { const [p0, p1] = beat.plant; drawPlant(ctx, 600, GY + 4, lerp(p0, p1, easeOut(t / Math.max(0.5, beat.dur * 0.8))), g); }
-  const head = drawFigure(ctx, c, P, g, null, { dx: c.f * 4, dy: 2 });
-  drawFx(ctx, P.fx, head.hx, head.hy, t, g, 11 + bi);
+  chars.forEach((c, i) => {
+    const P = poses[i]; const other = chars.find(o => o !== c);
+    const gaze = other && (c.face === 'to' || !c.face) ? { dx: Math.sign(other.x - c.x) * 7, dy: 3 } : { dx: c.f * 5, dy: 2 };
+    const head = drawFigure(ctx, c, P, g, mimeSpeech(c, g), gaze);
+    drawFx(ctx, P.fx, head.hx, head.hy, t, g, 11 + bi + i * 5);
+  });
   ctx.restore();
   ctx.save(); ctx.setTransform(scale, 0, 0, scale, 0, 0);
   if (beat.rain) drawRain(ctx, g, 1);

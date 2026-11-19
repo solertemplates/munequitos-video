@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=10">
+<link rel="stylesheet" href="css/app.css?v=11">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -88,6 +88,7 @@
         <p class="hint" id="writerHint"></p>
       </div>
       <div id="sits" class="options"></div>
+      <button id="mimeBtn" class="ghost strong" type="button" style="width:100%;margin-top:10px" hidden></button>
       <button id="punchBtn" class="ghost strong" type="button" style="width:100%;margin-top:10px" data-i18n="punchBtn">✨ Hacer este guion más divertido (IA)</button>
     </div>
 
@@ -117,7 +118,7 @@
     <div class="card">
       <h2><span class="n">8</span><span data-i18n="s7">Voz, música y efectos</span></h2>
       <div id="voiceBox">
-        <label class="lbl" for="voice" data-i18n="voice">Voz del protagonista</label>
+        <label class="lbl" for="voice" data-i18n="voice" id="voiceLbl">Voz del protagonista</label>
         <select id="voice"></select>
         <p class="hint" id="voiceHint"></p>
         <label class="lbl" for="apiKey" data-i18n="keyOpenai">Tu clave de OpenAI (API key)</label>
@@ -134,9 +135,9 @@
           <input id="musicVol" type="range" min="0" max="1" step="0.05" value="0.6">
         </div>
       </div>
+      <h3 class="bankH" data-i18n="bankTitle">🎵 Mi banco de música</h3>
       <div class="upRow">
-        <label class="ghost strong upBtn"><span data-i18n="upload">📂 Subir mi música</span><input id="musicFile" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav"></label>
-        <select id="musicTag" aria-label="Estilo"></select>
+        <label class="ghost strong upBtn"><span data-i18n="upload">📂 Subir canciones (varias a la vez)</span><input id="musicFile" type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.wav"></label>
       </div>
       <p class="hint" id="musicHint"></p>
       <div id="myTracks" class="tracks"></div>
@@ -198,6 +199,6 @@
   </section>
 </main>
 <footer class="foot"><span data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</span><br><small data-i18n="credits">Sonidos: «Oculus Audio Pack 1» de Meta (CC BY 4.0) e «Impact Sounds» de Kenney (CC0). Piano y guitarra: instrumentos grabados de Meta (CC0).</small></footer>
-<script type="module" src="js/app.js?v=11"></script>
+<script type="module" src="js/app.js?v=12"></script>
 </body>
 </html>

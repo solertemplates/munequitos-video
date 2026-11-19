@@ -45,10 +45,17 @@ La clave se guarda solo en el teléfono. Sin clave, el video sale con subtítulo
 
 ## Música y efectos
 
-- **Tu música**: botón «📂 Subir mi música» (mp3/m4a desde la app Archivos del iPhone), con estilo Emotiva, Alegre o Superación. Se guarda solo en el teléfono (IndexedDB). En la app hay una guía paso a paso para bajar música gratis de **Pixabay Music** (licencia gratuita, uso comercial permitido) desde el iPhone. Las canciones de Pixabay no se incluyen dentro de la app porque su licencia no permite redistribuirlas como archivos sueltos.
-- **Música incluida**: piano y guitarra de nailon **grabados de verdad** (no 8 bits), tocados por la app en tres estilos.
-- La música **baja sola** cuando alguien habla y vuelve a subir después.
+- **Banco de música propio**: «📂 Subir canciones» acepta varias a la vez (MP3/M4A desde la app Archivos del iPhone). Se guardan **solo en el teléfono** (IndexedDB), nunca en el repositorio ni en internet. En cada canción puedes **escucharla (▶), renombrarla (✏️), cambiarle la categoría o borrarla (🗑)**.
+- **Categorías automáticas**: al subirlas, la app escucha cada canción (ritmo/BPM, energía, brillo, pulso y si va creciendo) y lee el nombre del archivo, y le pone sola una categoría: **romántica, tensión o enojo, triste, emotiva, inspiracional, alegre o humor**. Te muestra la que escogió (✨) y puedes cambiarla si quieres.
+- **Música según la historia** (opción «🤖 Automática», la de fábrica): la app lee el guion, detecta la emoción de cada parte (pelea → tensión, tristeza → triste, reconciliación → romántica/emotiva, superación → inspiracional, comedia → humor) y escoge del banco la canción que pega, **sin repetir siempre la misma** (recuerda las últimas usadas). También puedes elegir una canción a mano.
+- **La música cambia durante el video** cuando cambia la emoción, con un fundido cruzado suave.
+- Si el banco no tiene una categoría, usa la **música incluida**: piano y guitarra grabados de verdad, en los mismos 7 estilos.
+- La música **baja sola** cuando alguien habla. Hay una guía para bajar música gratis de **Pixabay Music** en el iPhone.
 - **Efectos reales grabados** (pasos, golpes, whoosh, risas, cámara de fotos, pesas, monedas, lluvia…).
+
+## Pantomima (modo «Solo música con mensaje»)
+
+Además de las historias de un muñequito con frases (montaña, caer y levantarse, lluvia, semilla), hay **historias de pantomima**: varios personajes cuentan todo solo con gestos y mímica (discuten con la boca moviéndose sin sonido, se cruzan de brazos, se dan la espalda, se abrazan) y terminan con una frase corta de reflexión. Incluidas: **La sombrilla** (pareja peleada en un banco del parque; llueve y él la tapa), **El último pedazo de pizza** y **La abuela y el teléfono**. El botón **«✨ Inventar 3 historias de pantomima nuevas (IA)»** crea historias nuevas de este estilo, sin repetir las anteriores, con un giro final que emociona (usa tu clave de OpenAI).
 
 ## Lo que se dice, se ve
 
@@ -56,7 +63,7 @@ Si una frase menciona algo concreto (el gym, Instagram/fotos, la comida, el caf�
 
 ## Muebles
 
-No hay sillas sueltas, banquetas, bancos ni mesitas de centro (tampoco en los fondos con IA). Los personajes solo se sientan en el sofá del escenario, a tamaño real; si no hay sofá, se quedan de pie, siempre en el suelo.
+No hay sillas sueltas, banquetas ni mesitas de centro (tampoco en los fondos con IA). Los personajes solo se sientan en el sofá del escenario o, en las pantomimas del parque, en el banco del parque, ambos a tamaño real; si no hay dónde sentarse, se quedan de pie, siempre en el suelo.
 
 ## Historias con IA y tendencias (opcional, usa tu clave de OpenAI)
 
@@ -121,6 +128,7 @@ munequitos-video/
 ├── js/tts.js           voces de OpenAI (Onyx, Ash, Coral, Nova)
 ├── js/message.js       historias «solo música con mensaje»
 ├── js/visuals.js       palabras → escena (lo que se dice, se ve)
+├── js/musicplan.js     emoción de cada escena → música del banco (con cambios suaves)
 ├── audio/              efectos y muestras de piano/guitarra (ver créditos)
 ├── js/export.js        MP4 (H.264 + AAC) con Mediabunny
 └── vendor/             Mediabunny + codificador AAC
