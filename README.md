@@ -65,6 +65,18 @@ La clave se guarda solo en el teléfono. Sin clave, el video sale con subtítulo
 
 Además de las historias de un muñequito con frases (montaña, caer y levantarse, lluvia, semilla), hay **historias de pantomima**: varios personajes cuentan todo solo con gestos y mímica (discuten con la boca moviéndose sin sonido, se cruzan de brazos, se dan la espalda, se abrazan) y terminan con una frase corta de reflexión. Incluidas: **La sombrilla** (pareja peleada en un banco del parque; llueve y él la tapa), **El último pedazo de pizza** y **La abuela y el teléfono**. El botón **«✨ Inventar 3 historias de pantomima nuevas (IA)»** crea historias nuevas de este estilo, sin repetir las anteriores, con un giro final que emociona (usa tu clave de OpenAI).
 
+## Publicar
+
+Al terminar cada video aparece la sección **📣 Publicar** con un texto distinto y listo para **Facebook, Instagram, YouTube Shorts y TikTok**, en el idioma del video: título corto, formato de cada red (Instagram con hashtags al final, YouTube con título y #shorts, TikTok corto con #fyp…), hashtags del tema y una llamada como «Sígueme para más». Se pueden editar.
+
+- **Mis enlaces** (en «7 · Llamado a la acción» → «🔗 Mis enlaces en cada red»): se guardan una sola vez en el teléfono y salen en los textos.
+- **📋 Copiar y compartir en…**: copia el texto de esa red y abre el menú de compartir del iPhone con el video; eliges la app y pegas el texto. Si el MP4 aún no existe, lo crea y pide tocar otra vez.
+- **✨ Hashtags del momento (IA)**: busca en internet los hashtags que están funcionando esta semana para cada red (usa tu clave de OpenAI).
+
+## Modo lote
+
+En **🗓️ Modo lote** eliges 3, 5 o 7 videos y la app los crea seguidos (historias distintas; puede variar los temas), cada uno con su MP4 y sus textos, marcados por día de la semana. Cada uno tiene **▶ Ver** y **📣 Publicar**. **⬇ Guardar todos los videos** los manda juntos al menú de compartir (en el iPhone, «Guardar videos» los pone en Fotos) y **📄 Descargar todos los textos** baja un archivo con todos los textos de todas las redes.
+
 ## Sonidos y caras siempre de acuerdo
 
 Antes de mezclar el audio, la app mira qué cara tiene cada personaje en el instante de cada efecto con emoción: **risa → cara alegre/riéndose**, **triste → cara triste o llorando**, **susto → cara de sorpresa**, **enojo o cansancio («uf») → cara brava o cansada**, **«aww» → cara enamorada**. Si no coinciden, cambia el sonido por el de la cara que sí se ve, o lo quita. Si nadie se ríe en la escena, no suena ninguna risa, y la risa usa voz de muchacha o de muchacho según quién se ríe.
@@ -140,6 +152,7 @@ munequitos-video/
 ├── js/tts.js           voces de OpenAI (Onyx, Ash, Coral, Nova)
 ├── js/message.js       historias «solo música con mensaje»
 ├── js/visuals.js       palabras → escena (lo que se dice, se ve)
+├── js/publish.js      textos para publicar en cada red
 ├── js/phrases.js      banco de frases del autor y su visión para la IA
 ├── js/musicplan.js     emoción de cada escena → música del banco (con cambios suaves)
 ├── audio/              efectos y muestras de piano/guitarra (ver créditos)

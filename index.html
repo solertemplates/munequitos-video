@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=15">
+<link rel="stylesheet" href="css/app.css?v=16">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='14' r='10' fill='white' stroke='black' stroke-width='4'/><path d='M32 24v20M32 30l-14 8M32 30l14-6M32 44l-10 16M32 44l10 16' stroke='black' stroke-width='4' stroke-linecap='round'/></svg>">
 </head>
 <body>
@@ -130,6 +130,14 @@
         <label class="lbl" for="linkLabel" data-i18n="linkLabel">Texto del botón del enlace</label>
         <input id="linkLabel" type="text" placeholder="miweb.com/curso" maxlength="40">
       </details>
+      <details class="cfg" id="linksDet">
+        <summary data-i18n="linksTitle">🔗 Mis enlaces en cada red (para los textos de publicar)</summary>
+        <p class="hint" data-i18n="linksHint">Se guardan una sola vez en este teléfono y salen en los textos de cada red.</p>
+        <label class="lbl" for="lnk_facebook">📘 Facebook</label><input id="lnk_facebook" type="text" maxlength="120" placeholder="facebook.com/mipagina">
+        <label class="lbl" for="lnk_instagram">📸 Instagram</label><input id="lnk_instagram" type="text" maxlength="120" placeholder="@miusuario">
+        <label class="lbl" for="lnk_youtube">▶️ YouTube</label><input id="lnk_youtube" type="text" maxlength="120" placeholder="youtube.com/@micanal">
+        <label class="lbl" for="lnk_tiktok">🎵 TikTok</label><input id="lnk_tiktok" type="text" maxlength="120" placeholder="@miusuario">
+      </details>
     </div>
 
     <div class="card">
@@ -181,6 +189,20 @@
       </div>
     </div>
 
+    <div class="card" id="batchCard">
+      <h2><span class="n">🗓️</span><span data-i18n="batchTitle">Modo lote: videos para toda la semana</span></h2>
+      <p class="hint" data-i18n="batchHint">Crea varios videos seguidos con las opciones de arriba, cada uno con una historia distinta y sus textos para publicar. Deja la pantalla encendida.</p>
+      <div id="batchSeg" class="seg"></div>
+      <label class="check"><input id="batchVary" type="checkbox" checked> <span data-i18n="batchVary">Variar los temas (si no, todos del tema elegido)</span></label>
+      <button id="batchBtn" class="ghost strong" type="button" style="width:100%;margin-top:10px"></button>
+      <div id="batchProg" class="prog" hidden><div></div><span></span><button id="batchCancel" type="button" class="ghost sm" data-i18n="cancel">Cancelar</button></div>
+      <div id="batchList" class="tracks"></div>
+      <div id="batchAll" class="airow" hidden>
+        <button id="batchSave" class="primary" type="button" data-i18n="batchSave">⬇ Guardar todos los videos</button>
+        <button id="batchTxt" class="ghost" type="button" data-i18n="batchTxt">📄 Descargar todos los textos</button>
+      </div>
+    </div>
+
     <div id="costBox" class="cost" hidden></div>
     <button id="genBtn" class="primary" type="button" data-i18n="generate">Generar vista previa</button>
     <p id="status" class="status" role="status" aria-live="polite"></p>
@@ -209,6 +231,12 @@
       <button id="redoBg" class="ghost" type="button" style="display:block;margin:10px auto 0" hidden>🔄 Rehacer los fondos con IA</button>
     </div>
 
+    <div class="card" id="pubCard" hidden>
+      <div class="h2row"><h2 data-i18n="pubTitle">📣 Publicar</h2><button id="pubAI" class="ghost" type="button" data-i18n="pubAI">✨ Hashtags del momento (IA)</button></div>
+      <p class="hint" id="pubHint"></p>
+      <div id="pubNets"></div>
+    </div>
+
     <div class="card" id="scriptCard" hidden>
       <div class="h2row"><h2 data-i18n="script">Guion (puedes editarlo)</h2><button id="applyBtn" class="ghost" type="button" data-i18n="apply">Aplicar cambios</button></div>
       <ol id="scriptList" class="script"></ol>
@@ -216,6 +244,6 @@
   </section>
 </main>
 <footer class="foot"><span data-i18n="foot">Todo se genera en tu navegador. Formato vertical 1080×1920 para Shorts, Reels y Facebook.</span><br><small data-i18n="credits">Sonidos: «Oculus Audio Pack 1» de Meta (CC BY 4.0) e «Impact Sounds» de Kenney (CC0). Piano y guitarra: instrumentos grabados de Meta (CC0).</small></footer>
-<script type="module" src="js/app.js?v=15"></script>
+<script type="module" src="js/app.js?v=16"></script>
 </body>
 </html>

@@ -2,7 +2,8 @@ import { THEMES, ENVIRONMENTS, SITUATIONS, hookOptions, ctaOptions, combineCtas,
 import { DURATIONS, buildBeats, timeBeats, speakable, toSRT } from './script.js?v=15';
 import { drawFrame, prepareProject, FONT, LOOKS } from './render.js?v=15';
 import { IMAGE_MODELS, generateBackgrounds, planBackgrounds, imagePrice, clearBgCache } from './aiimages.js?v=15';
-import { searchTrends, writeIdeas, punchUp, writeMime, PRICE } from './scriptai.js?v=15';
+import { searchTrends, writeIdeas, punchUp, writeMime, trendingHashtags, PRICE } from './scriptai.js?v=15';
+import { NETWORKS, captionsFor, captionsText } from './publish.js?v=15';
 import { computeLip } from './lipsync.js?v=15';
 import { renderMix, MUSIC_STYLES, MUSIC_CATS, listTracks, addTracks, deleteTrack, loadTrack, renameTrack, setTrackCat, getTrackBlob, normCat } from './audio.js?v=15';
 import { moodSections, planMusic, catName } from './musicplan.js?v=15';
@@ -32,6 +33,8 @@ const I18N = {
     s0: 'Tipo de video', vVoz: '🎙️ Con voces', vVozD: 'Los personajes hablan', vMus: '🎵 Solo música con mensaje', vMusD: 'Sin voces, frases en pantalla',
     vtypeVoz: 'Los muñequitos hablan en español o inglés, con voces naturales de OpenAI, subtítulos y música que baja sola cuando hablan.', vtypeMus: 'Sin voces: un muñequito hace algo con significado (subir una montaña, caerse y levantarse, caminar bajo la lluvia…) con música emotiva. El mensaje aparece en pocas frases, grandes y cortas, y termina con una reflexión fuerte. No necesita clave.',
     phTitle: `Banco de frases de ${AUTHOR}`, phIntro: 'Pega tus frases, reflexiones e ideas: una por línea, o muchas de golpe. Se guardan solo en este teléfono. La IA escribe cada historia con tu forma de pensar y tu visión (tus frases mandan), inspirándose además en las ideas de grandes oradores, pero con palabras nuevas.', phPh: 'Ej.:\nEl que no se rinde ya va ganando.\nLa familia es el primer negocio que tienes que sacar adelante.', phAdd: '💾 Guardar frases', phAuto: '✨ Tema: que la app lo adivine', phUseLbl: 'Usar una de mis frases, tal cual, como reflexión final', phSome: 'A veces', phAlways: 'Siempre', phNever: 'Nunca', phSum: n => `📖 Ver, editar y borrar mis frases (${n})`, phAll: 'Todos los temas', phAdded: n => `Se guardaron ${n} frase(s) nueva(s). La app adivinó el tema de las que no tenían; puedes cambiarlo abajo.`, phNone: 'Pega al menos una frase.', phEdit: 'Edita tu frase:', phDel: 'Borrar esta frase?', phGuessed: '✨ tema adivinado', phMine: '✋ tema elegido por ti', phUsedN: n => `usada ${n} vez/veces como reflexión final`, phFinal: '✍️ Reflexión final: tu frase', phEmpty: 'Todavía no hay frases en este tema.',
+    pubTitle: '📣 Publicar', pubAI: '✨ Hashtags del momento (IA)', pubHint: 'Textos listos para cada red, en el idioma del video. Puedes editarlos. El botón copia el texto y abre el menú de compartir del iPhone con el video: elige la app y pega el texto (mantén el dedo → Pegar).', pubShare: n => `📋 Copiar y compartir en ${n}`, pubCopied: n => `Texto de ${n} copiado. Elige ${n} en el menú y pega el texto en la descripción.`, pubNeedExport: 'Primero se crea el MP4 (tarda un poco). Cuando termine, toca otra vez el botón de la red.', pubNoShare: 'Este navegador no puede compartir el video directo: se descargó y el texto quedó copiado.', pubAIing: 'Buscando los hashtags que están funcionando esta semana…', pubAIdone: 'Listo: hashtags del momento en cada texto.', pubTitleLbl: 'Título:', linksTitle: '🔗 Mis enlaces en cada red (para los textos de publicar)', linksHint: 'Se guardan una sola vez en este teléfono y salen en los textos de cada red.',
+    batchTitle: 'Modo lote: videos para toda la semana', batchHint: 'Crea varios videos seguidos con las opciones de arriba, cada uno con una historia distinta y sus textos para publicar. Deja la pantalla encendida y no cambies de app.', batchVary: 'Variar los temas (si no, todos del tema elegido)', batchBtn: n => `🎬 Crear ${n} videos seguidos`, batchSave: '⬇ Guardar todos los videos', batchTxt: '📄 Descargar todos los textos', batchStep: (i, n, t) => `Video ${i} de ${n}: ${t}`, batchDone: n => `Listo: ${n} videos con sus textos. Toca «Publicar» en cada uno, o guárdalos todos juntos.`, batchPub: '📣 Publicar', batchSee: '▶ Ver', days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'], batchCount: n => `${n} videos`, batchSavedHint: 'En el menú elige «Guardar videos» para tenerlos todos en Fotos.',
     s4msg: 'Historia con mensaje', mimeTag: 'Pantomima', soloTag: 'Mensaje', mimeBtn: '✨ Inventar 3 historias de pantomima nuevas (IA)', writingMime: 'Inventando historias de pantomima nuevas…', wroteMime: n => `Listo: ${n} historias nuevas de pantomima (marcadas «IA»). Elige una y genera el video.`, needKeyMime: 'Para inventar historias con IA, pega tu clave de OpenAI en la sección 8.', noMime: 'La IA no devolvió historias. Prueba otra vez.',
     autoMusic: '🤖 Automática: la app escoge según la historia', bankTitle: '🎵 Mi banco de música', bankHint: n => `Tienes ${n} canción(es) en tu banco. En «Automática», la app lee el guion y escoge la que pega con cada parte de la historia, sin repetir siempre la misma; si la emoción cambia, la música cambia con una transición suave.`, listening: (i, n, name) => `Escuchando y clasificando ${i}/${n}: «${name}»…`, addedN: (n, list) => `Se guardaron ${n} canción(es) en tu teléfono: ${list}. Puedes cambiar la categoría si quieres.`, listen: 'Escuchar', rename: 'Renombrar', renameAsk: 'Nuevo nombre de la canción:', catLbl: 'Categoría', delAsk: n => `¿Borrar «${n}» de tu banco?`, catAuto: c => `✨ La app la escuchó: ${c}`, catByYou: '✋ Categoría elegida por ti', musicUsed: '🎵 Música:', upload: '📂 Subir canciones (varias a la vez)', pixTitle: '📱 Cómo bajar música gratis de Pixabay en tu iPhone', mine: 'Mi música', builtIn: 'Incluida en la app (instrumentos reales)', tagFor: 'Estilo de la canción que subes:',
     musicHintTxt: 'Sube tus canciones (MP3 o M4A, varias a la vez, por ejemplo de Pixabay Music). Se guardan solo en este teléfono, no en internet. La app escucha cada una y le pone sola la categoría. Mientras tu banco esté vacío, usa piano y guitarra reales grabados.', uploaded: n => `Listo: «${n}» quedó guardada en tu teléfono y ya está elegida.`, upFail: 'No se pudo leer ese audio. Prueba con un .mp3 o .m4a.', delTrack: 'Borrar', sfx: 'Efectos de sonido reales',
@@ -60,6 +63,8 @@ const I18N = {
     s0: 'Video type', vVoz: '🎙️ With voices', vVozD: 'Characters talk', vMus: '🎵 Music + message only', vMusD: 'No voices, on-screen phrases',
     vtypeVoz: 'The stick figures talk in Spanish or English with natural OpenAI voices, subtitles and music that ducks when they speak.', vtypeMus: 'No voices: one stick figure does something meaningful (climbing a mountain, falling and getting up, walking in the rain…) with emotional music. The message appears in a few big, short phrases and ends with a strong reflection. No key needed.',
     phTitle: `${AUTHOR}'s quote bank`, phIntro: 'Paste your quotes, reflections and ideas: one per line, or many at once. They are saved only on this phone. The AI writes every story with your way of thinking and your vision (your quotes come first), also inspired by the ideas of great speakers, in new words.', phPh: 'E.g.:\nWhoever never quits is already winning.', phAdd: '💾 Save quotes', phAuto: '✨ Topic: let the app guess', phUseLbl: 'Use one of my quotes, word for word, as the final reflection', phSome: 'Sometimes', phAlways: 'Always', phNever: 'Never', phSum: n => `📖 See, edit and delete my quotes (${n})`, phAll: 'All topics', phAdded: n => `Saved ${n} new quote(s). The app guessed the topic for those without one; you can change it below.`, phNone: 'Paste at least one quote.', phEdit: 'Edit your quote:', phDel: 'Delete this quote?', phGuessed: '✨ topic guessed', phMine: '✋ topic chosen by you', phUsedN: n => `used ${n} time(s) as final reflection`, phFinal: '✍️ Final reflection: your quote', phEmpty: 'No quotes in this topic yet.',
+    pubTitle: '📣 Publish', pubAI: '✨ Trending hashtags (AI)', pubHint: 'Ready-to-post text for each network, in the video\'s language. You can edit them. The button copies the text and opens the iPhone share menu with the video: pick the app and paste the text (press and hold → Paste).', pubShare: n => `📋 Copy & share on ${n}`, pubCopied: n => `${n} text copied. Pick ${n} in the menu and paste the text in the caption.`, pubNeedExport: 'First the MP4 is created (it takes a moment). When it finishes, tap the network button again.', pubNoShare: 'This browser cannot share the video directly: it was downloaded and the text is copied.', pubAIing: 'Looking up hashtags that are working this week…', pubAIdone: 'Done: trending hashtags in every text.', pubTitleLbl: 'Title:', linksTitle: '🔗 My links on each network (for the publish texts)', linksHint: 'Saved once on this phone and added to each network\'s text.',
+    batchTitle: 'Batch mode: videos for the whole week', batchHint: 'Create several videos in a row with the options above, each with a different story and its publish texts. Keep the screen on and stay in the app.', batchVary: 'Vary the topics (otherwise all from the chosen topic)', batchBtn: n => `🎬 Create ${n} videos in a row`, batchSave: '⬇ Save all videos', batchTxt: '📄 Download all texts', batchStep: (i, n, t) => `Video ${i} of ${n}: ${t}`, batchDone: n => `Done: ${n} videos with their texts. Tap "Publish" on each one, or save them all at once.`, batchPub: '📣 Publish', batchSee: '▶ Watch', days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], batchCount: n => `${n} videos`, batchSavedHint: 'In the menu pick "Save Videos" to keep them all in Photos.',
     s4msg: 'Story with a message', mimeTag: 'Pantomime', soloTag: 'Message', mimeBtn: '✨ Invent 3 new pantomime stories (AI)', writingMime: 'Inventing new pantomime stories…', wroteMime: n => `Done: ${n} new pantomime stories (tagged "AI"). Pick one and generate.`, needKeyMime: 'To invent stories with AI, paste your OpenAI key in section 8.', noMime: 'The AI returned no stories. Try again.',
     autoMusic: '🤖 Automatic: the app picks based on the story', bankTitle: '🎵 My music bank', bankHint: n => `You have ${n} song(s) in your bank. On "Automatic" the app reads the script and picks the one that fits each part of the story, without always repeating the same; if the emotion changes, the music changes with a smooth crossfade.`, listening: (i, n, name) => `Listening and sorting ${i}/${n}: "${name}"…`, addedN: (n, list) => `Saved ${n} song(s) on your phone: ${list}. You can change the category if you want.`, listen: 'Listen', rename: 'Rename', renameAsk: 'New song name:', catLbl: 'Category', delAsk: n => `Delete "${n}" from your bank?`, catAuto: c => `✨ The app listened: ${c}`, catByYou: '✋ Category chosen by you', musicUsed: '🎵 Music:', upload: '📂 Upload songs (several at once)', pixTitle: '📱 How to get free music from Pixabay on your iPhone', mine: 'My music', builtIn: 'Built-in (real instruments)', tagFor: 'Style of the song you upload:',
     musicHintTxt: 'Upload your songs (MP3 or M4A, several at once, e.g. from Pixabay Music). They are saved only on this phone, never online. The app listens to each one and sorts it automatically. While your bank is empty it uses real recorded piano and guitar.', uploaded: n => `Done: "${n}" is saved on your phone and selected.`, upFail: 'Could not read that audio. Try an .mp3 or .m4a.', delTrack: 'Delete', sfx: 'Real sound effects',
@@ -75,7 +80,7 @@ const I18N = {
 
 // ---------- estado ----------
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const DEFAULTS = { phUse: 'aveces', phFilter: 'all', vtype: 'voz', msgSel: 0, voice: 'ash', musicHist: [], aiMime: [], mimeTitles: [], mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, page: '', linkUrl: '', linkLabel: '', music: 'auto', musicVol: 0.6, sfx: true };
+const DEFAULTS = { links: {}, batchN: 5, batchVary: true, phUse: 'aveces', phFilter: 'all', vtype: 'voz', msgSel: 0, voice: 'ash', musicHist: [], aiMime: [], mimeTitles: [], mainGender: 'm', nGirls: 1, lang: 'es', theme: 'trabajador', qSel: 0, qSeed: 1, nChars: 2, env: 'auto', color: true, dur: 'm', sit: 0, hookSeed: 1, ctaSeed: 1, hook: 0, cta: 0, ctaSel: [0], voiceSel: null, action: true, aiOn: false, aiModel: 'gpt-image-1-mini', aiQuality: 'medium', aiIdeas: {}, trend: '', trends: [], usedAI: {}, page: '', linkUrl: '', linkLabel: '', music: 'auto', musicVol: 0.6, sfx: true };
 let S = { ...DEFAULTS };
 try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('munequitos-state') || '{}') }; } catch { /* sin almacenamiento */ }
 const save = () => { try { localStorage.setItem('munequitos-state', JSON.stringify(S)); } catch { /* ignorar */ } };
@@ -151,6 +156,9 @@ function renderAll() {
   $('#writerHint').textContent = L.writerHint;
   $('#appSits').hidden = !(S.aiIdeas && S.aiIdeas[S.theme + '|' + S.lang]);
   renderCost(); renderPhrases(L);
+  $('#batchSeg').replaceChildren(...[3, 5, 7].map(n => btn('', L.batchCount(n), S.batchN === n, () => { S.batchN = n; save(); renderAll(); })));
+  $('#batchVary').checked = S.batchVary !== false; $('#batchVary').closest('label').hidden = MSG();
+  if (!batchRunning) $('#batchBtn').textContent = L.batchBtn(S.batchN || 5);
   { const qs = questionOptions(S.theme, sit, S.qSeed || 1); $('#questions').replaceChildren(...qs.map((q, i) => btn('opt', `<span class="tag">?</span><div><b>${esc(q[S.lang])}</b></div>`, (S.qSel || 0) === i, () => { S.qSel = i; change(); }))); }
   { const group = (label, opts) => { const g = document.createElement('optgroup'); g.label = label; g.append(...opts); return g; };
     const groups = [new Option(L.autoMusic, 'auto')]; if (TRACKS.length) groups.push(group('🎵 ' + L.mine, TRACKS.map(t => new Option(`${t.name} · ${catName(t.cat, S.lang)}`, 'mine:' + t.id))));
@@ -337,6 +345,7 @@ async function generateMessage(L, customTexts) {
   const { beats, total, ambience, ambienceFrom, ambienceUntil } = buildMessage({ story, lang: S.lang, dur: S.dur, ctas: chosen.length ? chosen : [ctas[0]], settings });
   if (customTexts) beats.forEach((b, i) => { if (customTexts[i] != null && customTexts[i].trim()) b.text = customTexts[i].trim(); });
   project = prepareProject({ mode: 'musica', beats, total, lang: S.lang, color: S.color, nChars: 1, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: story.id, genders: story.genders || { A: S.mainGender === 'f' ? 'f' : 'm' }, ambience, ambienceFrom, ambienceUntil });
+  project.meta = { title: (story.title && story.title[S.lang]) || '', hook: (beats.find(b => b.text && b.kind === 'msg') || {}).text || '', reflect: beats.filter(b => b.kind === 'reflect').map(b => b.text), theme: S.theme, lang: S.lang, id: story.id };
   setStatus(L.stMix);
   const own = await prepareMusic('msg');
   mix = await renderMix(project, { musicVol: S.musicVol, sfxOn: S.sfx, own });
@@ -391,6 +400,7 @@ async function generate(customTexts = null) {
       beats.filter(b => b.kind === 'rep').forEach((b, i, arr) => { b.level = (i + 1) / arr.length; });
       planShots(beats);
       project = prepareProject({ mode: 'voz', beats, total, lang: S.lang, color: S.color, nChars: S.nChars, page: S.page, linkUrl: S.linkUrl, linkLabel: S.linkLabel, music: S.music, sitId: sit.id, genders });
+      project.meta = { title: (sit.title && sit.title[S.lang]) || '', hook: (beats.find(b => b.kind === 'hook') || {}).text || '', reflect: beats.filter(b => b.kind === 'reflect').map(b => b.text), theme: S.theme, lang: S.lang, id: sit.id };
       if (S.aiOn) {
         try {
           const { images, errors } = await generateBackgrounds(project, sit, { apiKey: KEYS.openai, model: S.aiModel, quality: S.aiQuality, onProgress: (i2, n) => setStatus(L.stImg(i2, n)) });
@@ -405,7 +415,7 @@ async function generate(customTexts = null) {
       note = [note, myFinal ? L.phFinal : '', musicSummary(L)].filter(Boolean).join(' · ');
     }
     dirty = false;
-    renderScript();
+    renderScript(); pubTarget = { meta: project.meta, file: null, aiTags: null, edits: {} }; lastFile = null; renderPublish();
     $('#redoBg').hidden = !project.aiBg;
     $('#emptyMsg').hidden = true; $('#player').hidden = false; $('#exportRow').hidden = false; $('#bigPlay').hidden = false; $('#dl').hidden = true;
     curTime = 0; drawAt(0);
@@ -456,6 +466,12 @@ $('#seek').addEventListener('input', e => { if (!project) return; const was = pl
 
 // ---------- exportación ----------
 let abort = null, lastFile = null;
+// crea el MP4 del video actual (o de otro proyecto del lote)
+async function doExport(prj, mx, actx, { signal, onProgress } = {}) {
+  const { blob, ext, note } = await exportMP4(prj, mx, { audioContext: actx, signal, onProgress });
+  const m = prj.meta || {}; const name = `munequitos-${m.theme || S.theme}-${m.id || 'video'}-${m.lang || S.lang}.${ext}`;
+  return { file: new File([blob], name, { type: blob.type || 'video/mp4' }), blob, ext, note, name };
+}
 $('#exportBtn').addEventListener('click', async () => {
   if (!project) return; const L = tr(); stop();
   const actx = unlockAudio(); // en iPhone el audio debe activarse dentro del toque
@@ -465,22 +481,141 @@ $('#exportBtn').addEventListener('click', async () => {
   if (IOS) setStatus(L.keepOpen);
   const bar = $('#exportProg div'), lbl = $('#exportProg span');
   try {
-    const { blob, ext, note } = await exportMP4(project, mix, { audioContext: actx, signal: abort.signal, onProgress: p => { bar.style.width = (p * 100).toFixed(1) + '%'; lbl.textContent = L.exporting(p); } });
+    const { file, blob, ext, note, name } = await doExport(project, mix, actx, { signal: abort.signal, onProgress: p => { bar.style.width = (p * 100).toFixed(1) + '%'; lbl.textContent = L.exporting(p); } });
     const a = $('#dl'); if (a.href) URL.revokeObjectURL(a.href);
-    a.href = URL.createObjectURL(blob);
-    const sit = currentSits()[S.sit] || currentSits()[0];
-    const name = `munequitos-${S.theme}-${sit.id}-${S.lang}.${ext}`;
-    a.download = name;
+    a.href = URL.createObjectURL(blob); a.download = name;
     a.textContent = `⬇ ${L.exported} (${ext.toUpperCase()}, ${(blob.size / 1e6).toFixed(1)} MB)`; a.hidden = false;
-    lastFile = new File([blob], name, { type: blob.type || 'video/mp4' });
+    lastFile = file; if (pubTarget && pubTarget.meta === project.meta) pubTarget.file = file;
     const canShare = !!(navigator.canShare && navigator.canShare({ files: [lastFile] }));
     $('#shareBtn').hidden = !canShare;
     setStatus(canShare && IOS ? L.savedHintIOS : '');
     if (note === 'webm') setStatus(L.webmNote, true); else if (note === 'sin-audio') setStatus(L.noAudio, true); else if (note === 'opus') setStatus(L.opusNote);
     if (!IOS) a.click();
+    return file;
   } catch (e) { if (e.name !== 'AbortError') { console.error(e); setStatus(L.exportErr + (e.message || e), true); } }
   finally { $('#exportBtn').disabled = false; $('#exportProg').hidden = true; abort = null; }
 });
+
+// ---------- MODO LOTE ----------
+let batch = [], batchRunning = false, batchAbort = null;
+function batchPlan(n) {
+  const out = [];
+  if (MSG()) { const all = msgStories(); for (let i = 0; i < n; i++) out.push({ msgSel: ((S.msgSel || 0) + i) % all.length, ctaSeed: (S.ctaSeed || 1) + i }); return out; }
+  const ti = Math.max(0, THEMES.findIndex(t => t.id === S.theme));
+  const nSits = th => { const k = th + '|' + S.lang; return (S.aiIdeas && S.aiIdeas[k] && S.aiIdeas[k].length) ? S.aiIdeas[k].length : SITUATIONS[th].length; };
+  for (let i = 0; i < n; i++) {
+    if (S.batchVary !== false) { const th = THEMES[(ti + i) % THEMES.length].id; const round = Math.floor(i / THEMES.length); out.push({ theme: th, sit: ((th === S.theme ? S.sit : 0) + round) % nSits(th), hook: 0, hookSeed: 1 + i, qSel: i % 3, ctaSeed: (S.ctaSeed || 1) + i }); }
+    else out.push({ theme: S.theme, sit: (S.sit + i) % nSits(S.theme), hook: i % 3, hookSeed: 1 + Math.floor(i / nSits(S.theme)), qSel: i % 3, ctaSeed: (S.ctaSeed || 1) + i });
+  }
+  return out;
+}
+$('#batchBtn').addEventListener('click', async () => {
+  const L = tr();
+  if (batchRunning) return; const actx = unlockAudio(); stop();
+  const n = S.batchN || 5; const plan = batchPlan(n);
+  const keys = ['theme', 'sit', 'hook', 'hookSeed', 'qSel', 'ctaSeed', 'msgSel']; const backup = Object.fromEntries(keys.map(k => [k, S[k]]));
+  batchRunning = true; batchAbort = new AbortController(); batch = []; renderBatch();
+  $('#batchBtn').disabled = true; $('#batchProg').hidden = false; $('#batchAll').hidden = true;
+  const bar = $('#batchProg div'), lbl = $('#batchProg span');
+  const day0 = (new Date().getDay() + 6) % 7; // empieza hoy
+  try {
+    for (let i = 0; i < plan.length; i++) {
+      if (batchAbort.signal.aborted) break;
+      Object.assign(S, plan[i]); dirty = true;
+      lbl.textContent = L.batchStep(i + 1, n, '…'); bar.style.width = (i / n * 100).toFixed(1) + '%';
+      await generate(); if (!project || dirty) throw new Error(L.exportErr + '(' + (i + 1) + ')');
+      const prj = project, mx = mix;
+      lbl.textContent = L.batchStep(i + 1, n, prj.meta.title);
+      const { file } = await doExport(prj, mx, actx, { signal: batchAbort.signal, onProgress: p => { bar.style.width = ((i + p) / n * 100).toFixed(1) + '%'; } });
+      batch.push({ day: L.days[(day0 + i) % 7], project: prj, mix: mx, pub: { meta: prj.meta, file, aiTags: null, edits: {} } });
+      renderBatch();
+    }
+    if (batch.length) { pubTarget = batch[0].pub; renderPublish(); setStatus(L.batchDone(batch.length)); }
+  } catch (e) { if (e.name !== 'AbortError') { console.error(e); setStatus(String(e.message || e), true); } }
+  finally {
+    Object.assign(S, backup); save(); batchRunning = false; batchAbort = null;
+    $('#batchBtn').disabled = false; $('#batchProg').hidden = true; $('#batchAll').hidden = !batch.length; renderAll();
+  }
+});
+$('#batchCancel').addEventListener('click', () => batchAbort && batchAbort.abort());
+function renderBatch() {
+  const L = tr();
+  $('#batchList').replaceChildren(...batch.map((it, i) => {
+    const d = document.createElement('div'); d.className = 'bItem';
+    const t = document.createElement('b'); t.textContent = `${it.day} · ${String(it.pub.meta.title).replace(/["«»“”]/g, "")}`;
+    const see = document.createElement('button'); see.type = 'button'; see.className = 'ghost sm'; see.textContent = L.batchSee;
+    see.addEventListener('click', () => { stop(); project = it.project; mix = it.mix; dirty = false; lastFile = it.pub.file; pubTarget = it.pub; renderScript(); renderPublish(); curTime = 0; drawAt(0); $('#emptyMsg').hidden = true; $('#player').hidden = false; $('#exportRow').hidden = false; document.querySelector('.phone').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    const pub = document.createElement('button'); pub.type = 'button'; pub.className = 'ghost sm strong'; pub.textContent = L.batchPub;
+    pub.addEventListener('click', () => { pubTarget = it.pub; renderPublish(); $('#pubCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    const info = document.createElement('small'); info.textContent = `${it.project.total.toFixed(0)} s · ${(it.pub.file.size / 1e6).toFixed(1)} MB · ${it.pub.file.name}`;
+    d.append(t, see, pub, info); return d;
+  }));
+}
+function downloadFile(f) { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
+$('#batchSave').addEventListener('click', async () => {
+  const L = tr(); const files = batch.map(it => it.pub.file); if (!files.length) return;
+  if (navigator.canShare && navigator.canShare({ files })) { setStatus(L.batchSavedHint); try { await navigator.share({ files }); } catch (e) { if (e.name !== 'AbortError') setStatus(String(e.message || e), true); } return; }
+  files.forEach((f, i) => setTimeout(() => downloadFile(f), i * 700));
+});
+$('#batchTxt').addEventListener('click', async () => {
+  const txt = batch.map(it => captionsText(it.pub.meta, captionsFor(it.pub.meta, { links: S.links || {}, page: S.page, aiTags: it.pub.aiTags }), it.day)).join('\n');
+  const f = new File([txt], 'textos-para-publicar.txt', { type: 'text/plain' });
+  if (IOS && navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); } catch { /* cancelado */ } return; }
+  downloadFile(f);
+});
+$('#batchVary').addEventListener('change', e => { S.batchVary = e.target.checked; save(); });
+
+// ---------- PUBLICAR ----------
+let pubTarget = null;
+function pubCaps() { return captionsFor(pubTarget.meta, { links: S.links || {}, page: S.page, aiTags: pubTarget.aiTags }); }
+function renderPublish() {
+  const L = tr(); const card = $('#pubCard'); card.hidden = !pubTarget || !pubTarget.meta;
+  if (card.hidden) return;
+  $('#pubHint').textContent = L.pubHint;
+  const caps = pubCaps();
+  $('#pubNets').replaceChildren(...NETWORKS.map(n => {
+    const d = document.createElement('div'); d.className = 'pubNet';
+    const h = document.createElement('h3'); h.textContent = `${n.emoji} ${n.name}`;
+    const tt = document.createElement('small'); tt.textContent = `${L.pubTitleLbl} ${caps[n.id].title}`;
+    const ta = document.createElement('textarea'); ta.rows = n.id === 'tiktok' ? 4 : 7; ta.value = pubTarget.edits[n.id] ?? caps[n.id].text; ta.id = 'cap_' + n.id;
+    ta.addEventListener('input', () => { pubTarget.edits[n.id] = ta.value; });
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'primary'; b.textContent = L.pubShare(n.name);
+    b.addEventListener('click', () => shareTo(n, ta.value));
+    d.append(h, tt, ta, b); return d;
+  }));
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* sigue */ }
+  try { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; } catch { return false; }
+}
+function shareTo(net, text) {
+  const L = tr(); if (!pubTarget) return;
+  const copied = copyText(text); // dentro del mismo toque (el iPhone lo exige)
+  if (!pubTarget.file) { // sin MP4 todavía: lo crea y pide tocar otra vez
+    setStatus(L.pubNeedExport);
+    if (pubTarget.meta === (project && project.meta)) $('#exportBtn').click();
+    return;
+  }
+  const f = pubTarget.file;
+  if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    navigator.share({ files: [f], title: pubCaps()[net.id].title, text }).then(() => setStatus(L.pubCopied(net.name))).catch(e => { if (e.name !== 'AbortError') setStatus(String(e.message || e), true); });
+    copied.then(() => setStatus(L.pubCopied(net.name)));
+  } else {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    copied.then(() => setStatus(L.pubNoShare));
+  }
+}
+$('#pubAI').addEventListener('click', async () => {
+  const L = tr(); if (!pubTarget) return; if (!KEYS.openai) { setStatus(L.needKeyAI, true); return; }
+  const b = $('#pubAI'); b.disabled = true; setStatus(L.pubAIing);
+  try { pubTarget.aiTags = await trendingHashtags(KEYS.openai, { lang: pubTarget.meta.lang, theme: pubTarget.meta.theme, title: pubTarget.meta.title }); pubTarget.edits = {}; renderPublish(); setStatus(L.pubAIdone); }
+  catch (e) { console.warn(e); setStatus(String(e.message || e), true); } finally { b.disabled = false; }
+});
+for (const n of ['facebook', 'instagram', 'youtube', 'tiktok']) {
+  const el = $('#lnk_' + n); el.value = (S.links || {})[n] || '';
+  el.addEventListener('input', () => { S.links = { ...(S.links || {}), [n]: el.value.trim() }; save(); if (pubTarget) { pubTarget.edits = {}; clearTimeout(window._pt); window._pt = setTimeout(renderPublish, 400); } });
+}
+
 $('#shareBtn').addEventListener('click', async () => {
   if (!lastFile) return;
   try { await navigator.share({ files: [lastFile], title: lastFile.name }); } catch (e) { if (e.name !== 'AbortError') setStatus(String(e.message || e), true); }

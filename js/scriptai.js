@@ -223,3 +223,19 @@ Formato exacto: {"ideas":[{
   const data = extractJSON(responseText(j));
   return (data.ideas || []).slice(0, 3).map(toMime).filter(x => x.steps.length >= 3 && x.reflect.length);
 }
+
+// ---------- Hashtags que están funcionando AHORA en cada red (búsqueda en internet) ----------
+export async function trendingHashtags(apiKey, { lang, theme, title }) {
+  const topic = THEME_EN[theme] || theme;
+  const prompt = (lang === 'es'
+    ? `Busca en internet qué hashtags están funcionando ESTA SEMANA para videos cortos de reflexión y motivación en español (público latino de EE. UU. y Latinoamérica) sobre "${topic}" y sobre este video: "${title}".`
+    : `Search the web for which hashtags are working THIS WEEK for short reflection/motivation videos in English (US audience) about "${topic}" and about this video: "${title}".`)
+    + ` Da hashtags distintos para cada red, adecuados a su formato. Sin hashtags prohibidos, engañosos ni de otros temas. Devuelve SOLO JSON: {"facebook":["#..",3 a 5],"instagram":["#..",10 a 15],"youtube":["#shorts","#..",3 a 4],"tiktok":["#..",4 a 6]}`;
+  const j = await withModels(['gpt-5-mini', 'gpt-4.1-mini', 'gpt-4o-mini'], async model => {
+    try { return await responses(apiKey, { model, tools: [{ type: 'web_search' }], input: prompt }); }
+    catch (e) { if (e.status === 400) return responses(apiKey, { model, tools: [{ type: 'web_search_preview' }], input: prompt }); throw e; }
+  });
+  const data = extractJSON(responseText(j)); const out = {};
+  for (const k of ['facebook', 'instagram', 'youtube', 'tiktok']) out[k] = (Array.isArray(data[k]) ? data[k] : []).map(t => '#' + String(t).replace(/^#+/, '').replace(/[^\p{L}\p{N}_]/gu, '')).filter(t => t.length > 2).slice(0, 15);
+  return out;
+}
