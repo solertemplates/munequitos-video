@@ -10,7 +10,7 @@ export const VISUALS = [
   { id: 'coffee', re: W(String.raw`caf[eé]|cafecito|colada|coffee|latte`), env: 'cafe', act: 'coffee', hand: 'coffee', sfx: 'pop' },
   { id: 'work', re: W(String.raw`oficina|jefe|jefa|reuni[oó]n|email|correo|computadora|laptop|office|boss|meeting|computer|zoom`), env: 'oficina', act: 'laptop', hand: 'laptop', sfx: 'type' },
   { id: 'shift', re: W(String.raw`turno|almac[eé]n|cajas|construcci[oó]n|obra|f[aá]brica|shift|warehouse|boxes|factory|construction`), act: 'lift', hand: 'boxup', sfx: 'effort' },
-  { id: 'sleep', re: W(String.raw`dormir|dorm[ií]|sue[ñn]o|cansad[oa]|cama|siesta|sleep|slept|tired|nap|bed`), env: 'casa', act: 'sleep', sfx: 'aww' },
+  { id: 'sleep', re: W(String.raw`dormir|dorm[ií]|sue[ñn]o|cansad[oa]|cama|siesta|sleep|slept|tired|nap|bed`), env: 'casa', act: 'sleep', sfx: '' },
   { id: 'run', re: W(String.raw`correr|corr[ií]|corriendo|trotar|run|ran|running|jog(ging)?`), env: 'parque', act: 'run', sfx: 'run' },
   { id: 'study', re: W(String.raw`estudiar|estudi[eé]|libros?|leer|le[ií]|escuela|universidad|examen|clases?|study|studied|books?|read|school|college|exam|class`), act: 'read', hand: 'book', sfx: 'book' },
   { id: 'pray', re: W(String.raw`orar|or[eé]|oraci[oó]n|rezar|Dios|iglesia|misa|pray(ed|ing)?|prayer|God|church`), env: 'iglesia', act: 'pray', sfx: 'sparkle' },

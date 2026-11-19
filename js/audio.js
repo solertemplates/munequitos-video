@@ -5,6 +5,7 @@
 //  · Efectos: «Oculus Audio Pack 1» de Meta (CC BY 4.0, requiere crédito) y «Impact Sounds» de Kenney (CC0).
 //  · Música incluida: piano y guitarra de cuerdas de nailon grabados por Meta (CC0), tocados por la app.
 //  · Tu música: la que subas desde el iPhone (por ejemplo, de Pixabay Music), guardada solo en tu teléfono.
+import { facesAt } from './render.js';
 export const SR = 48000;
 const BASE = new URL('../audio/', import.meta.url).href;
 
@@ -50,6 +51,7 @@ const SFX = {
   levelup: [['sfx/levelup.mp3', 0, 0.7]], cash: [['sfx/cash.mp3', 0, 0.9]], sad: [['sfx/sad.mp3', 0, 0.6]],
   drum: [['sfx/drum.mp3', 0, 0.6]], type: [['sfx/type.mp3', 0, 0.8]], heart: [['sfx/heart.mp3', 0, 0.5]],
   alarm: [['sfx/alarm.mp3', 0, 0.8]], laugh: [['sfx/laugh.mp3', 0, 0.55]], laughs: [['sfx/laughs.mp3', 0, 0.6], ['sfx/laughf.mp3', 0.25, 0.5]],
+  laughF: [['sfx/laughf.mp3', 0, 0.6]], laughsF: [['sfx/laughf.mp3', 0, 0.6], ['sfx/laughf.mp3', 0.45, 0.35]],
   notif: [['sfx/notif.mp3', 0, 0.9], ['sfx/notif.mp3', 0.18, 0.7]], punch: [['sfx/punch.mp3', 0, 0.9]], thud: [['sfx/thud.mp3', 0, 1], ['sfx/thud2.mp3', 0.02, 0.5]],
   fall: [['sfx/swoosh.mp3', 0, 0.7], ['sfx/thud.mp3', 0.55, 1], ['sfx/thud2.mp3', 0.57, 0.5]], gasp: [['sfx/gasp.mp3', 0, 0.7]],
   uf: [['sfx/uf.mp3', 0, 0.8]], effort: [['sfx/effort.mp3', 0, 0.8]], tick: [['sfx/tick.mp3', 0, 0.6]],
@@ -161,6 +163,37 @@ function scheduleSection(ctx, sec, i, n, total, bank, beats, own) {
   } else if (sec.style && sec.style !== 'none') scheduleBuiltin(makeSampler(ctx, bank, g), sec.style, a, b, beats);
 }
 
+// ---------- sonidos y caras: siempre de acuerdo ----------
+// qué caras «justifican» cada sonido con emoción (risa → cara alegre, llanto/triste → cara triste, susto → sorpresa, enojo → brava)
+const SFX_EMO = {
+  laugh: ['laugh'], laughs: ['laugh'], laughF: ['laugh'], laughsF: ['laugh'],
+  sad: ['sad', 'cry'], gasp: ['shock'], uf: ['tired', 'angry', 'sad', 'dizzy'], effort: ['tired', 'angry', 'happy'],
+  aww: ['love', 'peace'], heart: ['love', 'peace', 'happy', 'laugh'],
+  victory: ['laugh', 'happy', 'love'], applause: ['laugh', 'happy', 'love'], levelup: ['laugh', 'happy'],
+};
+// si la cara no coincide, se cambia por el sonido de la cara que sí se ve (o se quita)
+const FACE_SFX = [['laugh', 'laughs'], ['shock', 'gasp'], ['cry', 'sad'], ['sad', 'sad'], ['angry', 'uf'], ['love', 'aww'], ['tired', 'uf']];
+export function fixEmotionSfx(project, ev) {
+  const total = project.total; const kept = []; const log = project._sfxLog = [];
+  for (const e of ev) {
+    const [name, t] = e; const need = SFX_EMO[name];
+    if (!need) { kept.push(e); continue; }
+    const faces = [0.1, 0.35, 0.7].map(d => Math.min(total - 0.01, t + d)).flatMap(tt => facesAt(project, tt));
+    const match = faces.find(f => need.includes(f.emo));
+    let out = null;
+    if (match) out = name;
+    else { const alt = FACE_SFX.find(([emo]) => faces.some(f => f.emo === emo)); out = alt ? alt[1] : null; }
+    log.push([name, out, +t.toFixed(2), [...new Set(faces.map(f => f.emo))].join('/')]);
+    if (!out) continue; // nadie tiene esa cara: sin sonido
+    // la risa suena con la voz de quien se ríe (muchacha o muchacho)
+    if (/^laughs?F?$/.test(out)) { const who = faces.find(f => f.emo === 'laugh'); if (!who) continue; out = who.girl ? (out.startsWith('laughs') ? 'laughsF' : 'laughF') : out.replace(/F$/, ''); }
+    if (kept.some(k => k[0] === out && Math.abs(k[1] - t) < 0.6)) continue; // sin repetir el mismo sonido encima
+    kept.push([out, t, e[2]]);
+  }
+  ev.length = 0; ev.push(...kept);
+  return ev;
+}
+
 // ---------- mezcla completa ----------
 export async function renderMix(project, { voiceVol = 1, musicVol = 0.6, sfxOn = true, own = new Map() } = {}) {
   const total = project.total;
@@ -209,6 +242,9 @@ export async function renderMix(project, { voiceVol = 1, musicVol = 0.6, sfxOn =
     }
     if (b.kind === 'reflect' && i > 0 && project.beats[i - 1].kind !== 'reflect') fx('sparkle', b.start + 0.1, 0.5);
   });
+
+  // cada sonido con emoción debe coincidir con la cara de quien se ve en pantalla
+  fixEmotionSfx(project, ev);
 
   // plan de música: si no viene, una sola sección con la elección del usuario
   const plan = project.musicPlan && project.musicPlan.length ? project.musicPlan

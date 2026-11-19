@@ -1207,6 +1207,22 @@ function drawMessageFrame(ctx, project, bi, beat, t, g, scale, time) {
   ctx.restore();
 }
 
+// Caras que se ven en un instante (para que cada efecto de sonido coincida con la expresión)
+export function facesAt(project, time) {
+  const bi = beatAt(project, time); const beat = project.beats[bi]; const t = Math.max(0, time - beat.start); const g = time;
+  const gen = project.genders || {};
+  if (project.mode === 'musica') return msgCast(project, beat, t).map(c => ({ role: c.role, girl: c.girl, emo: pose(c.act, t, g, c.seed).emo, act: c.act }));
+  if (beat.vis) {
+    let [w0, w1] = visWindow(beat); let v = beat.vis;
+    if (beat.vis2) { const mid = (beat.voiceLead || 0) + (beat.voiceDur || beat.dur) * beat.visSplit; if (t >= mid) { w0 = mid; v = beat.vis2; } else w1 = mid; }
+    if (t >= w0 && t < w1 && w1 - w0 > 0.8) { const role = beat.speaker || 'A'; return [{ role, girl: gen[role] === 'f', emo: pose(v.act, t - w0, g, 0.7).emo, act: v.act }]; }
+  }
+  const chars = sceneChars(beat, t, project);
+  const reactOn = beat.react && t >= beat.reactStart;
+  const talker = reactOn ? (beat.react.vocal ? beat.react.role : null) : beat.kind === 'act' ? null : (beat.speaker || 'A');
+  return chars.map(c => { const P = charPose(c, t, g); let emo = P.emo; if (c.role === talker && emo === 'neutral') emo = 'happy'; return { role: c.role, girl: c.girl, emo, act: c.act }; });
+}
+
 export function drawFrame(ctx, project, time, scale = 1) {
   BW = !project.color; LANG = project.lang || 'es'; cache.clear();
   const opts = project;

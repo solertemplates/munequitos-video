@@ -118,7 +118,7 @@ export const MIME_STORIES = [
       X('triste', 3.0, { A: ['fall', 1050, 1080, 1], B: ['shock', 860, 860, 'to'] }, { core: true, sfx: [['fall', 0.15]] }),
       X('triste', 2.8, { A: ['downSad', 1080, 1080, 1], B: ['think', 860, 860, 'to'] }),
       X('emotiva', 3.4, { A: ['rise', 1080, 1080, 1], B: ['give', 860, 900, 'to'] }, { core: true, sfx: [['effort', 0.4]] }),
-      X('alegre', 3.4, { A: ['eat', 1080, 1060, 'to'], B: ['eat', 900, 880, 'to'] }, { core: true, sfx: [['laughs', 0.6]] }),
+      X('alegre', 3.4, { A: ['laugh', 1080, 1060, 'to'], B: ['eat', 900, 880, 'to'] }, { core: true, sfx: [['laughs', 0.6]] }),
     ],
     reflect: [R('Ningún pedazo de pizza vale más que un amigo.', 'No slice of pizza is worth more than a friend.'), R('Compartido, sabe mejor.', 'Shared, it tastes better.')],
     endCast: { A: ['hug', 1050, 1050, 'to'], B: ['hug', 840, 840, 'to'] },

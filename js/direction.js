@@ -12,7 +12,7 @@ const VOCALS = {
   love: { es: ['¡Awww!', '¡Ay, qué lindo!', '¡Qué bello!'], en: ['Awww!', 'That\'s so sweet!', 'Aww, come on!'] },
   cry: { es: ['¡Ay, no, no, no!', '¡Qué tristeza!'], en: ['Oh no, no, no!', 'That\'s so sad!'] },
 };
-const REACT_FX = { laugh: 'laughs', shock: 'gasp', facepalm: 'uf', love: 'aww', cry: 'uf' };
+const REACT_FX = { laugh: 'laughs', shock: 'gasp', facepalm: 'uf', love: 'aww', cry: 'sad' };
 
 // Gags de comedia física (escenas sin voz). sfx: [efecto, segundo]; o: onomatopeya; oT: cuándo aparece.
 const GAGS = {
@@ -22,7 +22,7 @@ const GAGS = {
   ],
   laugh: [
     { a: 'A:slip B:laugh', sfx: [['boing', 0.05], ['thud', 0.5]], o: { es: '¡PATAPLÁN!', en: 'WHOOPS!' }, oT: 0.5, react: 'laugh' },
-    { a: 'B:chase A:flee', sfx: [['zip', 0], ['zip', 0.7], ['laughs', 1.2]], o: { es: '¡CORRE!', en: 'RUN!' }, oT: 0.3, dur: 2.3, react: null },
+    { a: 'B:chase A:flee', sfx: [['zip', 0], ['zip', 0.7], ['gasp', 1.2]], o: { es: '¡CORRE!', en: 'RUN!' }, oT: 0.3, dur: 2.3, react: null },
     { a: 'all:dance', sfx: [['ding', 0], ['laughs', 0.6]], o: { es: '¡AZÚCAR!', en: 'YEAH!' }, oT: 0.2, react: null },
   ],
   facepalm: [
