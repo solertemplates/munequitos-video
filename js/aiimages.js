@@ -55,15 +55,14 @@ async function generateOne({ apiKey, model, quality, prompt, reference }) {
 
 // Asigna a cada escena una "clave de fondo": entorno + variante (A/B alternadas para que cambie el escenario, y una cálida para la reflexión)
 export function planBackgrounds(project) {
-  const keys = new Map(); let alt = 0; let lastEnv = null;
-  project.beats.forEach(b => {
-    const env = b.env || 'parque';
-    if (b.kind === 'reflect' || b.kind === 'cta') { const base = project.beats.find(x => x.kind === 'hook').env; b.bgKey = `${base}|warm`; }
-    else if (env === 'caminos') b.bgKey = 'caminos|a';
-    else { if (env !== lastEnv) alt = 0; b.bgKey = `${env}|${b.kind === 'rep' ? (alt++ % 2 ? 'b' : 'a') : 'a'}`; lastEnv = env; }
-    if (!keys.has(b.bgKey)) keys.set(b.bgKey, b.bgKey);
+  const keys = new Set(); const alt = {};
+  project.beats.forEach((b, i) => {
+    const env = b.env || 'casa';
+    if (b.kind === 'cta') { const prev = project.beats[i - 1]; b.bgKey = prev ? prev.bgKey : `${env}|a`; }
+    else { alt[env] = (alt[env] || 0) + 1; b.bgKey = `${env}|${alt[env] % 3 === 0 ? 'b' : 'a'}`; }
+    keys.add(b.bgKey);
   });
-  return [...keys.keys()];
+  return [...keys];
 }
 
 function bgPrompt(key, story) {
@@ -71,7 +70,7 @@ function bgPrompt(key, story) {
   const place = ENV_DESC[env] || ENV_DESC.parque;
   const variant = v === 'b' ? ' Show a DIFFERENT part/angle of the same place (other furniture or objects), same style and colors.'
     : v === 'warm' ? ' Same place at golden hour / sunset, warm emotional light, a bit dreamy and touching.' : '';
-  return `${STYLE}\nPlace: ${place}.${variant}\nStory mood: "${story}".`;
+  return `${STYLE}\nPlace: ${place}.${variant}\nMood: funny silent slapstick comedy about "${story}".`;
 }
 
 const memo = new Map();
@@ -80,7 +79,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 export async function generateBackgrounds(project, situation, { apiKey, model, quality, onProgress }) {
   if (!apiKey) throw new Error('Falta tu clave de OpenAI.');
   const keys = planBackgrounds(project);
-  const story = situation.title[project.lang] || '';
+  const story = (situation.title && (situation.title.es || situation.title)) || '';
   const out = new Map(); const errors = []; let done = 0; const refs = new Map();
   onProgress && onProgress(0, keys.length);
   const run = async key => {

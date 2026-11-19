@@ -59,55 +59,58 @@ export async function searchTrends(apiKey, { lang, theme }) {
 }
 
 // 2) Escribir 3 historias nuevas en el formato de la app
-export async function writeIdeas(apiKey, { lang, theme, themeName, trend, nChars, dur, hero, heroBio }) {
-  const nScenes = dur === 's' ? 5 : dur === 'm' ? 7 : 9;
-  const es = lang === 'es';
-  const name = (hero || '').trim() || (es ? 'el protagonista' : 'the hero');
-  const voice = es
-    ? `IDIOMA: español de la calle en Miami (sabor cubano y latino de EE. UU.), fácil para cualquier latino, con alguna palabra en inglés natural (el rent, los bills, el jefe, el weekend, full, brother). Nada de frases de libro.`
-    : `LANGUAGE: natural, casual American English.`;
-  const sys = `Eres el guionista de una serie viral de muñequitos de palitos (TikTok, Reels, Shorts) con millones de vistas. ${voice}
-PROTAGONISTA FIJO (rol A, sale en todos los episodios): ${name}. Personalidad: ${heroBio || 'trabajador, siempre cansado y sin dinero, pero optimista y chistoso'}. La gente debe encariñarse con él.
-TEMAS PRIORITARIOS: la vida de la gente trabajadora: el sueldo que no alcanza, las deudas, la renta, los bills, el cansancio, el jefe, salir de noche al trabajo y volver muerto, los precios. Situaciones TAN reales que la gente diga "este eres tú" y etiquete a un amigo o a su pareja.
-CÓMO SE CUENTA: casi SIN PALABRAS. La historia la cuentan las acciones, las caras, los carteles de tiempo ("6:00 AM", "DÍA 15", "VIERNES", "3 HORAS DESPUÉS") y los efectos de sonido. El protagonista NO narra lo que hace (prohibido "ahora voy al trabajo"). Como mucho una frase corta y graciosa (máx 6 palabras) cada 2 o 3 escenas; puede decirla otro personaje.
-HUMOR: picante pero limpio, sin groserías. Cada escena trae algo nuevo (sorpresa, exageración, golpe) y todo crece hasta un giro final que dé risa o toque el corazón.
+const SHOTS = ['wide', 'two', 'single:A', 'single:B', 'close:A', 'close:B', 'close:C'];
+const PROPS2 = ['alarm', 'money', 'wallet', 'coffee', 'phone', 'laptop', 'heart', 'pizza', 'box', 'banana', 'chart_down', 'chart_up', 'trophy', 'calendar', 'bulb', 'plant', 'bus:arrive', 'bus:leave', 'bus:full', 'bus:splash', 'bus:stuck', 'bus:car'];
+const SFX2 = ['steps', 'horn', 'punch', 'thud', 'fall', 'crash', 'zip', 'gasp', 'laughs', 'uf', 'boing', 'pop', 'ding', 'cash', 'alarm', 'tick', 'sneak', 'splash', 'scratch', 'drum', 'sad', 'aww', 'notif', 'type', 'whoosh'];
+const ENV2 = ['casa', 'ciudad', 'oficina', 'cafe', 'parque', 'cocina', 'playa'];
+
+// Escribe 3 historias de comedia muda (sin diálogos ni textos), al estilo del cine mudo clásico
+export async function writeIdeas(apiKey, { theme, themeName, trend, nChars, dur }) {
+  const n = dur === 's' ? 9 : dur === 'm' ? 13 : 17;
+  const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
+  const sys = `Eres un guionista genial de comedia física muda, al estilo del cine mudo clásico y del humor de un hombre torpe que no habla (sin copiar personajes existentes). Escribes historias de muñequitos de palitos para videos verticales virales que se entienden en CUALQUIER país: NO hay diálogos, NO hay voces, NO hay textos ni carteles en pantalla. Todo se cuenta con acciones, gestos, caras exageradas, música y efectos de sonido.
+Temas: la vida diaria de la gente trabajadora (el cansancio, el dinero que no alcanza, el trabajo, el jefe, la guagua o el autobús, el despertador).
+Estructura: arranca con algo llamativo en el primer segundo; un plan sencillo; contratiempos que van creciendo (tropezones, confusiones, persecuciones, planes que salen mal, repetición con escalada); y un GIRO FINAL sorprendente que dé risa o ternura. Cada escena dura unos 2 segundos y SIEMPRE pasa algo nuevo. Humor limpio, sin violencia real.
 Responde SOLO con JSON válido.`;
-  const user = `Tema: ${themeName}. Tendencia o noticia del momento para usar: ${trend ? `"${trend}"` : '(ninguna: usa algo de la vida diaria del trabajador)'}.
-Personajes: ${nChars} (roles ${['A', 'B', 'C', 'D'].slice(0, nChars).join(', ')}; A = ${name}).
-Escribe 3 episodios DISTINTOS. Formato exacto:
+  const user = `Tema: ${themeName}. Idea o tendencia a usar (opcional): ${trend ? `"${trend}"` : '(ninguna)'}.
+Personajes disponibles: ${roles.join(', ')} (A = protagonista torpe y adorable; B = su pareja o su jefe; C = un niño o un compañero).
+Escribe 3 historias DISTINTAS con este formato exacto:
 {"ideas":[{
- "title":"título corto",
- "env":"uno de: ${ENVS.join(', ')}",
- "hooks":["3 ganchos para los primeros 2 segundos, máx 10 palabras, estilo 'POV: …' o 'Este eres tú cuando…' o 'Etiqueta a…'"],
- "scenes":[ exactamente ${nScenes} escenas {"card":"cartel de tiempo corto (máx 18 caracteres)","a":"acciones","p":"objeto","fx":"efecto","o":"onomatopeya o texto corto de cómic (máx 16 caracteres) o vacío","q":"frase corta hablada o vacío","w":"quién dice la frase (A, B…)","r":"reacción del otro: laugh, shock, facepalm, love o cry"} ],
- "twist":{"card":"...","a":"...","p":"...","fx":"scratch","o":"...","q":"frase del giro (máx 10 palabras) o vacío","w":"A"},
- "reflect":["frase corta que toque el corazón","segunda frase corta"],
- "question":"pregunta final corta para que comenten, como '¿A ti también te pasa?'"
+ "title":"título corto (solo para la app, no sale en el video)",
+ "desc":"de qué va, en una frase",
+ "env":"uno de: ${ENV2.join(', ')}",
+ "looks":{"B":"tie"},
+ "scenes":[ exactamente ${n} escenas {"a":"acciones","p":"objeto o vacío","sfx":"efecto@segundo,efecto@segundo","shot":"plano","react":"quién reacciona en primer plano al final (ej. B:laugh) o vacío","dur":1.9,"env":"opcional, para cambiar de lugar","night":false,"key":true,"twist":false} ]
 }]}
-Reglas: "a" con formato "A:accion B:accion" o "all:accion"; acciones válidas: ${ACTIONS.join(', ')}. "p": ${PROPS.join(', ')}, "clock:H:MM" o "". "fx" (VARÍALOS, que suenen fuerte): ${FX.join(', ')}. Al menos 2 de cada 3 escenas SIN frase ("q":""). Cambia la acción en cada escena.`;
+Reglas:
+- "a": "A:accion B:accion" con acciones válidas: ${ACTIONS.join(', ')}, además de "lie" (acostado en la cama). Solo roles ${roles.join(', ')}.
+- "p": ${PROPS2.join(', ')}, o "clock:H:MM" (reloj de pared con esa hora), o "".
+- "sfx": efectos FUERTES y variados: ${SFX2.join(', ')}; el segundo indica cuándo suena (0 a 2).
+- "shot": ${SHOTS.join(', ')}. Usa muchos "close:X" para las caras exageradas.
+- "looks": opcional; "tie" (corbata, para el jefe), "hair" (pelo largo), "kid" (niño), "pajama" (pijama a rayas).
+- Marca "twist":true en la escena del giro final (una de las últimas) y "key":true en las escenas imprescindibles (al menos la mitad).
+- "dur" entre 1.5 y 2.5. "night":true si es de noche.`;
   const j = await withModels(['gpt-5-mini', 'gpt-4.1', 'gpt-4o'], model => responses(apiKey, { model, input: [{ role: 'system', content: sys }, { role: 'user', content: user }], text: { format: { type: 'json_object' } } }));
   const data = extractJSON(responseText(j));
-  return (data.ideas || []).slice(0, 3).map((idea, k) => toSituation(idea, k, lang, nChars));
+  return (data.ideas || []).slice(0, 3).map((idea, k) => toStory(idea, k, roles)).filter(x => x.scenes.length >= 3);
 }
 
-// Convierte la respuesta de la IA en un episodio (historia casi muda) de la app, validando todo
-function toSituation(idea, k, lang, nChars) {
-  const roles = ['A', 'B', 'C', 'D'].slice(0, nChars);
-  const REACTS = ['laugh', 'shock', 'facepalm', 'love', 'cry'];
-  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && ACTIONS.includes(act); }).join(' ') || 'A:idle';
-  const cleanP = p => { p = String(p || ''); return PROPS.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
-  const both = t => ({ es: String(t || '').trim(), en: String(t || '').trim() });
-  const scene = o => {
-    o = o || {}; const q = String(o.q || '').trim(); const on = String(o.o || '').trim().slice(0, 18); const card = String(o.card || '').trim().slice(0, 20);
-    return { card: card ? both(card) : null, a: cleanA(o.a), p: cleanP(o.p), fx: FX.includes(o.fx) ? o.fx : 'pop', o: on ? both(on) : null, q: q ? both(q) : null, w: roles.includes(o.w) ? o.w : 'A', r: REACTS.includes(o.r) ? o.r : null };
-  };
-  const hooks = (idea.hooks || []).filter(Boolean).slice(0, 3).map(both);
-  return {
-    id: 'ia' + k + Date.now().toString(36), ai: true, silent: true, mode: 'mudo', env: ENVS.includes(idea.env) ? idea.env : 'casa',
-    title: both(idea.title), hook: hooks[0] || both(idea.title), hooks,
-    scenes: (idea.scenes || []).map(scene).filter(x => x.card || x.q || x.o), twist: scene(idea.twist),
-    reflect: (idea.reflect || []).slice(0, 2).map(both), question: idea.question ? both(idea.question) : null,
-  };
+function toStory(idea, k, roles) {
+  const acts = [...ACTIONS, 'lie'];
+  const cleanA = a => String(a || '').split(/\s+/).filter(tok => { const [r, act] = tok.split(':'); return (r === 'all' || roles.includes(r)) && acts.includes(act); }).join(' ') || 'A:idle';
+  const cleanP = p => { p = String(p || ''); return PROPS2.includes(p) || /^clock:\d{1,2}:\d{2}$/.test(p) ? p : ''; };
+  const cleanSfx = s => String(s || '').split(',').map(x => { const [nm, t] = x.trim().split('@'); return SFX2.includes(nm) ? [nm, Math.max(0, Math.min(2.4, +t || 0))] : null; }).filter(Boolean).slice(0, 4);
+  const LOOKS = ['tie', 'hair', 'kid', 'pajama'];
+  const looks = {}; Object.entries(idea.looks || {}).forEach(([r, l]) => { if (roles.includes(r) && LOOKS.includes(l)) looks[r] = l; });
+  const scenes = (idea.scenes || []).map(sc => {
+    sc = sc || {};
+    const shot = SHOTS.includes(sc.shot) ? sc.shot : 'two';
+    const react = /^[ABCD]:(laugh|shock|love|facepalm|cry|angry|think)$/.test(sc.react || '') && roles.includes(sc.react[0]) ? sc.react : null;
+    return { a: cleanA(sc.a), p: cleanP(sc.p), sfx: cleanSfx(sc.sfx), shot, react, dur: Math.max(1.4, Math.min(2.6, +sc.dur || 1.9)), env: ENV2.includes(sc.env) ? sc.env : undefined, night: !!sc.night, key: !!sc.key, twist: !!sc.twist };
+  });
+  if (!scenes.some(x => x.twist) && scenes.length) scenes[scenes.length - 2 >= 0 ? scenes.length - 2 : 0].twist = true;
+  if (scenes.filter(x => x.key).length < 4) scenes.forEach(x => { x.key = true; });
+  return { id: 'ia' + k + Date.now().toString(36), ai: true, title: String(idea.title || 'Historia con IA').slice(0, 60), desc: String(idea.desc || '').slice(0, 140), env: ENV2.includes(idea.env) ? idea.env : 'casa', looks, scenes };
 }
 
 export { R };

@@ -1,140 +1,58 @@
-// Construye el guion (beats) a partir de las elecciones del usuario y le asigna tiempos.
-import { fillCta, combineCtas, ctaTypesFor } from './content.js';
+// Arma el video de comedia muda: escenas de acción + final con íconos (me gusta / seguir), ajustado a la duración.
+import { BONUS_GAGS } from './content.js';
 
 export const DURATIONS = {
-  s: { min: 12, max: 25, reps: 3, after: false, reflect: 1, pace: 1.12, label: { es: '12–25 s', en: '12–25 s' } },
-  m: { min: 25, max: 45, reps: 5, after: true, reflect: 2, pace: 1.0, label: { es: '25–45 s', en: '25–45 s' } },
-  l: { min: 45, max: 60, reps: 6, after: true, reflect: 2, pace: 0.94, label: { es: '45–60 s', en: '45–60 s' } },
+  s: { min: 12, max: 25, scale: 1.0, label: '12–25 s', sub: 'Rápido' },
+  m: { min: 25, max: 45, scale: 1.15, label: '25–45 s', sub: 'Estándar' },
+  l: { min: 45, max: 60, scale: 1.3, label: '45–60 s', sub: 'Completo' },
 };
 
-function pickReps(reps, n) {
-  const core = reps.filter(r => r.core);
-  if (core.length) {
-    const extra = reps.filter(r => !r.core).slice(0, Math.max(0, n - core.length));
-    // intercalar los extras manteniendo el orden original
-    return reps.filter(r => r.core || extra.includes(r));
-  }
-  if (n >= reps.length) return reps.slice();
-  // siempre conservar el primero y el último (el más exagerado)
-  const idx = new Set([0, reps.length - 1]);
-  const step = (reps.length - 1) / (n - 1);
-  for (let i = 0; idx.size < n && i < n; i++) idx.add(Math.round(i * step));
-  for (let i = 1; idx.size < n; i++) idx.add(i);
-  return [...idx].sort((a, b) => a - b).map(i => reps[i]);
-}
+const parseActs = a => { const m = {}; (a || '').split(/\s+/).filter(Boolean).forEach(tok => { const [r, act] = tok.split(':'); m[r] = act; }); return m; };
 
-export function buildBeats({ situation, lang, dur, hook, ctas, settings, question }) {
-  const D = DURATIONS[dur];
-  const T = o => (typeof o === 'string' ? o : o[lang]);
-  const beats = [];
-  const env = situation.env;
-  const signProp = ((situation.setup || []).find(s => s.p.startsWith('sign:')) || {}).p || '';
-  const baseEnv = settings.env && settings.env !== 'auto' ? settings.env : (env === 'caminos' ? 'parque' : env);
-  const mk = (kind, line, extra = {}) => ({
-    kind, text: T(line.t || line), a: line.a || '', p: line.p || '', fx: line.fx || '', who: line.w || null, r: line.r || null,
-    env: extra.env || baseEnv, ...extra,
-  });
-
-  const NAME = (settings.seriesName || '').trim();
-  const nm = t => (NAME ? String(t).replace(/\{name\}/g, NAME) : String(t).replace(/\{name\}/g, lang === 'es' ? 'tú' : 'you'));
-  if (situation.mode === 'mudo') return buildSilent({ situation, lang, dur, hook: { es: nm(hook.es), en: nm(hook.en) }, ctas, settings, question, T, baseEnv, D, mk });
-  beats.push(mk('hook', { t: hook, a: situation.mode === 'caminos' ? 'all:think' : 'all:shock', fx: 'whoosh' }));
-  situation.setup.forEach(s => beats.push(mk('setup', s, situation.mode === 'caminos' ? { env: 'caminos', sign: signProp } : {})));
-  const nSpoken = settings.action ? Math.max(2, D.reps - (dur === 's' ? 1 : 2)) : D.reps;
-  const reps = situation.ai ? situation.reps.slice() : pickReps(situation.reps, nSpoken);
-  reps.forEach((r, i) => r.silent ? beats.push({ kind: 'act', text: '', a: r.a, p: r.p && r.p !== 'left' && r.p !== 'right' ? r.p : '', fx: '', gag: { a: r.a, sfx: [[r.fx || 'boing', 0.05]], react: r.r || 'laugh' }, onoma: (typeof r.o === 'string' ? r.o : (r.o && r.o[lang])) || '¡ZAS!', onomaT: 0.35, actDur: 2.0, env: situation.mode === 'caminos' ? 'caminos' : baseEnv, sign: situation.mode === 'caminos' ? signProp : undefined, side: r.p === 'left' ? -1 : r.p === 'right' ? 1 : 0, level: (i + 1) / reps.length }) : beats.push(mk('rep', r, {
-    level: (i + 1) / reps.length,
-    ...(situation.mode === 'caminos' ? { env: 'caminos', sign: signProp, side: r.p === 'left' ? -1 : r.p === 'right' ? 1 : 0, p: '' } : {}),
-  })));
-  beats.push(mk('twist', situation.twist));
-  if (D.after && situation.after) beats.push(mk('after', situation.after));
-  const refl = situation.reflect.map(T);
-  if (D.reflect === 1) beats.push(mk('reflect', { t: refl.join(' '), a: 'A:hug B:hug all:idle', p: '' }));
-  else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
-  if (question) beats.push(mk('question', { t: T(question), a: 'all:shrug', p: '', fx: 'ding' }));
-  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctaTypesFor(ctas) }));
-  return beats;
-}
-
-// Historias mudas (serie): cartel de tiempo + acción + efectos; solo frases cortas de vez en cuando
-const REACT_OF = a => (/faint|shock|flee|sneak/.test(a) ? 'shock' : /laugh|cheer|dance|jump/.test(a) ? 'laugh' : /sad|cry|tired|sleep/.test(a) ? 'facepalm' : /love|hug|kneel/.test(a) ? 'love' : 'laugh');
-function buildSilent({ situation, lang, dur, hook, ctas, settings, question, T, baseEnv, D, mk }) {
-  const beats = [];
-  const n = dur === 's' ? 4 : 6;
-  const sc = situation.ai ? situation.scenes.slice() : pickReps(situation.scenes, Math.min(n, situation.scenes.length));
-  const scene = (m, kind, i, total) => {
-    const card = m.card ? T(m.card) : '';
-    if (m.q) return mk(kind === 'twist' ? 'twist' : 'rep', { t: m.q, a: m.a, p: m.p, fx: m.fx }, { card, who: m.w || 'A', r: m.r || null, level: (i + 1) / total, onoma: m.o ? T(m.o) : '', onomaT: 0.25 });
-    const g = { a: m.a, sfx: [[m.fx || 'pop', 0.05]].concat(kind === 'twist' ? [['scratch', 0]] : []), react: m.r || REACT_OF(m.a) };
-    return { kind: 'act', text: '', a: m.a, p: m.p || '', fx: '', gag: g, onoma: m.o ? T(m.o) : '', onomaT: 0.3, actDur: kind === 'twist' ? 2.3 : 1.8, card, env: baseEnv, level: (i + 1) / total, twistLike: kind === 'twist' };
+function sceneBeat(sc, i, n, story, settings, scale) {
+  const env = sc.env || (settings.env && settings.env !== 'auto' ? settings.env : story.env || 'casa');
+  const looks = { ...(story.looks || {}), ...(sc.look || {}) };
+  let react = null;
+  if (sc.react) { const [role, act] = sc.react.split(':'); react = { role, act, vocal: null, fx: act === 'laugh' ? 'laughs' : act === 'shock' ? 'gasp' : act === 'love' ? 'aww' : 'uf' }; }
+  // en cada escena solo salen los personajes que actúan en ella
+  const m = parseActs(sc.a); let present = m.all ? null : Object.keys(m).filter(r => /^[ABCD]$/.test(r));
+  if (present && react && !present.includes(react.role)) present.push(react.role);
+  if (present && !present.length) present = ['A'];
+  return {
+    present, kind: 'act', text: '', a: sc.a, p: sc.p || '', fx: '', env, night: !!sc.night, looks, twistLike: !!sc.twist,
+    gag: { sfx: sc.sfx || [] }, react, shotHint: sc.shot || 'two', actDur: (sc.dur || 1.9) * scale, level: (i + 1) / n,
   };
-  beats.push(Object.assign(mk('hook', { t: hook, a: 'A:tired B:idle', fx: 'whoosh' }), { mute: true }));
-  sc.forEach((m, i) => beats.push(scene(m, 'rep', i, sc.length)));
-  beats.push(scene(situation.twist, 'twist', sc.length, sc.length));
-  const refl = situation.reflect.map(T);
-  if (D.reflect === 1) beats.push(mk('reflect', { t: refl[0], a: 'all:idle', p: '' }));
-  else refl.forEach((r, i) => beats.push(mk('reflect', { t: r, a: i ? 'A:hug B:hug all:idle' : 'all:idle', p: '' })));
-  if (question) beats.push(mk('question', { t: T(question), a: 'all:shrug', p: '', fx: 'ding' }));
-  beats.push(mk('cta', { t: fillCta(combineCtas(ctas, lang), lang, settings), a: 'all:wave A:point', p: 'cta', fx: 'pop' }, { ctaType: ctas[0].type, ctaTypes: ctaTypesFor(ctas) }));
+}
+
+export function buildComedy({ story, dur, settings }) {
+  const D = DURATIONS[dur];
+  let scenes = story.scenes.slice();
+  // videos cortos: se quedan las escenas clave
+  const est = list => list.reduce((s, x) => s + (x.dur || 1.9) * D.scale, 0) + 3.2;
+  if (est(scenes) > D.max) { scenes = scenes.filter(x => x.key); }
+  while (est(scenes) > D.max && scenes.length > 4) { const i = scenes.findIndex((x, k) => k > 0 && k < scenes.length - 2 && !x.twist); scenes.splice(i < 0 ? 1 : i, 1); }
+  // videos largos: se meten gags extra entre escenas (antes del giro)
+  let bi = 0;
+  while (est(scenes) < D.min + 1 && bi < 12) {
+    const twistAt = Math.max(1, scenes.findIndex(x => x.twist)); const pos = Math.max(1, Math.min(twistAt, 2 + (bi * 2) % Math.max(1, twistAt - 1)));
+    scenes.splice(pos, 0, { ...BONUS_GAGS[bi % BONUS_GAGS.length], env: scenes[Math.max(0, pos - 1)].env });
+    bi++;
+  }
+  const beats = scenes.map((sc, i) => sceneBeat(sc, i, scenes.length, story, settings, D.scale));
+  if (settings.cta !== false) beats.push({ kind: 'cta', text: '', a: 'all:wave A:point', p: 'cta', fx: 'pop', env: beats[beats.length - 1].env, looks: beats[beats.length - 1].looks, ctaTypes: ['combo'], ctaType: 'combo', actDur: 3.2 });
   return beats;
 }
 
-// Texto apto para la voz (sin comillas ni símbolos)
-export function speakable(text) {
-  return text.replace(/["“”«»]/g, '').replace(/\s+/g, ' ').replace(/\.\.\./g, ',').trim();
-}
-
-// Asigna tiempos: beat.start, beat.dur, voiceLead y, si hay reacción, reactStart (relativo al beat).
-export function timeBeats(beats, dur, allowDrop = true) {
-  const D = DURATIONS[dur];
-  const base = { hook: 0.3, setup: 0.2, rep: 0.15, twist: 0.45, after: 0.25, reflect: 0.75, cta: 0.6, question: 0.7 };
-  const lead = { hook: 0.12, setup: 0.08, rep: 0.06, twist: 0.5, after: 0.08, reflect: 0.3, cta: 0.2, question: 0.2 };
-  const minD = { hook: 2.0, setup: 1.6, rep: 1.4, twist: 2.4, after: 1.6, reflect: 3.0, cta: 3.2, question: 2.6 };
-  const minFor = b => (b.kind === 'cta' && b.ctaTypes && b.ctaTypes.length > 1 ? 3.8 : minD[b.kind]);
+// Tiempos: cada escena dura lo suyo; las reacciones ocupan el final de la escena
+export function timeBeats(beats) {
   let total = 0;
-  const calc = (padMul) => {
-    total = 0;
-    for (const b of beats) {
-      if (b.kind === 'act') { b.voiceLead = 0; b.voiceDur = 0; b.dur = b.actDur || 1.7; if (b.react) b.reactStart = b.dur - 0.6; b.start = total; total += b.dur; continue; }
-      const vd = b.mute ? Math.max(2.2, estimateDur(b.text, 1.25)) : (b.voiceDur || estimateDur(b.text, D.pace));
-      b.voiceLead = lead[b.kind];
-      const speechEnd = b.voiceLead + vd;
-      if (b.react) {
-        b.reactStart = speechEnd + 0.08;
-        b.dur = Math.max(minFor(b), b.reactStart + (b.react.vocal ? Math.max(0.85, (b.reactDur || 0.7) + 0.3) : 0.62) + base[b.kind] * (padMul - 1) * 0.5);
-      } else b.dur = Math.max(minFor(b), speechEnd + base[b.kind] * padMul + (b.exit ? 0.5 : 0));
-      b.start = total;
-      total += b.dur;
-    }
-    return total;
-  };
-  calc(1);
-  // si se pasa del máximo, quita reacciones alternas (las más largas primero) hasta que quepa
-  let guard = 0;
-  while (allowDrop && total > D.max + 0.5 && guard++ < 20) {
-    const withR = beats.filter(b => b.react && b.kind !== 'twist');
-    if (!withR.length) break;
-    withR.sort((x, y) => (y.reactDur || 0) - (x.reactDur || 0))[0].react = null;
-    calc(1);
+  for (const b of beats) {
+    b.voiceLead = 0; b.voiceDur = 0;
+    b.dur = b.actDur || 1.9;
+    if (b.react) b.reactStart = Math.max(0.6, b.dur - 0.65);
+    b.start = total; total += b.dur;
   }
-  if (total < D.min) { const extra = (D.min + 0.5 - total); calc(1 + extra / beats.reduce((s, b) => s + (base[b.kind] || 0), 0)); }
-  else if (total > D.max + 0.5) calc(0.2);
   return total;
 }
 
-export function estimateDur(text, pace = 1) {
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(0.8, (words / 2.7 + 0.25) / pace);
-}
-
-// Subtítulos .srt
-export function toSRT(beats) {
-  const ts = s => {
-    const ms = Math.round(s * 1000);
-    const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
-    const m = String(Math.floor(ms / 60000) % 60).padStart(2, '0');
-    const sec = String(Math.floor(ms / 1000) % 60).padStart(2, '0');
-    return `${h}:${m}:${sec},${String(ms % 1000).padStart(3, '0')}`;
-  };
-  return beats.filter(b => b.text).map((b, i) => `${i + 1}\n${ts(b.start)} --> ${ts(b.start + b.dur)}\n${b.text}\n`).join('\n');
-}
+export { parseActs };
